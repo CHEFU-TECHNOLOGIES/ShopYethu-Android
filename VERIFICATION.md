@@ -4,6 +4,8 @@ Date: 13 November 2026.
 
 ## Automated checks
 
+- Reproduced the CI CSS type errors with generated `expo-env.d.ts` and `.expo/types` excluded. Adding the tracked `src/types/expo.d.ts` reference to Expo's ambient declarations fixed that clean-environment check; normal typecheck and lint also passed. This does not run or enable a web build.
+
 - Android TypeScript and full-app lint passed after fixing the Account sign-in button expression and adding its external-link icon.
 - Android Hermes export passed after adding the first-launch welcome screen (`npm run export:android`). This is a JavaScript bundle export, not a signed installable APK.
 - Backend typecheck and build passed. Seven marketplace tests passed, covering application review/resubmission, authorization, suspension, order transitions, atomic stock validation, concurrent checkout and idempotent retries. Test dependencies are isolated from runtime; no demonstration accounts or data are served.
