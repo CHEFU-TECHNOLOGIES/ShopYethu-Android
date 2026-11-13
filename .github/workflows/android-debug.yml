@@ -53,6 +53,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Check application draft storage
+        run: npm run test:application
+
       - name: Generate Android project
         run: npx expo prebuild --platform android --no-install
 

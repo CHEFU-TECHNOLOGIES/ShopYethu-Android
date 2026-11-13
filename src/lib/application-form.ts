@@ -1,0 +1,63 @@
+import type { SellerApplication } from '@/types/marketplace';
+import { categories } from './config';
+
+export const applicationCategories = categories.filter(category => category !== 'All');
+export const applicationSteps = ['Business', 'Products', 'Contact & pickup', 'Review'];
+export type ApplicationForm = {
+  businessType: '' | 'individual' | 'registered-business';
+  businessName: string; area: string; categories: string[]; plans: string;
+  contactName: string; phone: string; phoneConfirmed: boolean;
+  collectionOffered: boolean | null; collectionArea: string; pickupHours: string; response: string;
+};
+export type ApplicationDraft = { version: 1; baseUpdatedAt: string; form: ApplicationForm; step: number; savedAt: string };
+
+export function initialApplication(previous: SellerApplication | null, name: string): ApplicationForm {
+  return {
+    businessType: previous?.businessType || '', businessName: previous?.businessName || '',
+    area: previous?.area || '', categories: previous?.categories || [], plans: previous?.plans || '',
+    contactName: previous?.contactName || name, phone: previous?.phone || '', phoneConfirmed: false,
+    collectionOffered: previous?.collectionOffered ?? null, collectionArea: previous?.collectionArea || '',
+    pickupHours: previous?.pickupHours || '', response: '',
+  };
+}
+
+export function validateApplicationStep(form: ApplicationForm, step: number, responding: boolean) {
+  const length = (value: string, min: number, max: number) => value.trim().length >= min && value.trim().length <= max;
+  if (step === 0) {
+    if (!['individual', 'registered-business'].includes(form.businessType)) return 'Choose your business type.';
+    if (!length(form.businessName, 2, 100)) return 'Enter a business or trading name (2–100 characters).';
+    if (!length(form.area, 2, 120)) return 'Enter your operating area (2–120 characters).';
+  }
+  if (step === 1) {
+    if (!form.categories.length || form.categories.some(item => !applicationCategories.includes(item)) || new Set(form.categories).size !== form.categories.length) return 'Choose at least one product category.';
+    if (!length(form.plans, 10, 2000)) return 'Describe what you plan to sell (10–2,000 characters).';
+  }
+  if (step === 2) {
+    if (!length(form.contactName, 2, 100)) return 'Enter a contact name (2–100 characters).';
+    const digits = form.phone.replace(/\D/g, '');
+    if (!/^\+?[\d\s()-]+$/.test(form.phone.trim()) || digits.length < 7 || digits.length > 15 || form.phone.length > 30) return 'Enter a valid contact number.';
+    if (!form.phoneConfirmed) return 'Confirm that this is your business contact number.';
+    if (form.collectionOffered === null) return 'Choose whether you offer collection.';
+    if (form.collectionOffered && !length(form.collectionArea, 2, 120)) return 'Enter a pickup area (2–120 characters).';
+    if (form.collectionOffered && !length(form.pickupHours, 3, 300)) return 'Enter your pickup hours (3–300 characters).';
+  }
+  if (step === 3 && responding && !length(form.response, 5, 2000)) return 'Respond to the requested information (5–2,000 characters).';
+  return '';
+}
+
+// Reject corrupted device data before putting it back into editable inputs.
+export function isApplicationDraft(value: unknown): value is ApplicationDraft {
+  if (!value || typeof value !== 'object') return false;
+  const draft = value as ApplicationDraft;
+  if (draft.version !== 1 || typeof draft.baseUpdatedAt !== 'string' || !Number.isInteger(draft.step) || draft.step < 0 || draft.step > 3 || !draft.form) return false;
+  const form = draft.form;
+  const limits = { businessName: 100, area: 120, plans: 2000, contactName: 100, phone: 30, collectionArea: 120, pickupHours: 300, response: 2000 };
+  return Object.entries(limits).every(([key, max]) => {
+    const field = form[key as keyof ApplicationForm];
+    return typeof field === 'string' && field.length <= max;
+  }) &&
+    ['', 'individual', 'registered-business'].includes(form.businessType) &&
+    Array.isArray(form.categories) && form.categories.length <= applicationCategories.length && new Set(form.categories).size === form.categories.length && form.categories.every(item => typeof item === 'string' && applicationCategories.includes(item)) &&
+    typeof form.phoneConfirmed === 'boolean' && [true, false, null].includes(form.collectionOffered) &&
+    typeof draft.savedAt === 'string' && Number.isFinite(Date.parse(draft.savedAt));
+}

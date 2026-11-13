@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { randomUUID } from 'expo-crypto';
+import { router } from 'expo-router';
 import { ACCOUNT_BASE, API_BASE, CLIENT_ID, REDIRECT_URI } from './config';
 import { hydrateSession, saveSession, subscribe, type Session } from './session';
 
@@ -33,8 +34,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const token = await AuthSession.exchangeCodeAsync({ clientId: CLIENT_ID, code: result.params.code, redirectUri: REDIRECT_URI, extraParams: { code_verifier: request.codeVerifier } }, discovery);
       const response = await fetch(`${API_BASE}/oauth/userinfo`, { headers: { Authorization: `Bearer ${token.accessToken}` }, signal: AbortSignal.timeout(10000) });
       const user = await response.json();
-      if (!response.ok || user.app !== 'shopyethu' || !user.sub || !user.email) throw new Error('Unable to verify your CheFu account.');
+      if (!response.ok || user.app !== 'shopyethu' || !user.sub || !user.email) throw new Error('Unable to verify your account. Please sign in again.');
       await saveSession({ token: token.accessToken, refreshToken: token.refreshToken, expiresAt: Date.now() + (token.expiresIn || 3600) * 1000, user: { uid: user.sub, email: user.email, name: user.name || user.email } });
+      router.replace('/account');
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Sign-in failed. Please try again.'); }
     finally { setBusy(false); }
   }

@@ -1,0 +1,27 @@
+import { StyleSheet } from 'react-native';
+import { palette } from './market-theme';
+
+export const applicationStyles = StyleSheet.create({
+    top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+    link: { paddingVertical: 12, paddingHorizontal: 4, minHeight: 48, justifyContent: 'center' },
+    linkText: { color: palette.brand, fontSize: 14, fontWeight: '700' },
+    progress: { flexDirection: 'row', gap: 6, marginTop: 8 },
+    segment: { flex: 1, height: 4, borderRadius: 4, backgroundColor: palette.line },
+    complete: { backgroundColor: palette.brand },
+    choices: { gap: 10 },
+    choice: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, minHeight: 56, backgroundColor: palette.paper, borderWidth: 1, borderColor: palette.line, borderRadius: 16 },
+    selected: { borderColor: palette.brand, backgroundColor: palette.soft },
+    choiceText: { color: palette.ink, fontSize: 15, fontWeight: '600', flex: 1 },
+    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    chip: { minHeight: 48, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 24, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.paper, justifyContent: 'center' },
+    chipText: { color: palette.ink, fontSize: 14, fontWeight: '600' },
+    controls: { flexDirection: 'row', gap: 12 },
+    control: { flex: 1 },
+    summary: { gap: 7 },
+    detail: { color: palette.ink, fontSize: 15, lineHeight: 23 },
+    event: { flexDirection: 'row', gap: 14 },
+    eventRail: { width: 16, alignItems: 'center' },
+    dot: { height: 10, width: 10, marginTop: 6, borderRadius: 5, backgroundColor: palette.brand },
+    stem: { flex: 1, width: 1, backgroundColor: palette.line, marginTop: 5 },
+    eventBody: { flex: 1, gap: 5, paddingBottom: 22 },
+});

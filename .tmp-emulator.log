@@ -189,4 +189,12 @@ INFO         | Ignore IPv6 address: c825:a654:8102:0:1000:a654:8102:0
 INFO         | Ignore IPv6 address: c825:a654:8102:0:1000:a654:8102:0
 INFO         | Ignore IPv6 address: c825:a654:8102:0:1000:a654:8102:0
 INFO         | Created VkInstance:0000028157F72590 for application:'' engine:''.
-INFO         | Destroyed VkI
+INFO         | Destroyed VkInstance:0000028157F72590 for application:'' engine:''.
+INFO         | Created VkInstance:0000028157F72590 for application:'' engine:''.
+INFO         | Destroyed VkInstance:0000028157F72590 for application:'' engine:''.
+INFO         | Wait for emulator (pid 22264) 20 seconds to shutdown gracefully before kill;you can set environment variable ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL(in seconds) to change the default value (20 seconds)
+
+INFO         | Saving with gfxstream=1
+INFO         | Saving snapshot 'default_boot' took 1361 ms
+INFO         | removeAll
+WARNING      | Netsim Wifi dns:///localhost:51131 is gone due to Stream removed (CANCELLED)

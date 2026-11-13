@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { CartProvider } from '@/lib/cart';
 import { WelcomeProvider, useWelcome } from '@/lib/welcome';
@@ -12,7 +13,9 @@ export default function RootLayout() {
     <AuthProvider>
       <WelcomeProvider>
         <CartProvider>
-          <AppNavigator />
+          <KeyboardProvider preload={false}>
+            <AppNavigator />
+          </KeyboardProvider>
         </CartProvider>
       </WelcomeProvider>
     </AuthProvider>

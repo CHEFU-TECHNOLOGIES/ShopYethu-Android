@@ -12,6 +12,7 @@ On first launch, a single welcome screen offers Start shopping or Sign in. Start
 npm ci
 npm run typecheck
 npm run lint
+npm run test:application
 npm start
 npm run export:android
 ```
@@ -25,6 +26,8 @@ npm run build:android
 ```
 
 Rebuild and reinstall the native APK after changing native dependencies, config plugins, URL schemes or splash settings. JavaScript-only edits use Metro and Fast Refresh. Android package: `za.co.chefu.shopyethu`. The API currently points to `https://api.chefu.co.za` in `src/lib/config.ts`.
+
+Forms use `react-native-keyboard-controller` through the shared Page component to scroll the focused input above the keyboard, including lower and multiline fields. Installing this change requires a rebuilt development APK; restarting Metro alone cannot add the native keyboard module. Keyboard dragging dismisses the keyboard, and buttons remain tappable while it is open.
 
 ## Android debug GitHub Actions
 
@@ -57,6 +60,18 @@ Backend records live in Firestore collections `shopyethu_applications`, `shopyet
 | Staff review/suspension | `GET/PUT /shopyethu/admin/applications/:uid`, `GET/PUT /admin/sellers/:uid` |
 
 The admin website's Applications, Sellers and Complaints views now read the real endpoints. Staff can approve, request more information, reject, suspend/reactivate, and inspect submitted reports. Customer-facing reasons appear in the mobile application. Admin permissions are checked from the current central user profile; seller actions check current store status and ownership on the server, including direct/stale requests. Approval is never granted by the phone.
+
+## Seller application
+
+Applications use four short steps: Business, Products, Contact & pickup, and Review. Each step validates before continuing; the final summary has Edit actions. Email comes from the signed-in account and cannot be changed in the form. The backend also derives it from the authenticated identity.
+
+Business details include individual/sole trader or registered business, trading name and operating area. Applicants choose product categories and describe their products. The contact-number checkbox is the applicant's acknowledgement, **not SMS/OTP verification**. Changing the number clears that acknowledgement. Pickup area and hours are requested only if collection is offered; the form asks for an area, not a private street address. This application preference does not enable unconfigured fulfilment or automatically configure product listings.
+
+Progress is saved after a short typing pause, when leaving the app, and through Save & exit. Drafts use encrypted device SecureStore, separate keys per account and chunked, serialized writes. Failed saves retain the last complete draft and show a retry message. Drafts belong to the current server application version; an old draft cannot overwrite a new review decision. There are no draft API writes or cross-device draft synchronization. Successful submissions clear the local draft. Abrupt termination before a save completes can lose the most recent edits.
+
+The application screen shows server-recorded submission, information requests, resubmissions and decisions with dates and customer-facing messages. Staff can inspect the same details and history on the admin website. More-information requests return the applicant to the same editable steps, with a response on Review. History retains the latest 100 events; the original submission date is retained separately for new records. Older applications show their latest recorded update without inventing a submission date.
+
+Deploy the companion backend validation/history changes and admin review display with this mobile update. Existing records remain reviewable. New submissions require the additional fields; older mobile builds need updating. No document-upload or SMS-verification service has been configured for applications; staff can request clarification through the existing customer-facing message and written-response flow.
 
 ## Orders, photos and integration limits
 

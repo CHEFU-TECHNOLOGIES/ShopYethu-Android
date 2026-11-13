@@ -3,13 +3,13 @@ import {
     ActivityIndicator,
     Pressable,
     RefreshControl,
-    ScrollView,
     Text,
     TextInput,
     View,
     type TextInputProps,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { router } from "expo-router";
 import { palette, ui } from "@/constants/market-theme";
 
@@ -32,9 +32,12 @@ export function Page({
 }) {
     return (
         <SafeAreaView style={ui.page} edges={["top"]}>
-            <ScrollView
+            <KeyboardAwareScrollView
+                style={{ flex: 1 }}
+                bottomOffset={24}
                 contentContainerStyle={ui.content}
                 keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
                 refreshControl={onRefresh ? (
                     <RefreshControl
                         refreshing={refreshing}
@@ -62,7 +65,7 @@ export function Page({
                     {subtitle && <Text style={ui.subtitle}>{subtitle}</Text>}
                 </View>}
                 {children}
-            </ScrollView>
+            </KeyboardAwareScrollView>
         </SafeAreaView>
     );
 }
