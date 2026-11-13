@@ -24,4 +24,5 @@ export const applicationStyles = StyleSheet.create({
     dot: { height: 10, width: 10, marginTop: 6, borderRadius: 5, backgroundColor: palette.brand },
     stem: { flex: 1, width: 1, backgroundColor: palette.line, marginTop: 5 },
     eventBody: { flex: 1, gap: 5, paddingBottom: 22 },
+    topTitle: { flex: 1, minWidth: 0 },
 });

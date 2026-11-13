@@ -70,13 +70,7 @@ export const ui = StyleSheet.create({
     },
     pillActive: { backgroundColor: palette.brand, borderColor: palette.brand },
     error: { color: palette.danger, fontSize: 14, lineHeight: 21 },
-    badge: {
-        color: palette.brand,
-        fontSize: 11,
-        fontWeight: "700",
-        textTransform: "uppercase",
-        letterSpacing: 0.7,
-    },
+    
     divider: {
         borderBottomWidth: 1,
         borderBottomColor: palette.line,
