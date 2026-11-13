@@ -2,6 +2,10 @@
 
 ShopYethu by Chefu Technologies: one Expo SDK 58 / React Native app for local shopping and selling. Navigation uses Expo Router and the existing native tabs. The app uses the real ShopYethu icon and the shared CheFu OAuth server. There are no demo accounts, seeded products, fake approval switches, or simulated payment successes.
 
+This project targets Android and iOS. The separate ShopYethu admin website handles marketplace administration; this project has no web launch script or web build target.
+
+On first launch, a single welcome screen offers Start shopping or Sign in. Start shopping opens the public catalogue; Sign in opens the existing Account screen and CheFu sign-in flow. The choice is stored on the device with SecureStore, so later launches skip the welcome. There are no onboarding API requests. Shared product and storefront links continue opening directly. Storage failures allow the user to continue for the current app session.
+
 ## Run and verify
 
 ```sh
@@ -21,6 +25,16 @@ npx eas-cli@latest build --platform android --profile preview
 ```
 
 `eas.json` contains preview APK and production build profiles. No signed APK or cloud build is claimed by the source code checks. Android package: `za.co.chefu.shopyethu`. The API URL defaults to `https://api.chefu.co.za`; set `EXPO_PUBLIC_API_BASE_URL` at build time for another real HTTPS backend. No secrets belong in public environment variables.
+
+## Android debug GitHub Actions
+
+The `Android Debug APK` workflow in `.github/workflows/android-debug.yml` runs directly on GitHub's Ubuntu runner. It installs dependencies, checks TypeScript and lint, generates the native Android project from Expo configuration, and builds with Gradle. It does not use EAS Build or require an Expo account, Expo token, or release signing secrets.
+
+Push the workflow to GitHub, then open **Actions → Android Debug APK → Run workflow**. After a successful run, download `shopyethu-android-debug-<run>-<attempt>` from Artifacts, extract the ZIP and install the APK. Builds include ARM64 devices and x86_64 emulators. Artifacts are retained for 14 days.
+
+The runner uses Node.js 24, Temurin Java 17, and the Android SDK/NDK versions needed by the current React Native dependencies. For the public runner's 16 GB memory budget, Gradle gets an 8 GB heap plus up to 1 GB metaspace, Node.js gets a 3 GB heap, and Gradle uses two workers. Kotlin compilation shares Gradle's process rather than starting another large compiler daemon. These are upper limits; unused memory remains available for native compilers and the OS.
+
+This is a debug APK that loads JavaScript from Metro. Start `npm start` from the same source revision. For a USB-connected device, run `adb reverse tcp:8081 tcp:8081` before opening the installed app. For an installable build with bundled JavaScript, use the preview build profile described above. The workflow has not been run on GitHub from this workspace.
 
 ## Shared backend
 

@@ -1,0 +1,99 @@
+name: Android Debug APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-debug-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Android debug APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+      NODE_OPTIONS: --max-old-space-size=3072
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Check TypeScript
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Generate Android project
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Build debug APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug \
+            --no-daemon \
+            --max-workers=2 \
+            --stacktrace \
+            -Dorg.gradle.jvmargs="-Xmx8g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" \
+            -Pkotlin.compiler.execution.strategy=in-process \
+            -PreactNativeArchitectures=arm64-v8a,x86_64
+
+      - name: Upload debug APK
+        id: apk
+        uses: actions/upload-artifact@v7
+        with:
+          name: shopyethu-android-debug-${{ github.run_number }}-${{ github.run_attempt }}
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+      - name: Write download instructions
+        env:
+          APK_ARTIFACT_URL: ${{ steps.apk.outputs.artifact-url }}
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          ### ShopYethu Android debug APK
+
+          [Download APK artifact]($APK_ARTIFACT_URL)
+
+          Extract the ZIP and install the APK on an Android device or emulator.
+          This debug APK requires Metro running from the same source revision.
+          Start Metro with npm start. For a USB-connected device, run:
+
+              adb reverse tcp:8081 tcp:8081
+
+          Build memory limits: Gradle 8 GB heap, Node.js 3 GB heap, two Gradle workers.
+          EOF
