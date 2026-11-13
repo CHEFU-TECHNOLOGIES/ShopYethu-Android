@@ -1,42 +1,43 @@
 {
-  "expo": {
-    "name": "ShopYethu-android",
-    "slug": "ShopYethu-android",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "shopyethuandroid",
-    "userInterfaceStyle": "automatic",
-    "ios": {
-      "icon": "./assets/expo.icon"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      },
-      "predictiveBackGestureEnabled": false
-    },
-    "web": {
-      "output": "server",
-      "favicon": "./assets/images/favicon.png"
-    },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "backgroundColor": "#208AEF",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+    "expo": {
+        "name": "ShopYethu",
+        "slug": "ShopYethu",
+        "version": "1.0.0",
+        "orientation": "portrait",
+        "icon": "./assets/images/shopyethu-icon.png",
+        "scheme": "shopyethu",
+        "userInterfaceStyle": "light",
+        "ios": {
+            "bundleIdentifier": "za.co.chefu.shopyethu"
+        },
+        "android": {
+            "package": "za.co.chefu.shopyethu",
+            "adaptiveIcon": {
+                "backgroundColor": "#244D3B",
+                "foregroundImage": "./assets/images/shopyethu-icon.png"
+            },
+            "predictiveBackGestureEnabled": false
+        },
+        "web": {
+            "output": "server",
+            "favicon": "./assets/images/shopyethu-icon.png"
+        },
+        "plugins": [
+            "expo-router",
+            [
+                "expo-splash-screen",
+                {
+                    "backgroundColor": "#F7F6F1",
+                    "image": "./assets/images/shopyethu-icon.png",
+                    "imageWidth": 96
+                }
+            ],
+            "expo-secure-store",
+            ["expo-image-picker", { "photosPermission": "Choose photos for your ShopYethu products.", "microphonePermission": false }]
+        ],
+        "experiments": {
+            "typedRoutes": true,
+            "reactCompiler": true
         }
-      ]
-    ],
-    "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
     }
-  }
 }
