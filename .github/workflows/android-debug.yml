@@ -1,6 +1,7 @@
 name: Android Debug APK
 
 on:
+  push:
   workflow_dispatch:
 
 permissions:
@@ -12,7 +13,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build Android debug APK
+    name: Build Android development APK
     runs-on: ubuntu-24.04
     timeout-minutes: 90
 
@@ -90,8 +91,10 @@ jobs:
           [Download APK artifact]($APK_ARTIFACT_URL)
 
           Extract the ZIP and install the APK on an Android device or emulator.
-          This debug APK requires Metro running from the same source revision.
-          Start Metro with npm start. For a USB-connected device, run:
+          This APK includes ShopYethu's development client and requires Metro
+          running from the same source revision. Start Metro with npm start,
+          then scan its QR code in the installed development app.
+          For a USB-connected device, run:
 
               adb reverse tcp:8081 tcp:8081
 

@@ -4,6 +4,8 @@ Date: 13 November 2026.
 
 ## Automated checks
 
+- Development-build readiness: installed the SDK-compatible `expo-dev-client`, configured Metro scripts to use `--dev-client`, and retained the GitHub/Gradle build path. All 20 Expo Doctor checks, dependency version validation, TypeScript, lint, and workflow syntax checks passed. Native configuration introspection confirmed both `shopyethu` (SSO) and `exp+shopyethu` (development launcher) schemes for `za.co.chefu.shopyethu`. A rebuilt development APK, Metro connection and real sign-in still require device verification.
+
 - Reproduced the CI CSS type errors with generated `expo-env.d.ts` and `.expo/types` excluded. Adding the tracked `src/types/expo.d.ts` reference to Expo's ambient declarations fixed that clean-environment check; normal typecheck and lint also passed. This does not run or enable a web build.
 
 - Android TypeScript and full-app lint passed after fixing the Account sign-in button expression and adding its external-link icon.
@@ -23,7 +25,7 @@ No accounts, listings, applications or orders were created for these checks. No 
 
 ## Android device verification
 
-The Android debug GitHub Actions workflow builds on GitHub's Ubuntu runner using Expo prebuild and Gradle, with no EAS service or Expo token. Local native project generation completed, and workflow YAML/Bash syntax, TypeScript and lint checks passed. The GitHub workflow and its Gradle APK build have not been executed from this workspace. Its manual trigger and artifact download instructions are documented in README.md.
+The Android debug GitHub Actions workflow builds on GitHub's Ubuntu runner using Expo prebuild and Gradle, with no EAS service or Expo token. Local native project generation completed, and workflow YAML/Bash syntax, TypeScript and lint checks passed. The GitHub workflow and its Gradle APK build have not been executed from this workspace. Its automatic push trigger, optional manual trigger and artifact download instructions are documented in README.md.
 
 An Android API 36 emulator was detected and Expo Go 58.0.5 installed. Launch attempts were interrupted by Android system application-not-responding dialogs, including “Process system isn't responding”. The latest screenshot therefore does not verify the ShopYethu screen. Guest navigation and the visual layout are not claimed as emulator verified.
 

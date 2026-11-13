@@ -16,25 +16,25 @@ npm start
 npm run export:android
 ```
 
-Use an SDK 58 compatible Expo Go for guest UI testing. CheFu sign-in uses the native callback `shopyethu://sso-callback`, so verify authentication in an installed Android build that owns the `shopyethu` scheme. Expo Go cannot register that application scheme.
+Use the installed ShopYethu development build for testing. `expo-dev-client` provides the development launcher and developer menu, and `npm start` explicitly starts Metro with `--dev-client`. The Android and iOS launch scripts also target the installed development app. CheFu sign-in uses the registered native callback `shopyethu://sso-callback`.
 
-For an installable APK, configure your Expo project and run:
+For an installable Android development APK, use the GitHub workflow below. For local native compilation with an Android SDK and Java configured, run:
 
 ```sh
-npx eas-cli@latest build --platform android --profile preview
+npm run build:android
 ```
 
-`eas.json` contains preview APK and production build profiles. No signed APK or cloud build is claimed by the source code checks. Android package: `za.co.chefu.shopyethu`. The API URL defaults to `https://api.chefu.co.za`; set `EXPO_PUBLIC_API_BASE_URL` at build time for another real HTTPS backend. No secrets belong in public environment variables.
+Rebuild and reinstall the native APK after changing native dependencies, config plugins, URL schemes or splash settings. JavaScript-only edits use Metro and Fast Refresh. Android package: `za.co.chefu.shopyethu`. The API currently points to `https://api.chefu.co.za` in `src/lib/config.ts`.
 
 ## Android debug GitHub Actions
 
-The `Android Debug APK` workflow in `.github/workflows/android-debug.yml` runs directly on GitHub's Ubuntu runner. It installs dependencies, checks TypeScript and lint, generates the native Android project from Expo configuration, and builds with Gradle. It does not use EAS Build or require an Expo account, Expo token, or release signing secrets.
+The `Android Debug APK` workflow in `.github/workflows/android-debug.yml` runs directly on GitHub's Ubuntu runner. It installs dependencies including the development client, checks TypeScript and lint, generates the native Android project from Expo configuration, and builds with Gradle. It does not use EAS Build or require an Expo account, Expo token, or release signing secrets.
 
-Push the workflow to GitHub, then open **Actions → Android Debug APK → Run workflow**. After a successful run, download `shopyethu-android-debug-<run>-<attempt>` from Artifacts, extract the ZIP and install the APK. Builds include ARM64 devices and x86_64 emulators. Artifacts are retained for 14 days.
+The workflow runs automatically on every push. You can also start it from **Actions → Android Debug APK → Run workflow**. After a successful run, download `shopyethu-android-debug-<run>-<attempt>` from Artifacts, extract the ZIP and install the APK. Builds include ARM64 devices and x86_64 emulators. Artifacts are retained for 14 days.
 
 The runner uses Node.js 24, Temurin Java 17, and the Android SDK/NDK versions needed by the current React Native dependencies. For the public runner's 16 GB memory budget, Gradle gets an 8 GB heap plus up to 1 GB metaspace, Node.js gets a 3 GB heap, and Gradle uses two workers. Kotlin compilation shares Gradle's process rather than starting another large compiler daemon. These are upper limits; unused memory remains available for native compilers and the OS.
 
-This is a debug APK that loads JavaScript from Metro. Start `npm start` from the same source revision. For a USB-connected device, run `adb reverse tcp:8081 tcp:8081` before opening the installed app. For an installable build with bundled JavaScript, use the preview build profile described above. The workflow has not been run on GitHub from this workspace.
+This development APK loads JavaScript from Metro. Start `npm start` from the same source revision and scan the terminal's QR code in the installed ShopYethu development client. For a USB-connected device, run `adb reverse tcp:8081 tcp:8081` before opening the project in the app. A standalone release workflow with bundled JavaScript is not configured. The development APK and SSO round trip still require verification on an Android device.
 
 ## Shared backend
 
