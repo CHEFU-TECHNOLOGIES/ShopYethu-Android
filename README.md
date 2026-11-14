@@ -13,6 +13,7 @@ npm ci
 npm run typecheck
 npm run lint
 npm run test:application
+npm run test:seller
 npm start
 npm run export:android
 ```
@@ -52,6 +53,7 @@ Backend records live in Firestore collections `shopyethu_applications`, `shopyet
 | Own application and store permissions | `GET /shopyethu/me` |
 | Apply/respond/resubmit | `POST /shopyethu/application` |
 | Store/inventory | `GET/PUT /shopyethu/seller/store` |
+| Own product for editing | `GET /shopyethu/seller/products/:id` |
 | Create/update/publish/unpublish | `POST /shopyethu/seller/products`, `PUT /seller/products/:id` |
 | Device photo upload | `POST /shopyethu/seller/photos` |
 | Customer orders | `GET/POST /shopyethu/orders` |
@@ -72,6 +74,22 @@ Progress is saved after a short typing pause, when leaving the app, and through 
 The application screen shows server-recorded submission, information requests, resubmissions and decisions with dates and customer-facing messages. Staff can inspect the same details and history on the admin website. More-information requests return the applicant to the same editable steps, with a response on Review. History retains the latest 100 events; the original submission date is retained separately for new records. Older applications show their latest recorded update without inventing a submission date.
 
 Deploy the companion backend validation/history changes and admin review display with this mobile update. Existing records remain reviewable. New submissions require the additional fields; older mobile builds need updating. No document-upload or SMS-verification service has been configured for applications; staff can request clarification through the existing customer-facing message and written-response flow.
+
+## Seller workspace
+
+My Store groups storefront details, real counts from the loaded inventory, Add product and Orders actions, and searchable Published/Draft filters. Product rows show a thumbnail, price, publication status and stock. Counts cover the loaded page (up to 100 records).
+
+The product editor uses four short steps: Details, Photos, Price & stock, and Review. Sellers can select several device photos, remove photos and select a cover. Optional image-link entry is collapsed; raw URLs are not displayed in the photo grid. Validation matches the server's price/stock limits. Existing fulfilment choices are preserved during edits. Drafts can omit photos; publishing requires a photo. Leaving with unsaved changes prompts before discarding them.
+
+Successful product and storefront saves update open My Store screens from the server response without polling or a return-to-screen read. Editing loads the specific owned product rather than fetching the full inventory. Backend checks still enforce current seller status and ownership on every request.
+
+New clients send an Idempotency-Key for product creation and updates. The backend reserves the key transactionally and rejects reuse for different details. Replaying an accepted save returns the current product without restoring stock consumed by later orders. Edits also send their original version and stock; stale edits must reload before saving. A synchronous client lock prevents double taps. Already-saved, unchanged details are not submitted again.
+
+Save attempts are encrypted on the device before submission, separately per account/product. An uncertain result freezes the details and offers Retry save with the same key/body, including after reopening the editor. The record is cleared after confirmation; it is not an autosave of unsubmitted product edits. Uploaded photo cleanup remains subject to the storage limitation below.
+
+Deploy the backend changes **before** this mobile update: older endpoints ignore product retry keys and lack the single-product editing route. Existing clients without keys retain their previous behavior. Product creation, photo upload and publishing still require an end-to-end check with a real approved seller on Android.
+
+Unused template graphics and orphaned Expo logo/badge components were removed. The only local project image is `assets/images/shopyethu-icon.png`, used by the app icon, splash, welcome, home and sign-in loading screen.
 
 ## Orders, photos and integration limits
 

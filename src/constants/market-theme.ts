@@ -23,6 +23,7 @@ export const ui = StyleSheet.create({
     heading: { fontSize: 19, fontWeight: "700", color: palette.ink },
     body: { fontSize: 15, lineHeight: 23, color: palette.ink },
     small: { fontSize: 12, lineHeight: 18, color: palette.muted },
+    badge: { fontSize: 11, fontWeight: "700", color: palette.brand, letterSpacing: 1, textTransform: "uppercase" },
     row: { flexDirection: "row", alignItems: "center", gap: 10 },
     between: {
         flexDirection: "row",

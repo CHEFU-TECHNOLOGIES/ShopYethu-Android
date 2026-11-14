@@ -17,8 +17,8 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   if (currentSession()?.user.uid !== identity) throw new ApiError('Your account changed. Please retry.', 401);
   if (response.status === 401 && currentSession()?.token === token) await saveSession(null);
   if (!response.ok) {
-    if (response.status === 404) throw new ApiError('This marketplace feature is not available on the server yet. Please try again later.', 404);
-    const message = data?.error || data?.message;
+    const message = typeof data?.message === 'string' ? data.message : data?.error;
+    if (response.status === 404 && (typeof message !== 'string' || message.startsWith('Cannot '))) throw new ApiError('This marketplace feature is not available on the server yet. Please try again later.', 404);
     throw new ApiError(typeof message === 'string' ? message : 'Something went wrong. Please try again.', response.status);
   }
   return data as T;

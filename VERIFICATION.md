@@ -1,6 +1,15 @@
 # Verification record
 
-Date: 13 November 2026.
+Latest update: 14 November 2026.
+
+## Seller workspace and asset cleanup — 14 November
+
+- My Store now groups storefront details, inventory counts, product search/filters, and product/order actions. Product editing uses Details, Photos, Price & stock, and Review steps, with photo selection, cover controls and an unsaved-changes prompt.
+- Product saves use backend idempotency keys, current seller/ownership checks and optimistic version/stock checks. Interrupted save attempts are encrypted locally and retried with the same key and body. Successful responses update the open inventory without focus polling. Editing reads a specific owned product instead of the entire inventory.
+- Removed 24 unused assets (1,428,657 bytes) and four unreferenced starter components/styles. The active ShopYethu icon remains. Android bundling confirms the referenced local assets resolve.
+- Automated checks: Android typecheck, lint and Hermes export; three seller-form tests; six encrypted draft-storage tests; backend typecheck/build and sixteen marketplace tests. These checks do not demonstrate the seller interface on a device.
+- The previously downloaded GitHub development build #3 was installed on the running emulator, but predates the native keyboard-controller dependency and these seller changes. A new development APK and real approved seller account are still needed to verify photos, keyboard scrolling, publication, interrupted saves and stock conflicts on Android. No demo data was added.
+- Backend phone verification now has a separate authenticated, rate-limited module and sixteen passing isolated tests. The seller application phone checkbox remains an acknowledgement: the mobile OTP interaction and requirement to match a saved backend verification are not connected. See the backend phone-verification README for deployment requirements.
 
 ## Automated checks
 

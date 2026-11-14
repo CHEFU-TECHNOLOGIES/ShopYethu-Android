@@ -56,6 +56,9 @@ jobs:
       - name: Check application draft storage
         run: npm run test:application
 
+      - name: Check seller product validation
+        run: npm run test:seller
+
       - name: Generate Android project
         run: npx expo prebuild --platform android --no-install
 

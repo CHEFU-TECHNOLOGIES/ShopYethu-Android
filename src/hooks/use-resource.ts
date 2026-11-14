@@ -15,5 +15,6 @@ export function useResource<T>(path: string, enabled = true) {
     }).catch(error => { if (!controller.signal.aborted) setState({ key, data: null, error: error.message || 'Unable to load this page.', loading: false }); });
     return () => controller.abort();
   }, [path, key, enabled, attempt]);
-  return { data: state.key === key ? state.data : null, error: state.key === key ? state.error : '', loading: enabled && (state.key !== key || state.loading), refresh: useCallback(() => setAttempt(value => value + 1), []) };
+  const mutate = useCallback((update: (previous: T) => T) => setState(current => current.key === key && current.data !== null ? { ...current, data: update(current.data) } : current), [key]);
+  return { data: state.key === key ? state.data : null, error: state.key === key ? state.error : '', loading: enabled && (state.key !== key || state.loading), refresh: useCallback(() => setAttempt(value => value + 1), []), mutate };
 }
