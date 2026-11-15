@@ -1,5 +1,5 @@
-import { useLocalSearchParams } from 'expo-router';
-import { Button, Page, ResourceState, SignInNotice } from '@/components/market/Primitives';
+import { ResourceState, SignInNotice } from '@/components/market/Primitives';
+import { ListPage } from '@/components/market/ListPage';
 import { OrderCard } from '@/components/market/OrderCard';
 import { useResource } from '@/hooks/use-resource';
 import { useAuth } from '@/lib/auth';
@@ -7,9 +7,11 @@ import type { Order } from '@/types/marketplace';
 
 export default function OrdersScreen() {
   const { session } = useAuth();
-  const { refresh } = useLocalSearchParams<{ refresh?: string }>();
-  const resource = useResource<{ orders: Order[] }>(`/orders?updated=${refresh || ''}`, !!session);
-  return <Page title="Your orders" subtitle="Every local find, all in one place.">
-    {!session ? <SignInNotice /> : <><Button title="Refresh orders" secondary onPress={resource.refresh} /><ResourceState {...resource} retry={resource.refresh} empty={resource.data?.orders.length === 0 ? 'No orders yet. Your first local find is waiting.' : undefined} />{resource.data?.orders.map(order => <OrderCard key={order.id} order={order} />)}</>}
-  </Page>;
+  const resource = useResource<{ orders: Order[] }>('/orders', !!session);
+  return <ListPage title="Your orders" data={session ? resource.data?.orders || [] : []}
+    keyExtractor={item => item.id} renderItem={({ item }) => <OrderCard order={item} />}
+    onRefresh={session ? resource.refresh : undefined} refreshing={!!resource.data && resource.loading}
+    header={!session ? <SignInNotice /> : <ResourceState {...resource} retry={resource.refresh}
+      empty={resource.data?.orders.length === 0 ? 'No orders yet. Your first local find is waiting.' : undefined} />}
+  />;
 }

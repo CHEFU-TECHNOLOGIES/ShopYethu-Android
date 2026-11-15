@@ -125,6 +125,7 @@ export function ContactFields({
             />
             <Field
                 label="Contact number"
+                placeholder="e.g. 082 123 4567"
                 value={form.phone}
                 onChangeText={(value) => update("phone", value)}
                 keyboardType="phone-pad"

@@ -13,15 +13,19 @@ export function validPhotoUrl(value: string) {
   try { const url = new URL(value); return value.length <= 2048 && url.protocol === 'https:' && !url.username && !url.password; }
   catch { return false; }
 }
-export function validateProductStep(form: ProductForm, step: number, publishing = false) {
+export function validateProductStep(
+  form: ProductForm,
+  step: number,
+  stagedPhotos?: ReadonlySet<string>,
+) {
   if (step === 0) {
     if (form.name.trim().length < 2 || form.name.trim().length > 120) return 'Enter a product name (2–120 characters).';
     if (form.description.trim().length < 10 || form.description.trim().length > 4000) return 'Add a description (10–4,000 characters).';
     if (form.category.trim().length < 2 || form.category.length > 60) return 'Choose a product category.';
   }
   if (step === 1) {
-    if (form.photos.length > 5 || form.photos.some(url => !validPhotoUrl(url))) return 'Use up to five valid HTTPS product photos.';
-    if (publishing && !form.photos.length) return 'Add at least one photo before publishing.';
+    if (form.photos.length > 5 || form.photos.some(url => !validPhotoUrl(url) && !stagedPhotos?.has(url))) return 'Use up to five valid HTTPS product photos.';
+    if (!form.photos.length) return 'Add at least one photo before continuing.';
   }
   if (step === 2) {
     if (!/^\d+(?:[.,]\d{1,2})?$/.test(form.price.trim())) return 'Enter a price in rand, with up to two decimal places.';

@@ -46,8 +46,12 @@ export function ApplicationWizard({
         [error, setError] = useState("");
     const lock = useRef(false);
     const responding = previous?.status === "more-info";
+    const requiredIssue = (step === 3 ? [0, 1, 2, 3] : [step])
+        .map(index => ({ index, message: validateApplicationStep(form, index, responding) }))
+        .find(issue => issue.message);
     const exit = () => router.replace("/account");
     function changeStep(next: number) {
+        if (lock.current || !ready) return;
         setError("");
         draft.goTo(next);
     }
@@ -80,6 +84,7 @@ export function ApplicationWizard({
         if (saved) exit();
     }
     function next() {
+        if (lock.current || !ready || step >= 3) return;
         const issue = validateApplicationStep(form, step, responding);
         if (issue) {
             setError(issue);
@@ -88,7 +93,7 @@ export function ApplicationWizard({
         changeStep(step + 1);
     }
     async function submit() {
-        if (lock.current) return;
+        if (lock.current || !ready) return;
         for (let index = 0; index < 4; index++) {
             const issue = validateApplicationStep(form, index, responding);
             if (issue) {
@@ -277,13 +282,16 @@ export function ApplicationWizard({
                                               : "Submit application"
                                           : "Continue"
                                 }
-                                disabled={busy}
+                                disabled={busy || !ready || Boolean(requiredIssue)}
                                 onPress={() =>
                                     step === 3 ? void submit() : next()
                                 }
                             />
                         </View>
                     </View>
+                    {requiredIssue && <Text accessibilityLiveRegion="polite" style={ui.small}>
+                        {step === 3 ? `${applicationSteps[requiredIssue.index]}: ` : ""}{requiredIssue.message}
+                    </Text>}
                     <Text accessibilityLiveRegion="polite" style={ui.small}>
                         {draft.saving
                             ? "Saving on this device…"

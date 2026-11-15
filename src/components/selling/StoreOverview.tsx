@@ -26,9 +26,7 @@ export function StoreOverview({ data }: { data: SellerInventory }) {
         <View style={styles.store}>
             <View style={ui.between}>
                 <View style={{ flex: 1, gap: 5 }}>
-                    <Text style={styles.storeStatus}>
-                        YOUR STOREFRONT · ACTIVE
-                    </Text>
+                   
                     <Text style={styles.storeName}>{data.store.name}</Text>
                     <Text style={styles.storeArea}>{data.store.area}</Text>
                 </View>

@@ -4,15 +4,22 @@ import { initialProduct, productPayload, validateProductStep, validPhotoUrl } fr
 
 const form = () => ({ ...initialProduct(), name: 'Unit test product', description: 'Used only by isolated tests.', price: '25,50', stock: '4' });
 
-test('drafts may omit photos, publishing requires a valid cover', () => {
+test('drafts and published products both require a valid cover photo', () => {
   const draft = form();
-  assert.equal(validateProductStep(draft, 1), '');
-  assert.match(validateProductStep(draft, 1, true), /photo/);
+  assert.match(validateProductStep(draft, 1), /photo/);
   draft.photos = ['https://example.test/photo.png'];
-  assert.equal(validateProductStep(draft, 1, true), '');
+  assert.equal(validateProductStep(draft, 1), '');
   assert.equal(validPhotoUrl('file:///private/photo.jpg'), false);
   assert.equal(validPhotoUrl('https://name:secret@example.test/photo.png'), false);
   assert.equal(validPhotoUrl('https://example.test/photo.png'), true);
+});
+
+test('queued local photos are valid only while staged in the editor', () => {
+  const draft = form();
+  const localPhoto = 'file:///cache/product-photo.jpg';
+  draft.photos = [localPhoto];
+  assert.ok(validateProductStep(draft, 1));
+  assert.equal(validateProductStep(draft, 1, new Set([localPhoto])), '');
 });
 
 test('prices use exact rand input; invalid quantities and unsupported fulfilment are rejected', () => {

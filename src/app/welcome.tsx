@@ -10,13 +10,13 @@ import { useAuth } from "@/lib/auth";
 import { useWelcome } from "@/lib/welcome";
 
 export default function WelcomeScreen() {
-    const { ready, session } = useAuth();
+    const { ready, session, signIn, busy: authBusy, error } = useAuth();
     const { complete } = useWelcome();
     const entering = useRef(false);
     const [busy, setBusy] = useState(false);
 
     async function enter(destination: "/" | "/account") {
-        if (entering.current) return;
+        if (entering.current || authBusy) return;
         entering.current = true;
         setBusy(true);
         try {
@@ -28,12 +28,27 @@ export default function WelcomeScreen() {
         }
     }
 
+    async function openAccount() {
+        if (entering.current || authBusy) return;
+        if (session) { await enter("/account"); return; }
+        entering.current = true;
+        setBusy(true);
+        try {
+            await complete();
+            await signIn();
+        } finally {
+            entering.current = false;
+            setBusy(false);
+        }
+    }
+
     return (
         <SafeAreaView style={welcome.page}>
             <ScrollView contentContainerStyle={welcome.content}>
                 <View style={welcome.brand}>
                     <Text style={welcome.name}>ShopYethu</Text>
-                    <Text style={welcome.byline}>by Chefu Technologies</Text>
+                    {/**TODO uncomment when we reach high downloads */}
+                    {/* <Text style={welcome.byline}>by Chefu Technologies</Text> */}
                 </View>
                 <View style={welcome.introduction}>
                     <Image
@@ -53,7 +68,7 @@ export default function WelcomeScreen() {
                 <View style={welcome.actions}>
                     <Button
                         title="Start shopping"
-                        disabled={!ready || busy}
+                        disabled={!ready || busy || authBusy}
                         onPress={() => void enter("/")}
                         trailingIcon={
                             <Feather
@@ -65,10 +80,10 @@ export default function WelcomeScreen() {
                         }
                     />
                     <Button
-                        title={session ? "Your account" : "Sign in"}
+                        title={session ? "Your account" : authBusy ? "Signing in…" : "Sign in"}
                         secondary
-                        disabled={!ready || busy}
-                        onPress={() => void enter("/account")}
+                        disabled={!ready || busy || authBusy}
+                        onPress={() => void openAccount()}
                         trailingIcon={
                             <Feather
                                 name="user"
@@ -78,6 +93,7 @@ export default function WelcomeScreen() {
                             />
                         }
                     />
+                    {error ? <Text accessibilityRole="alert" style={[welcome.note, { color: palette.danger }]}>{error}</Text> : null}
                     <Text style={welcome.note}>
                         Browse without an account. Sign in when you are ready to
                         order or start selling.

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Image, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
+import { MarketImage } from '@/components/market/MarketImage';
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import type { Product } from "@/types/marketplace";
@@ -9,11 +10,11 @@ import { sellerStyles as styles } from "@/constants/seller-styles";
 export function ProductThumbnail({ url }: { url?: string }) {
     const [failed, setFailed] = useState(false);
     return url && !failed ? (
-        <Image
+        <MarketImage
             accessibilityLabel="Product photo"
-            source={{ uri: url }}
+            uri={url}
+            width={240}
             style={styles.image}
-            resizeMode="cover"
             onError={() => setFailed(true)}
         />
     ) : (

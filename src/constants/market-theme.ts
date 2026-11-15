@@ -1,4 +1,5 @@
 import { StyleSheet } from "react-native";
+export { money } from "../lib/money";
 export const palette = {
     canvas: "#F7F6F1",
     paper: "#FFFFFF",
@@ -78,7 +79,6 @@ export const ui = StyleSheet.create({
         marginVertical: 6,
     },
 });
-export const money = (cents: number) => `R ${(cents / 100).toFixed(2)}`;
 export const statusLabel = (value: string) =>
     ({
         pending: "Pending review",
@@ -90,8 +90,9 @@ export const statusLabel = (value: string) =>
         placed: "Order placed",
         accepted: "Accepted",
         preparing: "Preparing",
-        ready: "Ready for collection",
+        ready: "Awaiting payment / collection",
         dispatched: "Dispatched",
         completed: "Completed",
+        collected: "Collected",
         cancelled: "Cancelled",
     })[value] || value;

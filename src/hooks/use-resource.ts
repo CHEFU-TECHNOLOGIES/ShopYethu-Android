@@ -1,20 +1,31 @@
-import { useCallback, useEffect, useState } from 'react';
-import { api } from '@/lib/api';
+import { useCallback, useSyncExternalStore } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { useAuth } from '@/lib/auth';
+import { loadMarketQuery, marketCache, queryScope } from '@/lib/market-cache';
+import { canonicalPath, publicQuery } from '@/lib/query-policy';
+import { toast } from '@/lib/toast';
 
 export function useResource<T>(path: string, enabled = true) {
-  const { session } = useAuth();
-  const [attempt, setAttempt] = useState(0);
-  const key = `${session?.user.uid || 'guest'}:${path}:${attempt}`;
-  const [state, setState] = useState<{ key: string; data: T | null; error: string; loading: boolean }>({ key, data: null, error: '', loading: true });
-  useEffect(() => {
-    if (!enabled) return;
-    const controller = new AbortController();
-    void api<T>(path, { signal: controller.signal }).then(data => {
-      if (!controller.signal.aborted) setState({ key, data, error: '', loading: false });
-    }).catch(error => { if (!controller.signal.aborted) setState({ key, data: null, error: error.message || 'Unable to load this page.', loading: false }); });
-    return () => controller.abort();
-  }, [path, key, enabled, attempt]);
-  const mutate = useCallback((update: (previous: T) => T) => setState(current => current.key === key && current.data !== null ? { ...current, data: update(current.data) } : current), [key]);
-  return { data: state.key === key ? state.data : null, error: state.key === key ? state.error : '', loading: enabled && (state.key !== key || state.loading), refresh: useCallback(() => setAttempt(value => value + 1), []), mutate };
+  const { session, ready } = useAuth();
+  const uid = ready ? session?.user.uid || null : null;
+  const canonical = canonicalPath(path), scope = queryScope(canonical, uid);
+  const allowed = enabled && ready && (publicQuery(canonical) || !!uid);
+  const subscribe = useCallback((listener: () => void) => marketCache.subscribe(canonical, scope, listener), [canonical, scope]);
+  const snapshot = useCallback(() => marketCache.get<T>(canonical, scope), [canonical, scope]);
+  const state = useSyncExternalStore(subscribe, snapshot, snapshot);
+  useFocusEffect(useCallback(() => {
+    if (!allowed) return;
+    const stop = marketCache.observe(canonical, scope);
+    void loadMarketQuery(canonical, scope);
+    return stop;
+  }, [canonical, scope, allowed]));
+  const refresh = useCallback(() => {
+    if (allowed) void loadMarketQuery(canonical, scope, true).then(() => {
+      const failure = marketCache.get(canonical, scope).error;
+      if (failure) toast.error(failure);
+    });
+  }, [allowed, canonical, scope]);
+  const mutate = useCallback((update: (previous: T) => T) => marketCache.set(canonical, scope, update, false), [canonical, scope]);
+  return { ...state, data: allowed ? state.data : null, error: allowed ? state.error : '',
+    loading: allowed && (state.loading || !state.data && !state.error), refresh, mutate };
 }

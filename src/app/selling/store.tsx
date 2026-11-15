@@ -8,6 +8,7 @@ import { useSellerInventory } from '@/hooks/use-seller-inventory';
 import { publishSellerChange } from '@/lib/seller-events';
 import type { Storefront } from '@/types/marketplace';
 import { ui } from '@/constants/market-theme';
+import { toast } from '@/lib/toast';
 
 export default function StoreEditor() {
   const { session } = useAuth();
@@ -24,7 +25,7 @@ export default function StoreEditor() {
       setForm({ name: store.name, description: store.description, area: store.area });
       setNotice('Your storefront has been updated.');
     }
-    catch (cause) { setError((cause as Error).message); } finally { locked.current = false; setBusy(false); }
+    catch (cause) { setError((cause as Error).message); toast.error((cause as Error).message); } finally { locked.current = false; setBusy(false); }
   }
   return <Page title="Your storefront" subtitle="Give customers a little insight into your business." back>
     {!session ? <SignInNotice /> : <><ResourceState {...resource} retry={resource.refresh} />{resource.data && <>

@@ -9,7 +9,9 @@ import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import { randomUUID } from "expo-crypto";
 import { router } from "expo-router";
+import { toast } from './toast';
 import { ACCOUNT_BASE, API_BASE, CLIENT_ID, REDIRECT_URI } from "./config";
+import { accountUserDiagnostics, accountUserFromInfo } from "./account-user";
 import {
     hydrateSession,
     saveSession,
@@ -38,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         let active = true;
         void hydrateSession()
             .then((value) => {
+                if (__DEV__ && value) console.debug("[ShopYethu auth] restored user", accountUserDiagnostics(value.user));
                 if (active) setSession(value);
             })
             .catch(() => {
@@ -110,28 +113,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 headers: { Authorization: `Bearer ${token.accessToken}` },
                 signal: AbortSignal.timeout(10000),
             });
-            const user = await response.json();
-            if (
-                !response.ok ||
-                user.app !== "shopyethu" ||
-                !user.sub ||
-                !user.email
-            )
+            const userInfo: unknown = await response.json();
+           
+            if (!response.ok)
                 throw new Error(
                     "Unable to verify your account. Please sign in again.",
                 );
+            const user = accountUserFromInfo(userInfo);
             await saveSession({
                 token: token.accessToken,
                 refreshToken: token.refreshToken,
                 expiresAt: Date.now() + (token.expiresIn || 3600) * 1000,
-                user: {
-                    uid: user.sub,
-                    email: user.email,
-                    name: user.name || user.email,
-                },
+                user,
             });
             router.replace("/account");
+            toast.success('You’re signed in.');
         } catch (cause) {
+            toast.error(cause instanceof Error ? cause.message : 'Sign-in failed. Please try again.');
             setError(
                 cause instanceof Error
                     ? cause.message
@@ -149,7 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 busy,
                 error,
                 signIn,
-                signOut: () => saveSession(null),
+                signOut: async () => { await saveSession(null); toast.success('You’re signed out.'); },
             }}
         >
             {children}

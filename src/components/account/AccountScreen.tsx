@@ -5,18 +5,15 @@ import Feather from "@expo/vector-icons/Feather";
 import { Page } from "@/components/market/Primitives";
 import { AccountRow, AccountSection } from "./AccountMenu";
 import { AccountIdentity, AccountSignIn } from "./AccountProfile";
-import {
-    SellerAccountSection,
-    type SellerAccount,
-} from "./SellerAccountSection";
+import { SellerAccountSection } from "./SellerAccountSection";
 import { account } from "@/constants/account-styles";
 import { palette } from "@/constants/market-theme";
 import { useAuth } from "@/lib/auth";
-import { useResource } from "@/hooks/use-resource";
+import { useSellerAccount } from "@/hooks/use-seller-account";
 
 export default function AccountScreen() {
     const { session, ready, busy, error, signIn, signOut } = useAuth();
-    const resource = useResource<SellerAccount>("/me", ready && !!session);
+    const resource = useSellerAccount();
     const signOutLock = useRef(false);
     const [signingOut, setSigningOut] = useState(false);
     const [actionError, setActionError] = useState("");
@@ -43,6 +40,7 @@ export default function AccountScreen() {
     }
 
     return (
+        <View style={{ flex: 1 }}>
         <Page
             title="Account"
             header={
@@ -172,5 +170,6 @@ export default function AccountScreen() {
                 </>
             )}
         </Page>
+        </View>
     );
 }

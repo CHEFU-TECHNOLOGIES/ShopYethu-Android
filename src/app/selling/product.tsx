@@ -8,6 +8,7 @@ import {
 } from "@/components/market/Primitives";
 import { ProductEditor } from "@/components/selling/ProductEditor";
 import { useResource } from "@/hooks/use-resource";
+import { useSellerAccount } from "@/hooks/use-seller-account";
 import { useAuth } from "@/lib/auth";
 import type { Product, Storefront } from "@/types/marketplace";
 import { ui } from "@/constants/market-theme";
@@ -15,10 +16,7 @@ import { ui } from "@/constants/market-theme";
 export default function ProductScreen() {
     const { id } = useLocalSearchParams<{ id?: string }>();
     const { session } = useAuth();
-    const account = useResource<{ store: Storefront | null }>(
-        "/me",
-        !!session && !id,
-    );
+    const account = useSellerAccount(!id);
     const product = useResource<{ product: Product; store: Storefront }>(
         `/seller/products/${encodeURIComponent(id || "")}`,
         !!session && !!id,

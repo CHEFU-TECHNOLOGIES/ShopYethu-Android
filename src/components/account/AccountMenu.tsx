@@ -16,14 +16,16 @@ export function AccountSection({ title, children }: { title: string; children: R
 }
 
 export function AccountRow({
-  icon, title, description, onPress, disabled = false,
-  danger = false, divider = false, trailingIcon = 'chevron-right',
+  icon, title, description, onPress, disabled = false, titleAccessory,
+  accessibilityLabel, danger = false, divider = false, trailingIcon = 'chevron-right',
 }: {
   icon: IconName;
   title: string;
   description?: string;
   onPress: () => void;
   disabled?: boolean;
+  titleAccessory?: ReactNode;
+  accessibilityLabel?: string;
   danger?: boolean;
   divider?: boolean;
   trailingIcon?: IconName | null;
@@ -32,7 +34,7 @@ export function AccountRow({
     <>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={description ? `${title}, ${description}` : title}
+        accessibilityLabel={accessibilityLabel ?? (description ? `${title}, ${description}` : title)}
         accessibilityState={{ disabled }}
         disabled={disabled}
         onPress={onPress}
@@ -42,8 +44,15 @@ export function AccountRow({
           <Feather name={icon} size={18} color={danger ? palette.danger : palette.brand} accessible={false} />
         </View>
         <View style={account.rowText}>
-          <Text style={[account.rowTitle, danger && account.dangerText]}>{title}</Text>
-          {!!description && <Text style={account.rowDescription}>{description}</Text>}
+          {titleAccessory ? (
+            <View style={account.rowTitleLine}>
+              <Text style={[account.rowTitle, account.rowTitleWithAccessory, danger && account.dangerText]}>{title}</Text>
+              {titleAccessory}
+            </View>
+          ) : (
+            <Text style={[account.rowTitle, danger && account.dangerText]}>{title}</Text>
+          )}
+          {!!description && <Text style={account.rowDescription} numberOfLines={1} ellipsizeMode="tail">{description}</Text>}
         </View>
         {trailingIcon && <Feather name={trailingIcon} size={17} color={palette.muted} accessible={false} />}
       </Pressable>

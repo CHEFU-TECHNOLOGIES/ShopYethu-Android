@@ -14,6 +14,7 @@ npm run typecheck
 npm run lint
 npm run test:application
 npm run test:seller
+npm run test:cache
 npm start
 npm run export:android
 ```
@@ -61,6 +62,22 @@ Backend records live in Firestore collections `shopyethu_applications`, `shopyet
 | Listing/order reports | `POST /shopyethu/reports` |
 | Staff review/suspension | `GET/PUT /shopyethu/admin/applications/:uid`, `GET/PUT /admin/sellers/:uid` |
 
+Account, seller applications and Add product share a five-minute memory cache for
+`GET /shopyethu/me`. Concurrent consumers share one request. Returning to a screen
+within that period does not reread status; after expiry, the next screen focus
+refreshes in the background while keeping the previous status visible. There is
+no polling, expiry timer or app-resume listener. Use the Account refresh action or
+pull to refresh the application to check an admin decision immediately.
+
+Successful application submissions and storefront saves update the cache from
+the server response without another GET. Sign-out and account changes clear it;
+old requests cannot restore a previous account's data. Token refresh for the same
+user keeps the cache. It is not persisted: restarting the app makes a fresh read.
+Connection failures preserve the last known status and offer Retry, with a
+30-second cooldown for automatic retries. Explicit Refresh bypasses the cooldown.
+Authentication/permission failures clear the cached data. The cache only controls
+display; every seller mutation still checks current permissions on the backend.
+
 The admin website's Applications, Sellers and Complaints views now read the real endpoints. Staff can approve, request more information, reject, suspend/reactivate, and inspect submitted reports. Customer-facing reasons appear in the mobile application. Admin permissions are checked from the current central user profile; seller actions check current store status and ownership on the server, including direct/stale requests. Approval is never granted by the phone.
 
 ## Seller application
@@ -97,9 +114,11 @@ The company-store Paystack integration is not a marketplace payment provider con
 
 Device photos upload through the backend's existing Cloudinary storage module, using the configured `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET`. JPEG, PNG and WebP are limited to 2 MB, five per product. Failed uploads show errors. Public HTTPS photo links are also supported. Removed photo links are detached from a product; automatic deletion of orphaned Cloudinary uploads is not implemented.
 
-Each order contains products from one store. Checkout revalidates price, stock, seller status and fulfilment in a Firestore transaction. It decrements stock atomically and saves a server-side idempotency record. Double taps are locked in the client; retries with the same basket details reuse the attempt key. Server replay returns the original order without decrementing stock twice. Cancellation restores stock once. The basket is currently memory-only; closing the app clears it. Orders remain in Firestore and are visible after signing in again.
+Each order contains products from one store. Checkout revalidates price, stock, seller status and fulfilment in a Firestore transaction. It decrements stock atomically and saves a server-side idempotency record. Double taps are locked in the client. The basket and unresolved order key/body are encrypted on the device; uncertain retries reuse the exact attempt, including after reopening the app. Server replay returns the original order without decrementing stock twice. Cancellation restores stock once. Signing out or switching accounts clears protected basket/cache data.
 
-Lists are capped at 100 records per query in this first implementation. Catalogue text filtering occurs within that first page; cursor pagination/full-text indexing are not implemented. Order updates refresh explicitly; there is no background polling. Reports are recorded for staff follow-up; automatic support messaging is not configured.
+Catalogue and storefront screens support 24-record cursor pages and virtualized product lists. Text matching still filters each scanned page; full-text indexing is not implemented. Seller inventory and order queries retain their existing 100-record caps. Orders refresh when stale on focus/foreground and through explicit refresh; there is no order polling. Reports are recorded for staff follow-up; automatic support messaging is not configured.
+
+Shared cache behaviour, per-feature freshness, encrypted persistence, offline recovery, toast coverage, backend/index deployment and measured request-count tests are documented in [CACHING.md](CACHING.md). No dependencies were added for this work.
 
 ## Verification and remaining live acceptance
 

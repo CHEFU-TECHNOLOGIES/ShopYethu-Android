@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { Page, ResourceState } from '@/components/market/Primitives';
+import { FlatList, Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Button, ResourceState } from '@/components/market/Primitives';
+import { CatalogSkeleton } from '@/components/market/CatalogSkeleton';
 import { ProductCard } from '@/components/market/ProductCard';
 import { home } from '@/constants/home-styles';
-import { palette } from '@/constants/market-theme';
+import { palette, ui } from '@/constants/market-theme';
 import { categories } from '@/lib/config';
-import { useResource } from '@/hooks/use-resource';
-import type { Product } from '@/types/marketplace';
+import { useProductFeed } from '@/hooks/use-product-feed';
 
 export default function ShopScreen() {
   const [search, setSearch] = useState('');
@@ -18,22 +19,31 @@ export default function ShopScreen() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const resource = useResource<{ products: (Product & { storeName: string })[] }>(
-    `/products?q=${encodeURIComponent(query)}&category=${encodeURIComponent(category === 'All' ? '' : category)}`,
+  const resource = useProductFeed(
+    `/products?page=1&q=${encodeURIComponent(query)}&category=${encodeURIComponent(category === 'All' ? '' : category)}`,
   );
 
   return (
-    <Page
-      title="ShopYethu"
-      header={
+    <SafeAreaView style={ui.page} edges={['top']}>
+    <FlatList
+      data={resource.data?.products || []}
+      keyExtractor={item => item.id}
+      renderItem={({ item }) => <ProductCard product={item} />}
+      numColumns={2}
+      columnWrapperStyle={{ justifyContent: 'space-between' }}
+      contentContainerStyle={[ui.content, { gap: 0 }]}
+      initialNumToRender={8}
+      maxToRenderPerBatch={8}
+      windowSize={7}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      onRefresh={resource.refresh}
+      refreshing={!!resource.data && resource.loading}
+      ListHeaderComponent={<View style={{ gap: 18, paddingBottom: 18 }}>
         <View style={home.brand}>
           <Image source={require('@/assets/images/shopyethu-icon.png')} style={home.icon} />
           <Text accessibilityRole="header" style={home.name}>ShopYethu</Text>
         </View>
-      }
-      onRefresh={resource.refresh}
-      refreshing={resource.loading}
-    >
       <TextInput
         accessibilityLabel="Search products"
         placeholder="Search products"
@@ -64,14 +74,14 @@ export default function ShopScreen() {
       <Text accessibilityRole="header" style={home.sectionTitle}>
         {query ? 'Search results' : category === 'All' ? 'Products' : category}
       </Text>
-      <ResourceState
+      {!resource.data && resource.loading ? <CatalogSkeleton /> : <ResourceState
         {...resource}
         retry={resource.refresh}
-        empty={resource.data?.products.length === 0 ? 'No products found. Try another search or category.' : undefined}
-      />
-      <View style={home.products}>
-        {resource.data?.products.map(product => <ProductCard key={product.id} product={product} />)}
-      </View>
-    </Page>
+        empty={resource.data?.products.length === 0 ? resource.data.nextCursor ? 'No matches on this page. Load more to keep searching.' : 'No products found. Try another search or category.' : undefined}
+      />}
+      </View>}
+      ListFooterComponent={resource.data?.nextCursor ? <Button title={resource.loadingMore ? 'Loading more…' : 'Load more products'} secondary disabled={resource.loadingMore} onPress={() => void resource.more()} /> : undefined}
+    />
+    </SafeAreaView>
   );
 }

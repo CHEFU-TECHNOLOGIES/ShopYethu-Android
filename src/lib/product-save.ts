@@ -15,6 +15,6 @@ export function restoreProductSave(value: unknown): { attempt: ProductSaveAttemp
     !Array.isArray(body.fulfilment) || body.fulfilment.some((choice: unknown) => typeof choice !== 'string')) throw new Error('Incomplete saved product details.');
   const form = { ...initialProduct(), name: body.name, description: body.description, category: body.category,
     price: (body.priceCents / 100).toFixed(2), stock: String(body.stock), photos: body.photos, fulfilment: body.fulfilment };
-  if ([0, 1, 2].some(step => validateProductStep(form, step, body.published))) throw new Error('Invalid saved product details.');
+  if ([0, 1, 2].some(step => validateProductStep(form, step))) throw new Error('Invalid saved product details.');
   return { attempt, form };
 }

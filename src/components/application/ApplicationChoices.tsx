@@ -22,7 +22,11 @@ export function Choice({
             accessibilityState={{ checked: selected, disabled }}
             disabled={disabled}
             onPress={onPress}
-            style={[styles.choice, selected && styles.selected]}
+            style={[
+                checkbox ? styles.checkboxChoice : styles.choice,
+                !checkbox && selected && styles.selected,
+                disabled && { opacity: 0.5 },
+            ]}
         >
             <Ionicons
                 name={
@@ -34,10 +38,10 @@ export function Choice({
                           ? "radio-button-on"
                           : "radio-button-off"
                 }
-                size={22}
+                size={checkbox ? 18 : 22}
                 color={selected ? palette.brand : palette.muted}
             />
-            <Text style={styles.choiceText}>{label}</Text>
+            <Text style={[styles.choiceText, checkbox && styles.checkboxText]}>{label}</Text>
         </Pressable>
     );
 }
@@ -71,12 +75,14 @@ export function CategoryChoices({
                                     : [...value, category],
                             )
                         }
-                        style={[styles.chip, selected && styles.selected]}
+                        style={styles.chipTouch}
                     >
-                        <Text style={styles.chipText}>
-                            {selected ? "✓ " : ""}
-                            {category}
-                        </Text>
+                        <View style={[styles.chip, selected && styles.selected]}>
+                            <Text style={styles.chipText}>
+                                {selected ? "✓ " : ""}
+                                {category}
+                            </Text>
+                        </View>
                     </Pressable>
                 );
             })}

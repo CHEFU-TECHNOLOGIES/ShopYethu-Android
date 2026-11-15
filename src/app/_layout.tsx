@@ -6,6 +6,8 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { CartProvider } from '@/lib/cart';
 import { WelcomeProvider, useWelcome } from '@/lib/welcome';
+import { ToastHost } from '@/components/feedback/ToastHost';
+import { MarketplaceSync } from '@/components/feedback/MarketplaceSync';
 
 void SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
@@ -37,6 +39,8 @@ function AppNavigator() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="welcome" options={{ animation: 'fade' }} />
       </Stack>
+      <MarketplaceSync />
+      <ToastHost />
     </>
   );
 }

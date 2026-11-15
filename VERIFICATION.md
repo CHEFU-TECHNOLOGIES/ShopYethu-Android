@@ -1,6 +1,20 @@
 # Verification record
 
-Latest update: 14 November 2026.
+Latest update: 15 November 2026.
+
+## Order confirmation email
+
+- Confirmed order creation now sends the authenticated buyer a hosted Resend template, `shopyethu-order-confirmation`, with the existing `SY-…` order reference as the collection code. Buyer and seller order cards explain how to use it at collection. No additional database reads/writes or native dependencies were added.
+- All 37 backend marketplace tests passed, including six order-email tests for committed-only sends, duplicate/retried checkout, provider retries, recipient integrity, escaped/bounded variables and mail failure preserving the order. Tests mock Resend; no live email was sent. Android typecheck and lint passed for the order-card copy change.
+- Publish the template using the HTML and variable list in `chefu-inc-backend/docs/shopyethu-order-confirmation.html` and its companion Markdown guide. Delivery and collection matching still need a live acceptance check after the backend is deployed and the template is published. Email delivery is best effort; the order/code remains accessible in the app if mail fails.
+
+## Shared cache update
+
+- Android: 48 unit tests passed, including 23 cache/bridge/seller-status tests. Typecheck and lint passed. Android Hermes export passed (1,869 modules; 4.7 MB bundle).
+- Backend: typecheck, build and all 31 marketplace tests passed. Six new cache/repository tests cover deduplication, TTL expiry, in-flight invalidation, private-query bypass, store suspension, cursors/index definitions and idempotent order recovery. The email-template assertion now matches the existing configured `seller-account-approval` alias.
+- Request counters: three simultaneous consumers plus twenty repeat reads require one GET before expiry; expiry adds one GET. Restoring fresh public/account snapshots requires zero GETs. Confirmed application/store/product/order mutation responses update related records with zero follow-up reads. These are controlled test measurements, not real-device latency or frame-rate benchmarks.
+- No emulator/device is connected: `adb devices` returned an empty list. Live sign-in, restart/offline recovery, scrolling, photo-cache behaviour and buyer/seller flows still need Android acceptance testing. No real emails, orders or fixture data were created by these tests.
+- Deploy the companion backend and three product composite indexes before releasing the mobile update. Indexes are local changes only. Full backend lint reports existing test-file promise errors outside this change; changed runtime/cache files are checked separately. See [CACHING.md](CACHING.md) for architecture, limits and follow-up work.
 
 ## Seller workspace and asset cleanup — 14 November
 

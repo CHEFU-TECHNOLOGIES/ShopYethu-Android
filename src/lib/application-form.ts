@@ -1,5 +1,6 @@
 import type { SellerApplication } from '@/types/marketplace';
 import { categories } from './config';
+import { normalizeApplicationPhone } from './contact-phone';
 
 export const applicationCategories = categories.filter(category => category !== 'All');
 export const applicationSteps = ['Business', 'Products', 'Contact & pickup', 'Review'];
@@ -34,8 +35,7 @@ export function validateApplicationStep(form: ApplicationForm, step: number, res
   }
   if (step === 2) {
     if (!length(form.contactName, 2, 100)) return 'Enter a contact name (2–100 characters).';
-    const digits = form.phone.replace(/\D/g, '');
-    if (!/^\+?[\d\s()-]+$/.test(form.phone.trim()) || digits.length < 7 || digits.length > 15 || form.phone.length > 30) return 'Enter a valid contact number.';
+    if (!normalizeApplicationPhone(form.phone)) return 'Enter a valid South African number, e.g. 082 123 4567 or +27 82 123 4567.';
     if (!form.phoneConfirmed) return 'Confirm that this is your business contact number.';
     if (form.collectionOffered === null) return 'Choose whether you offer collection.';
     if (form.collectionOffered && !length(form.collectionArea, 2, 120)) return 'Enter a pickup area (2–120 characters).';

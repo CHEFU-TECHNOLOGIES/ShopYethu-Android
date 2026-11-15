@@ -1,29 +1,377 @@
-import { useState } from 'react';
-import { Image, ScrollView, Text, View } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
-import { Button, Page, ResourceState } from '@/components/market/Primitives';
-import { useResource } from '@/hooks/use-resource';
-import { useCart } from '@/lib/cart';
-import type { Product, Storefront } from '@/types/marketplace';
-import { money, palette, ui } from '@/constants/market-theme';
+import { useState } from "react";
+import {
+    Pressable,
+    ScrollView,
+    Text,
+    useWindowDimensions,
+    View,
+} from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { MarketImage } from "@/components/market/MarketImage";
+import { ExpandableDescription } from "@/components/market/ExpandableDescription";
+import { Page, ResourceState } from "@/components/market/Primitives";
+import { productDetailStyles as styles } from "@/constants/product-detail-styles";
+import { money, palette, ui } from "@/constants/market-theme";
+import { useResource } from "@/hooks/use-resource";
+import { useCart } from "@/lib/cart";
+import { toast } from "@/lib/toast";
+import type { Product, Storefront } from "@/types/marketplace";
 
 export default function ProductScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const resource = useResource<{ product: Product; store: Storefront }>(`/products/${id}`);
-  const { add } = useCart();
-  const [notice, setNotice] = useState('');
-  const product = resource.data?.product, store = resource.data?.store;
-  return <Page title={product?.name || 'Product details'} back>
-    <ResourceState {...resource} retry={resource.refresh} />
-    {product && store && <>
-      <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>{product.photos.map(photo => <Image key={photo} source={{ uri: photo }} style={{ width: 320, height: 300, borderRadius: 20, backgroundColor: palette.soft }} resizeMode="cover" />)}</ScrollView>
-      <View style={ui.between}><Text style={[ui.title, { fontSize: 27 }]}>{money(product.priceCents)}</Text><Text style={ui.badge}>{product.stock > 0 ? `${product.stock} available` : 'Sold out'}</Text></View>
-      <Text style={ui.body}>{product.description}</Text>
-      <View style={ui.card}><Text style={ui.heading}>{store.name}</Text><Text style={ui.small}>{store.area}</Text><Text style={ui.subtitle}>Fulfilment: {product.fulfilment.map(value => value === 'collection' ? 'Collection' : 'Local delivery').join(' · ')}</Text><Button title="Visit storefront" secondary onPress={() => router.push({ pathname: '/store/[id]', params: { id: store.id } })} /></View>
-      {notice && <Text accessibilityRole="alert" style={ui.body}>{notice}</Text>}
-      <Button title="Add to basket" disabled={product.stock === 0} testID="add-to-cart" onPress={() => { try { add(product); setNotice('Added to your basket.'); } catch (error) { setNotice((error as Error).message); } }} />
-      <Button title="View basket" secondary onPress={() => router.push('/cart')} />
-      <Button title="Report this listing" secondary onPress={() => router.push({ pathname: '/report', params: { productId: product.id } })} />
-    </>}
-  </Page>;
+    const { id } = useLocalSearchParams<{ id: string }>();
+    const resource = useResource<{ product: Product; store: Storefront }>(
+        `/products/${id}`,
+    );
+    const { add, items, quantity: updateQuantity } = useCart();
+    const { width: windowWidth } = useWindowDimensions();
+    const [activePhoto, setActivePhoto] = useState(0);
+    const product = resource.data?.product;
+    const store = resource.data?.store;
+    const productQuantity =
+        items.find((item) => item.product.id === product?.id)?.quantity ?? 0;
+    const basketCount = items.reduce((total, item) => total + item.quantity, 0);
+    const galleryWidth = Math.max(1, Math.min(windowWidth - 40, 560));
+    const galleryHeight = galleryWidth * 1.04;
+    const stockText = !product?.stock
+        ? "Sold out"
+        : product.stock <= 5
+          ? `Only ${product.stock} left`
+          : "In stock";
+
+    function addToBasket() {
+        if (!product) return;
+        try {
+            add(product);
+        } catch (error) {
+            toast.error((error as Error).message);
+        }
+    }
+
+    return (
+        <Page
+            title={product?.name || "Product details"}
+            back
+            backAccessory={
+                <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`View basket${basketCount ? `, ${basketCount} items` : ""}`}
+                    onPress={() => router.push("/cart")}
+                    style={styles.basketButton}
+                >
+                    <Ionicons
+                        name="basket-outline"
+                        size={20}
+                        color={palette.brand}
+                    />
+                    {basketCount > 0 && (
+                        <View style={styles.basketCount}>
+                            <Text style={styles.basketCountText}>
+                                {basketCount > 99 ? "99+" : basketCount}
+                            </Text>
+                        </View>
+                    )}
+                </Pressable>
+            }
+            
+        >
+            <ResourceState {...resource} retry={resource.refresh} />
+            {product && store && (
+                <>
+                    {product.photos.length ? (
+                        <View
+                            style={[
+                                styles.gallery,
+                                styles.contentBlock,
+                                {
+                                    width: galleryWidth,
+                                    height: galleryHeight,
+                                },
+                            ]}
+                        >
+                            <ScrollView
+                                horizontal
+                                pagingEnabled
+                                showsHorizontalScrollIndicator={false}
+                                onMomentumScrollEnd={({ nativeEvent }) =>
+                                    setActivePhoto(
+                                        Math.round(
+                                            nativeEvent.contentOffset.x /
+                                                galleryWidth,
+                                        ),
+                                    )
+                                }
+                            >
+                                {product.photos.map((photo) => (
+                                    <MarketImage
+                                        key={photo}
+                                        accessibilityLabel={`${product.name} photo`}
+                                        uri={photo}
+                                        width={960}
+                                        style={[
+                                            styles.galleryImage,
+                                            { width: galleryWidth },
+                                        ]}
+                                    />
+                                ))}
+                            </ScrollView>
+                            {product.photos.length > 1 && (
+                                <View style={styles.galleryCounter}>
+                                    <Text style={styles.galleryCounterText}>
+                                        {activePhoto + 1} /{" "}
+                                        {product.photos.length}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+                    ) : (
+                        <View
+                            style={[
+                                styles.galleryPlaceholder,
+                                styles.contentBlock,
+                                {
+                                    width: galleryWidth,
+                                    height: galleryHeight,
+                                },
+                            ]}
+                        >
+                            <Ionicons
+                                name="image-outline"
+                                size={38}
+                                color={palette.muted}
+                            />
+                        </View>
+                    )}
+
+                    <View
+                        style={[
+                            styles.productDetails,
+                            styles.contentBlock,
+                        ]}
+                    >
+                        <View style={styles.productMeta}>
+                            <View style={styles.categoryChip}>
+                                <Text style={styles.categoryChipText}>
+                                    {product.category}
+                                </Text>
+                            </View>
+                            <View
+                                style={[
+                                    styles.stockChip,
+                                    product.stock === 0 && styles.soldOutChip,
+                                ]}
+                            >
+                                <Text
+                                    style={[
+                                        styles.stockChipText,
+                                        product.stock === 0 &&
+                                            styles.soldOutText,
+                                    ]}
+                                >
+                                    {stockText}
+                                </Text>
+                            </View>
+                        </View>
+                        <Text accessibilityRole="header" style={styles.name}>
+                            {product.name}
+                        </Text>
+                        <Text style={styles.price}>
+                            {money(product.priceCents)}
+                        </Text>
+                    </View>
+
+                    <View style={[styles.section, styles.contentBlock]}>
+                        <Text style={styles.sectionTitle}>About this item</Text>
+                        <ExpandableDescription
+                            key={product.description}
+                            description={product.description}
+                        />
+                    </View>
+
+                    <View style={[styles.section, styles.contentBlock]}>
+                        <Text style={styles.sectionTitle}>How you can get it</Text>
+                        <View style={styles.fulfilmentOptions}>
+                            {product.fulfilment.map((option) => (
+                                <View key={option} style={styles.fulfilmentChip}>
+                                    <Ionicons
+                                        name={
+                                            option === "collection"
+                                                ? "storefront-outline"
+                                                : "car-outline"
+                                        }
+                                        size={16}
+                                        color={palette.brand}
+                                    />
+                                    <Text style={styles.fulfilmentText}>
+                                        {option === "collection"
+                                            ? "Collection"
+                                            : "Local delivery"}
+                                    </Text>
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+
+                    <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Visit ${store.name} storefront`}
+                        onPress={() =>
+                            router.push({
+                                pathname: "/store/[id]",
+                                params: { id: store.id },
+                            })
+                        }
+                        style={[styles.storeCard, styles.contentBlock]}
+                    >
+                        <View style={styles.storeIcon}>
+                            <Ionicons
+                                name="storefront-outline"
+                                size={20}
+                                color={palette.brand}
+                            />
+                        </View>
+                        <View style={styles.storeInfo}>
+                            <Text style={ui.small}>Sold by</Text>
+                            <Text style={styles.storeName}>{store.name}</Text>
+                            <Text style={ui.small}>{store.area}</Text>
+                        </View>
+                        <View style={styles.storeVisit}>
+                            <Text style={styles.storeVisitText}>Visit</Text>
+                            <Ionicons
+                                name="chevron-forward"
+                                size={16}
+                                color={palette.brand}
+                            />
+                        </View>
+                    </Pressable>
+
+                    <View
+                        style={[
+                            styles.purchaseCard,
+                            styles.contentBlock,
+                        ]}
+                    >
+                        <View style={styles.purchaseInfo}>
+                            <Text style={ui.small}>Price</Text>
+                            <Text style={styles.purchasePrice}>
+                                {money(product.priceCents)}
+                            </Text>
+                            <Text style={styles.stockNote}>{stockText}</Text>
+                        </View>
+                        {product.stock === 0 ? (
+                            <View
+                                accessibilityLabel="Sold out"
+                                style={styles.soldOutControl}
+                            >
+                                <Text style={styles.soldOutControlText}>
+                                    Sold out
+                                </Text>
+                            </View>
+                        ) : (
+                            <View style={styles.quantityControl}>
+                                <Pressable
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Remove one ${product.name} from basket`}
+                                    accessibilityState={{
+                                        disabled: productQuantity === 0,
+                                    }}
+                                    testID="remove-from-cart"
+                                    disabled={productQuantity === 0}
+                                    onPress={() =>
+                                        updateQuantity(
+                                            product.id,
+                                            productQuantity - 1,
+                                        )
+                                    }
+                                    style={({ pressed }) => [
+                                        styles.quantityStep,
+                                        productQuantity === 0 &&
+                                            styles.quantityStepDisabled,
+                                        pressed &&
+                                            productQuantity > 0 &&
+                                            styles.quantityStepPressed,
+                                    ]}
+                                >
+                                    <Ionicons
+                                        name="remove"
+                                        size={20}
+                                        color={
+                                            productQuantity === 0
+                                                ? palette.muted
+                                                : "#FFFFFF"
+                                        }
+                                        accessible={false}
+                                    />
+                                </Pressable>
+                                <Text
+                                    accessibilityLabel={`${productQuantity} ${
+                                        productQuantity === 1 ? "item" : "items"
+                                    } in basket`}
+                                    accessibilityLiveRegion="polite"
+                                    style={styles.quantityCount}
+                                >
+                                    {productQuantity}
+                                </Text>
+                                <Pressable
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Add one ${product.name} to basket`}
+                                    accessibilityState={{
+                                        disabled:
+                                            productQuantity >=
+                                            Math.min(product.stock, 99),
+                                    }}
+                                    testID="add-to-cart"
+                                    disabled={
+                                        productQuantity >=
+                                        Math.min(product.stock, 99)
+                                    }
+                                    onPress={addToBasket}
+                                    style={({ pressed }) => [
+                                        styles.quantityStep,
+                                        productQuantity >=
+                                            Math.min(product.stock, 99) &&
+                                            styles.quantityStepDisabled,
+                                        pressed &&
+                                            productQuantity <
+                                                Math.min(product.stock, 99) &&
+                                            styles.quantityStepPressed,
+                                    ]}
+                                >
+                                    <Ionicons
+                                        name="add"
+                                        size={20}
+                                        color={
+                                            productQuantity >=
+                                            Math.min(product.stock, 99)
+                                                ? palette.muted
+                                                : "#FFFFFF"
+                                        }
+                                        accessible={false}
+                                    />
+                                </Pressable>
+                            </View>
+                        )}
+                    </View>
+
+                    <Pressable
+                        accessibilityRole="button"
+                        onPress={() =>
+                            router.push({
+                                pathname: "/report",
+                                params: { productId: product.id },
+                            })
+                        }
+                        style={[styles.reportButton, styles.contentBlock]}
+                    >
+                        <Ionicons
+                            name="flag-outline"
+                            size={15}
+                            color={palette.muted}
+                        />
+                        <Text style={styles.reportText}>Report this listing</Text>
+                    </Pressable>
+                </>
+            )}
+        </Page>
+    );
 }

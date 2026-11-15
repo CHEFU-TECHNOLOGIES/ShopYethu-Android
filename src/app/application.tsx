@@ -9,24 +9,17 @@ import { ApplicationStatus } from "@/components/application/ApplicationStatus";
 import { ApplicationWizard } from "@/components/application/ApplicationWizard";
 import { useAuth } from "@/lib/auth";
 import type { Session } from "@/lib/session";
-import { useResource } from "@/hooks/use-resource";
-import type { SellerApplication, Storefront } from "@/types/marketplace";
+import { useSellerAccount } from "@/hooks/use-seller-account";
+import { recordSellerApplication } from "@/lib/seller-account";
 import { ui } from "@/constants/market-theme";
 
-type Account = {
-    application: SellerApplication | null;
-    store: Storefront | null;
-};
-
 function SignedInApplication({ session }: { session: Session }) {
-    const resource = useResource<Account>("/me");
-    const [submitted, setSubmitted] = useState<SellerApplication | null>(null);
+    const resource = useSellerAccount();
     const [warning, setWarning] = useState("");
     const [editing, setEditing] = useState(false);
-    const application = submitted || resource.data?.application;
+    const application = resource.data?.application;
     if (
         resource.data &&
-        !submitted &&
         (!application || (application.status === "more-info" && editing))
     ) {
         return (
@@ -36,7 +29,7 @@ function SignedInApplication({ session }: { session: Session }) {
                 previous={application || null}
                 onCheckStatus={resource.refresh}
                 onSubmitted={(result, message) => {
-                    setSubmitted(result);
+                    recordSellerApplication(session.user.uid, result);
                     setWarning(message);
                     setEditing(false);
                 }}
@@ -48,15 +41,10 @@ function SignedInApplication({ session }: { session: Session }) {
             title="Seller application"
             subtitle="Your next chapter starts here."
             back
-            onRefresh={() => {
-                setSubmitted(null);
-                resource.refresh();
-            }}
+            onRefresh={resource.refresh}
             refreshing={resource.loading}
         >
-            {!submitted && (
-                <ResourceState {...resource} retry={resource.refresh} />
-            )}
+            <ResourceState {...resource} loading={resource.loading && !resource.data} retry={resource.refresh} />
             {!!warning && (
                 <Text accessibilityRole="alert" style={ui.error}>
                     {warning}
