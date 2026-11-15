@@ -25,7 +25,8 @@ const validation = load("lib/application-form.ts", {
     "./config": load("lib/config.ts"), "./contact-phone": phoneValidation,
 });
 const completeForm = () => ({
-    businessType: "individual", businessName: "Test trading business", area: "Cape Town",
+    businessType: "individual", cipcCertificateId: "", cipcCertificateFormat: "", cipcCertificateName: "",
+    businessName: "Test trading business", area: "Cape Town",
     categories: ["Clothing"], plans: "Clothing made locally for customers.",
     contactName: "Test Applicant", phone: "0821234567", phoneConfirmed: true,
     collectionOffered: false, collectionArea: "", pickupHours: "", response: "",
@@ -50,6 +51,8 @@ function setup(step, form = completeForm(), previous = null) {
         },
         "react/jsx-runtime": jsx,
         "react-native": { ActivityIndicator: "ActivityIndicator", BackHandler: {}, Pressable: "Pressable", Text: "Text", View: "View" },
+        "expo-document-picker": { getDocumentAsync: async () => ({ canceled: true, assets: null }) },
+        "expo-file-system": { File: class {} },
         "expo-router": { router: { replace: path => destinations.push(path) }, useFocusEffect() {} },
         "@/components/market/Primitives": { Button: "Button", Page: "Page" },
         "@/constants/application-styles": { applicationStyles: {} },
@@ -57,6 +60,7 @@ function setup(step, form = completeForm(), previous = null) {
         "@/hooks/use-application-draft": { useApplicationDraft: () => draft },
         "@/lib/application-form": validation,
         "@/lib/api": { api: async (...args) => { requests.push(args); return respond(...args); } },
+        "@/lib/session": { currentSession: () => ({ user: { uid: "applicant" } }) },
         "./ApplicationFields": { BusinessFields: "BusinessFields", ContactFields: "ContactFields", ProductFields: "ProductFields" },
         "./ApplicationReview": { ApplicationReview: "ApplicationReview" },
     });
@@ -79,6 +83,12 @@ test("Business Continue stays disabled until business type, name and operating a
     assert.equal(state.forward().props.disabled, true);
     state.draft.form.area = "Cape Town";
     assert.equal(state.forward().props.disabled, false);
+
+    const registered = setup(0, { ...completeForm(), businessType: "registered-business" });
+    assert.equal(registered.forward().props.disabled, true);
+    registered.draft.form.cipcCertificateId = "uploaded-certificate";
+    registered.draft.form.cipcCertificateFormat = "pdf";
+    assert.equal(registered.forward().props.disabled, false);
     state.forward().props.onPress();
     assert.equal(state.draft.step, 1);
     assert.equal(state.requests.length, 0);
