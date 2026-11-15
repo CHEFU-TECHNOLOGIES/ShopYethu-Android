@@ -1,41 +1,71 @@
 {
-    "expo": {
-        "name": "ShopYethu",
-        "slug": "ShopYethu",
-        "version": "1.0.0",
-        "orientation": "portrait",
-        "platforms": ["android", "ios"],
-        "icon": "./assets/images/shopyethu-icon.png",
-        "scheme": "shopyethu",
-        "userInterfaceStyle": "light",
-        "ios": {
-            "bundleIdentifier": "za.co.chefu.shopyethu"
-        },
-        "android": {
-            "package": "za.co.chefu.shopyethu",
-            "adaptiveIcon": {
-                "backgroundColor": "#244D3B",
-                "foregroundImage": "./assets/images/shopyethu-icon.png"
-            },
-            "predictiveBackGestureEnabled": false
-        },
-        "plugins": [
-            "expo-router",
-            ["expo-dev-client", { "launchMode": "most-recent" }],
-            [
-                "expo-splash-screen",
-                {
-                    "backgroundColor": "#12483D",
-                    "image": "./assets/images/shopyethu-icon.png",
-                    "imageWidth": 96
-                }
-            ],
-            "expo-secure-store",
-            ["expo-image-picker", { "photosPermission": "Choose photos for your ShopYethu products.", "microphonePermission": false }]
-        ],
-        "experiments": {
-            "typedRoutes": true,
-            "reactCompiler": true
+  "expo": {
+    "name": "ShopYethu",
+    "slug": "ShopYethu",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "platforms": [
+      "android",
+      "ios"
+    ],
+    "icon": "./assets/images/shopyethu-icon.png",
+    "scheme": "shopyethu",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "bundleIdentifier": "za.co.chefu.shopyethu"
+    },
+    "android": {
+      "package": "za.co.chefu.shopyethu",
+      "adaptiveIcon": {
+        "backgroundColor": "#244D3B",
+        "foregroundImage": "./assets/images/shopyethu-icon.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-dev-client",
+        {
+          "launchMode": "most-recent"
         }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#12483D",
+          "image": "./assets/images/shopyethu-icon.png",
+          "imageWidth": 96
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choose photos for your ShopYethu products.",
+          "microphonePermission": false
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "237453a3-8114-4f1e-be36-496e04793cfd"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/237453a3-8114-4f1e-be36-496e04793cfd"
     }
+  }
 }

@@ -8,6 +8,7 @@ import { useCart } from "@/lib/cart";
 import { toast } from "@/lib/toast";
 import type { Product, Storefront } from "@/types/marketplace";
 import { ui } from "@/constants/market-theme";
+import { OperatingAreaLabel } from "@/components/market/OperatingAreaLabel";
 
 export default function StoreScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -62,9 +63,11 @@ export default function StoreScreen() {
                     />
                     {resource.data && (
                         <View style={ui.card}>
-                            <Text style={ui.badge}>
-                                {resource.data.store.area}
-                            </Text>
+                            <OperatingAreaLabel
+                                area={resource.data.store.area}
+                                placeId={resource.data.store.areaPlaceId}
+                                style={ui.badge}
+                            />
                             <Text style={ui.body}>
                                 {resource.data.store.description}
                             </Text>

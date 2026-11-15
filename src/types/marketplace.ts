@@ -3,7 +3,7 @@ export type ApplicationStatus = 'pending' | 'more-info' | 'approved' | 'rejected
 export type ApplicationEvent = { status: ApplicationStatus; at: string; reason?: string; response?: string };
 export type SellerApplication = {
   id: string; ownerUid: string; businessName: string; contactName: string; email: string;
-  phone: string; area: string; plans: string; response: string; status: ApplicationStatus;
+  phone: string; area: string; areaPlaceId?: string; plans: string; response: string; status: ApplicationStatus;
   reason: string; updatedAt: string;
   businessType?: 'individual' | 'registered-business'; categories?: string[];
   cipcCertificateId?: string; cipcCertificateFormat?: 'pdf' | 'jpg' | 'png' | 'webp';
@@ -12,7 +12,7 @@ export type SellerApplication = {
   createdAt?: string; history?: ApplicationEvent[];
 };
 export type Storefront = {
-  id: string; ownerUid: string; name: string; description: string; area: string;
+  id: string; ownerUid: string; name: string; description: string; area: string; areaPlaceId?: string;
   status: 'active' | 'suspended'; reason: string; updatedAt: string;
 };
 export type SellerAccount = { application: SellerApplication | null; store: Storefront | null };

@@ -26,7 +26,7 @@ const validation = load("lib/application-form.ts", {
 });
 const completeForm = () => ({
     businessType: "individual", cipcCertificateId: "", cipcCertificateFormat: "", cipcCertificateName: "",
-    businessName: "Test trading business", area: "Cape Town",
+    businessName: "Test trading business", area: "Cape Town", areaPlaceId: "ChIJtest", areaSessionToken: "",
     categories: ["Clothing"], plans: "Clothing made locally for customers.",
     contactName: "Test Applicant", phone: "0821234567", phoneConfirmed: true,
     collectionOffered: false, collectionArea: "", pickupHours: "", response: "",
@@ -75,13 +75,14 @@ function setup(step, form = completeForm(), previous = null) {
     };
 }
 
-test("Business Continue stays disabled until business type, name and operating area are complete", () => {
-    const state = setup(0, { ...completeForm(), businessType: "", businessName: "", area: " " });
+test("Business Continue stays disabled until business type, name and a selected operating area are complete", () => {
+    const state = setup(0, { ...completeForm(), businessType: "", businessName: "", area: " ", areaPlaceId: "" });
     assert.equal(state.forward().props.disabled, true);
     state.draft.form.businessType = "individual";
     state.draft.form.businessName = "Test business";
     assert.equal(state.forward().props.disabled, true);
     state.draft.form.area = "Cape Town";
+    state.draft.form.areaPlaceId = "ChIJtest";
     assert.equal(state.forward().props.disabled, false);
 
     const registered = setup(0, { ...completeForm(), businessType: "registered-business" });
@@ -94,6 +95,24 @@ test("Business Continue stays disabled until business type, name and operating a
     assert.equal(state.requests.length, 0);
 });
 
+test("required validation is routed to its field or review section instead of the wizard footer", () => {
+    const business = setup(0, { ...completeForm(), businessType: "" });
+    const businessTree = elements(business.render());
+    const businessFields = businessTree.find(node => node.type === "BusinessFields");
+    assert.equal(businessFields.props.fieldIssue.field, "businessType");
+    assert.equal(businessFields.props.fieldIssue.message, "Choose your business type.");
+    assert.equal(
+        businessTree.some(node => node.type === "Text" && JSON.stringify(node.props.children).includes("Choose your business type.")),
+        false,
+    );
+
+    const review = setup(3, { ...completeForm(), businessName: "", areaPlaceId: "" });
+    const reviewFields = elements(review.render()).find(node => node.type === "ApplicationReview");
+    assert.equal(reviewFields.props.issue.field, "businessName");
+    assert.equal(reviewFields.props.issue.message, "Enter a business or trading name (2–100 characters).");
+    assert.equal(reviewFields.props.issue.index, 0);
+});
+
 test("Products Continue reacts to category deselection and incomplete descriptions", () => {
     const state = setup(1, { ...completeForm(), categories: [], plans: "" });
     assert.equal(state.forward().props.disabled, true);
@@ -103,6 +122,18 @@ test("Products Continue reacts to category deselection and incomplete descriptio
     assert.equal(state.forward().props.disabled, false);
     state.draft.form.categories = [];
     assert.equal(state.forward().props.disabled, true);
+});
+
+test("registered-business applicants can continue from Products when categories and description are complete", () => {
+    const state = setup(1, {
+        ...completeForm(),
+        businessType: "registered-business",
+        cipcCertificateId: "uploaded-certificate",
+        cipcCertificateFormat: "pdf",
+        categories: ["Clothing", "Home & Living"],
+        plans: "Locally made clothing and home products for customers.",
+    });
+    assert.equal(state.forward().props.disabled, false);
 });
 
 test("Contact Continue requires confirmation and a collection choice, with pickup fields required only for collection", () => {
@@ -140,7 +171,7 @@ test("contact numbers are checked locally and incomplete numbers keep Continue d
 });
 
 test("review checks all earlier fields in restored drafts and requires a response when more information was requested", async () => {
-    const state = setup(3, { ...completeForm(), area: "" });
+    const state = setup(3, { ...completeForm(), area: "", areaPlaceId: "" });
     assert.equal(state.forward().props.disabled, true);
     state.forward().props.onPress();
     await new Promise(setImmediate);

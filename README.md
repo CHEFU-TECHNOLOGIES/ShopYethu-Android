@@ -31,15 +31,21 @@ Rebuild and reinstall the native APK after changing native dependencies, config 
 
 Forms use `react-native-keyboard-controller` through the shared Page component to scroll the focused input above the keyboard, including lower and multiline fields. Installing this change requires a rebuilt development APK; restarting Metro alone cannot add the native keyboard module. Keyboard dragging dismisses the keyboard, and buttons remain tappable while it is open.
 
-## Android debug GitHub Actions
+## Android GitHub Actions
 
 The `Android Debug APK` workflow in `.github/workflows/android-debug.yml` runs directly on GitHub's Ubuntu runner. It installs dependencies including the development client, checks TypeScript and lint, generates the native Android project from Expo configuration, and builds with Gradle. It does not use EAS Build or require an Expo account, Expo token, or release signing secrets.
 
-The workflow runs automatically on every push. You can also start it from **Actions → Android Debug APK → Run workflow**. After a successful run, download `shopyethu-android-debug-<run>-<attempt>` from Artifacts, extract the ZIP and install the APK. Builds include ARM64 devices and x86_64 emulators. Artifacts are retained for 14 days.
+The workflow runs automatically on branch pushes. You can also start it from **Actions → Android Debug APK → Run workflow**. After a successful run, download `shopyethu-android-debug-<run>-<attempt>` from Artifacts, extract the ZIP and install the APK. Builds include ARM64 devices and x86_64 emulators. Artifacts are retained for 14 days.
 
 The runner uses Node.js 24, Temurin Java 17, and the Android SDK/NDK versions needed by the current React Native dependencies. For the public runner's 16 GB memory budget, Gradle gets an 8 GB heap plus up to 1 GB metaspace, Node.js gets a 3 GB heap, and Gradle uses two workers. Kotlin compilation shares Gradle's process rather than starting another large compiler daemon. These are upper limits; unused memory remains available for native compilers and the OS.
 
-This development APK loads JavaScript from Metro. Start `npm start` from the same source revision and scan the terminal's QR code in the installed ShopYethu development client. For a USB-connected device, run `adb reverse tcp:8081 tcp:8081` before opening the project in the app. A standalone release workflow with bundled JavaScript is not configured. The development APK and SSO round trip still require verification on an Android device.
+This development APK loads JavaScript from Metro. Start `npm start` from the same source revision and scan the terminal's QR code in the installed ShopYethu development client. For a USB-connected device, run `adb reverse tcp:8081 tcp:8081` before opening the project in the app.
+
+The `Android Release` workflow in `.github/workflows/android-release.yml` builds a signed APK and Play Store AAB with JavaScript bundled into the app. It runs on `v<app version>` tags and can also be started manually from **Actions → Android Release → Run workflow**. Tag builds create or update the matching GitHub Release; every run also uploads a 30-day Actions artifact. The Android version code uses the workflow run number.
+
+Before using the release workflow, add these repository Actions secrets: `ANDROID_KEYSTORE_BASE64` (base64-encoded release keystore), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, and `ANDROID_KEY_PASSWORD`. Use the same long-lived upload keystore for every release and keep a secure backup; replacing it can prevent updates to the published app. The workflow never stores the decoded keystore as an artifact.
+
+Both workflows use Node.js 24 and Temurin Java 17. Gradle receives an 8 GB heap, Kotlin compilation runs in-process, and the build uses two workers to fit the public runner's memory limit.
 
 ## Shared backend
 
@@ -53,6 +59,7 @@ Backend records live in Firestore collections `shopyethu_applications`, `shopyet
 | Capabilities | `GET /shopyethu/config` |
 | Own application and store permissions | `GET /shopyethu/me` |
 | Apply/respond/resubmit | `POST /shopyethu/application` |
+| South Africa–restricted area search | `POST /shopyethu/application/areas/suggestions`, `GET /shopyethu/areas/:placeId` |
 | Store/inventory | `GET/PUT /shopyethu/seller/store` |
 | Own product for editing | `GET /shopyethu/seller/products/:id` |
 | Create/update/publish/unpublish | `POST /shopyethu/seller/products`, `PUT /seller/products/:id` |
@@ -94,7 +101,7 @@ The admin website's Applications, Sellers and Complaints views now read the real
 
 Applications use four short steps: Business, Products, Contact & pickup, and Review. Each step validates before continuing; the final summary has Edit actions. Email comes from the signed-in account and cannot be changed in the form. The backend also derives it from the authenticated identity.
 
-Business details include individual/sole trader or registered business, trading name and operating area. Applicants choose product categories and describe their products. The contact-number checkbox is the applicant's acknowledgement, **not SMS/OTP verification**. Changing the number clears that acknowledgement. Pickup area and hours are requested only if collection is offered; the form asks for an area, not a private street address. This application preference does not enable unconfigured fulfilment or automatically configure product listings.
+Business details include individual/sole trader or registered business, trading name and operating area. Applications are open to South Africans only. The operating-area picker uses Google Places, restricted to South Africa; only the selected Place ID is saved, and labels are resolved live with Google Maps attribution. Set `GOOGLE_MAPS_PLACES_API_KEY` on the backend; the backend repository's Google Places setup guide covers key restrictions. Applicants choose product categories and describe their products. The contact-number checkbox is the applicant's acknowledgement, **not SMS/OTP verification**. Changing the number clears that acknowledgement. Pickup area and hours are requested only if collection is offered; the form asks for an area, not a private street address. This application preference does not enable unconfigured fulfilment or automatically configure product listings.
 
 Progress is saved after a short typing pause, when leaving the app, and through Save & exit. Drafts use encrypted device SecureStore, separate keys per account and chunked, serialized writes. Failed saves retain the last complete draft and show a retry message. Drafts belong to the current server application version; an old draft cannot overwrite a new review decision. There are no draft API writes or cross-device draft synchronization. Successful submissions clear the local draft. Abrupt termination before a save completes can lose the most recent edits.
 

@@ -14,8 +14,8 @@ import { applicationStyles as styles } from "@/constants/application-styles";
 import { palette, ui } from "@/constants/market-theme";
 import { useApplicationDraft } from "@/hooks/use-application-draft";
 import {
+    applicationIssue,
     applicationSteps,
-    validateApplicationStep,
 } from "@/lib/application-form";
 import { api } from "@/lib/api";
 import { currentSession, type Session } from "@/lib/session";
@@ -50,8 +50,11 @@ export function ApplicationWizard({
     const lock = useRef(false);
     const responding = previous?.status === "more-info";
     const requiredIssue = (step === 3 ? [0, 1, 2, 3] : [step])
-        .map(index => ({ index, message: validateApplicationStep(form, index, responding) }))
-        .find(issue => issue.message);
+        .map((index) => ({
+            index,
+            issue: applicationIssue(form, index, responding),
+        }))
+        .find((result) => result.issue !== null);
     const exit = () => router.replace("/account");
     function changeStep(next: number) {
         if (lock.current || !ready) return;
@@ -88,20 +91,16 @@ export function ApplicationWizard({
     }
     function next() {
         if (lock.current || !ready || uploadingProof || step >= 3) return;
-        const issue = validateApplicationStep(form, step, responding);
-        if (issue) {
-            setError(issue);
-            return;
-        }
+        if (applicationIssue(form, step, responding)) return;
         changeStep(step + 1);
     }
     async function submit() {
         if (lock.current || !ready || uploadingProof) return;
         for (let index = 0; index < 4; index++) {
-            const issue = validateApplicationStep(form, index, responding);
+            const issue = applicationIssue(form, index, responding);
             if (issue) {
                 draft.goTo(index);
-                setError(issue);
+                setError("");
                 return;
             }
         }
@@ -111,7 +110,7 @@ export function ApplicationWizard({
         try {
             const application = await api<SellerApplication>("/application", {
                 method: "POST",
-                body: JSON.stringify({ ...form, email: session.user.email }),
+                body: JSON.stringify({ ...form, area: "", email: session.user.email }),
             });
             let warning = "";
             try {
@@ -194,6 +193,10 @@ export function ApplicationWizard({
         form,
         email: session.user.email,
         disabled: busy || uploadingProof || !ready,
+        fieldIssue:
+            requiredIssue?.index === step
+                ? requiredIssue.issue
+                : null,
         uploadProof,
         uploadingProof,
         update: draft.update,
@@ -295,6 +298,14 @@ export function ApplicationWizard({
                         <ApplicationReview
                             {...fields}
                             edit={changeStep}
+                            issue={
+                                requiredIssue?.issue
+                                    ? {
+                                          ...requiredIssue.issue,
+                                          index: requiredIssue.index,
+                                      }
+                                    : undefined
+                            }
                             requested={responding ? previous.reason : undefined}
                         />
                     )}
@@ -357,18 +368,9 @@ export function ApplicationWizard({
                             />
                         </View>
                     </View>
-                    {requiredIssue && <Text accessibilityLiveRegion="polite" style={ui.small}>
-                        {step === 3 ? `${applicationSteps[requiredIssue.index]}: ` : ""}{requiredIssue.message}
-                    </Text>}
-                    <Text accessibilityLiveRegion="polite" style={ui.small}>
-                        {draft.saving
-                            ? "Saving on this device…"
-                            : draft.savedAt
-                              ? "Draft saved on this device. You can come back later."
-                              : "Your progress saves on this device as you go."}
-                    </Text>
                 </>
             )}
         </Page>
     );
 }
+ 

@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { sellerStyles as styles } from "@/constants/seller-styles";
 import { ui } from "@/constants/market-theme";
 import type { SellerInventory } from "@/hooks/use-seller-inventory";
+import { OperatingAreaLabel } from "@/components/market/OperatingAreaLabel";
 
 export function StoreOverview({ data }: { data: SellerInventory }) {
     const stats = [
@@ -27,7 +28,12 @@ export function StoreOverview({ data }: { data: SellerInventory }) {
             <View style={ui.between}>
                 <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
                     <Text style={styles.storeName} numberOfLines={1} ellipsizeMode="tail">{data.store.name}</Text>
-                    <Text style={styles.storeArea} numberOfLines={1} ellipsizeMode="tail">{data.store.area}</Text>
+                    <OperatingAreaLabel
+                        area={data.store.area}
+                        placeId={data.store.areaPlaceId}
+                        style={styles.storeArea}
+                        numberOfLines={1}
+                    />
                 </View>
                 <Pressable
                     accessibilityRole="button"

@@ -79,7 +79,6 @@ export function CategoryChoices({
                     >
                         <View style={[styles.chip, selected && styles.selected]}>
                             <Text style={styles.chipText}>
-                                {selected ? "✓ " : ""}
                                 {category}
                             </Text>
                         </View>

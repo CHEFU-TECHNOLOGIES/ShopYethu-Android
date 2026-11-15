@@ -26,7 +26,12 @@ export function useApplicationDraft(uid: string, name: string, previous: SellerA
         const now = new Date().toISOString();
         if (mounted.current) setSaving(true);
         try {
-            await writeApplicationDraft(uid, { version: 1, baseUpdatedAt, ...current, savedAt: now });
+            const form = {
+                ...current.form,
+                area: current.form.areaPlaceId ? '' : current.form.area,
+                areaSessionToken: '',
+            };
+            await writeApplicationDraft(uid, { version: 1, baseUpdatedAt, ...current, form, savedAt: now });
             if (snapshot.current === current) dirty.current = false;
             if (mounted.current && active.current) { if (snapshot.current === current) setSavedAt(now); setDraftError(''); }
             return true;

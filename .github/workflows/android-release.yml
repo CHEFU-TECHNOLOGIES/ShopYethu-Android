@@ -1,0 +1,194 @@
+name: Android Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build signed Android release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+      NODE_OPTIONS: --max-old-space-size=3072
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Validate release configuration
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Configure the $name repository secret before running a signed release."
+              exit 1
+            fi
+          done
+
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            app_version="$(node -p "require('./app.json').expo.version")"
+            if [[ "$GITHUB_REF_NAME" != "v$app_version" ]]; then
+              echo "::error::Release tag $GITHUB_REF_NAME must match app.json version v$app_version."
+              exit 1
+            fi
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Check TypeScript
+        run: npm run typecheck
+
+      - name: Check cache isolation and order retry safety
+        run: npm run test:cache
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Set Android version code
+        env:
+          ANDROID_VERSION_CODE: ${{ github.run_number }}
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const config = JSON.parse(fs.readFileSync("app.json", "utf8"));
+          const versionCode = Number(process.env.ANDROID_VERSION_CODE);
+          if (!Number.isSafeInteger(versionCode) || versionCode < 1) {
+            throw new Error("GitHub run number is not a valid Android version code.");
+          }
+          config.expo.android.versionCode = versionCode;
+          fs.writeFileSync("app.json", `${JSON.stringify(config, null, 2)}\n`);
+          NODE
+
+      - name: Generate Android project
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Prepare release keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          key_store="$RUNNER_TEMP/shopyethu-release-key.jks"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$key_store"
+          chmod 600 "$key_store"
+          keytool -list -keystore "$key_store" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null
+          echo "ANDROID_RELEASE_KEYSTORE=$key_store" >> "$GITHUB_ENV"
+
+      - name: Build signed APK and app bundle
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleRelease :app:bundleRelease \
+            --no-daemon \
+            --max-workers=2 \
+            --stacktrace \
+            -Dorg.gradle.jvmargs="-Xmx8g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" \
+            -Pkotlin.compiler.execution.strategy=in-process \
+            -PreactNativeArchitectures=arm64-v8a,x86_64 \
+            -Pandroid.injected.signing.store.file="$ANDROID_RELEASE_KEYSTORE" \
+            -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD"
+
+      - name: Verify release signatures
+        run: |
+          apk="android/app/build/outputs/apk/release/app-release.apk"
+          aab="android/app/build/outputs/bundle/release/app-release.aab"
+          test -f "$apk"
+          test -f "$aab"
+          apksigner_path="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort | tail -n 1)"
+          test -n "$apksigner_path"
+          "$apksigner_path" verify --verbose "$apk"
+          jarsigner -verify "$aab"
+
+      - name: Prepare versioned release files
+        id: release-files
+        run: |
+          version="$(node -p "require('./app.json').expo.version")"
+          mkdir -p "$RUNNER_TEMP/shopyethu-release"
+          cp android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/shopyethu-release/ShopYethu-$version.apk"
+          cp android/app/build/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/shopyethu-release/ShopYethu-$version.aab"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Upload signed release artifacts
+        id: release-artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: shopyethu-android-release-${{ github.run_number }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/shopyethu-release/*
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+      - name: Publish GitHub release assets
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          files=("$RUNNER_TEMP"/shopyethu-release/*)
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "${files[@]}" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "${files[@]}" \
+              --title "ShopYethu $GITHUB_REF_NAME" \
+              --generate-notes \
+              --verify-tag
+          fi
+
+      - name: Write download instructions
+        env:
+          ARTIFACT_URL: ${{ steps.release-artifacts.outputs.artifact-url }}
+          RELEASE_VERSION: ${{ steps.release-files.outputs.version }}
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          ### ShopYethu Android release $RELEASE_VERSION
+
+          [Download signed APK and AAB artifacts]($ARTIFACT_URL)
+
+          The APK can be installed directly on Android. Upload the AAB to Google Play.
+          Release tags also publish both files to the matching GitHub Release.
+          Android version code: $GITHUB_RUN_NUMBER.
+          EOF

@@ -1,5 +1,5 @@
 export function publicQuery(path: string) {
-  return /^\/(config(?:\?|$)|products(?:\/|\?|$)|stores\/)/.test(path);
+  return /^\/(config(?:\?|$)|products(?:\/|\?|$)|stores\/|areas\/)/.test(path);
 }
 
 export function canonicalPath(path: string) {

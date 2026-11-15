@@ -17,6 +17,7 @@ import { useResource } from "@/hooks/use-resource";
 import { useCart } from "@/lib/cart";
 import { toast } from "@/lib/toast";
 import type { Product, Storefront } from "@/types/marketplace";
+import { OperatingAreaLabel } from "@/components/market/OperatingAreaLabel";
 
 export default function ProductScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -233,7 +234,11 @@ export default function ProductScreen() {
                         <View style={styles.storeInfo}>
                             <Text style={ui.small}>Sold by</Text>
                             <Text style={styles.storeName}>{store.name}</Text>
-                            <Text style={ui.small}>{store.area}</Text>
+                            <OperatingAreaLabel
+                                area={store.area}
+                                placeId={store.areaPlaceId}
+                                style={ui.small}
+                            />
                         </View>
                         <View style={styles.storeVisit}>
                             <Text style={styles.storeVisitText}>Visit</Text>

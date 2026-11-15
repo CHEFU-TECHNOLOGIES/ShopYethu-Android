@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useDraft } from '@/hooks/use-draft';
 import { Text } from 'react-native';
 import { Button, Field, Page, ResourceState, SignInNotice } from '@/components/market/Primitives';
+import { OperatingAreaField } from '@/components/market/OperatingAreaField';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useSellerInventory } from '@/hooks/use-seller-inventory';
@@ -14,7 +15,7 @@ export default function StoreEditor() {
   const { session } = useAuth();
   const resource = useSellerInventory(true, 60_000);
   const initial = resource.data?.store;
-  const [form, setForm] = useDraft(`${session?.user.uid}:${initial?.id || 'store'}`, { name: initial?.name || '', description: initial?.description || '', area: initial?.area || '' });
+  const [form, setForm] = useDraft(`${session?.user.uid}:${initial?.id || 'store'}`, { name: initial?.name || '', description: initial?.description || '', area: initial?.area || '', areaPlaceId: initial?.areaPlaceId || '', areaSessionToken: '' });
   const [busy, setBusy] = useState(false), [notice, setNotice] = useState(''), [error, setError] = useState('');
   const locked = useRef(false);
   async function save() {
@@ -22,7 +23,7 @@ export default function StoreEditor() {
     try {
       const store = await api<Storefront>('/seller/store', { method: 'PUT', body: JSON.stringify(form) });
       publishSellerChange({ uid: session.user.uid, store });
-      setForm({ name: store.name, description: store.description, area: store.area });
+      setForm({ name: store.name, description: store.description, area: store.area, areaPlaceId: store.areaPlaceId || '', areaSessionToken: '' });
       setNotice('Your storefront has been updated.');
     }
     catch (cause) { setError((cause as Error).message); toast.error((cause as Error).message); } finally { locked.current = false; setBusy(false); }
@@ -31,7 +32,15 @@ export default function StoreEditor() {
     {!session ? <SignInNotice /> : <><ResourceState {...resource} retry={resource.refresh} />{resource.data && <>
       <Field label="Store name" value={form.name} onChangeText={name => setForm(value => ({ ...value, name }))} editable={!busy} />
       <Field label="About your store" value={form.description} multiline onChangeText={description => setForm(value => ({ ...value, description }))} editable={!busy} />
-      <Field label="Operating area" value={form.area} onChangeText={area => setForm(value => ({ ...value, area }))} editable={!busy} />
+      <OperatingAreaField
+        value={form.area}
+        placeId={form.areaPlaceId}
+        sessionToken={form.areaSessionToken}
+        editable={!busy}
+        onChange={(area, areaPlaceId, areaSessionToken) => setForm(value => ({
+          ...value, area, areaPlaceId, areaSessionToken,
+        }))}
+      />
       {error && <Text accessibilityRole="alert" style={ui.error}>{error}</Text>}{notice && <Text style={ui.body}>{notice}</Text>}
       <Button title={busy ? 'Saving…' : 'Save storefront'} disabled={busy} onPress={() => void save()} />
     </>}</>}
