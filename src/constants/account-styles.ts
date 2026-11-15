@@ -84,5 +84,19 @@ export const account = StyleSheet.create({
     errorText: { flex: 1, color: palette.danger, fontSize: 14, lineHeight: 20, fontWeight: '500' },
     sellerError: { color: palette.muted, fontSize: 14, lineHeight: 21, paddingHorizontal: 16, paddingTop: 16 },
 
+    // Confirmation dialog
+    dialogOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+    dialogBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(20, 32, 26, 0.42)' },
+    dialog: { width: '100%', maxWidth: 380, padding: 22, borderRadius: 22, backgroundColor: palette.paper, gap: 10 },
+    dialogTitle: { color: palette.ink, fontSize: 21, lineHeight: 28, fontWeight: '700' },
+    dialogMessage: { color: palette.muted, fontSize: 14, lineHeight: 21 },
+    dialogActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 10 },
+    dialogButton: { minHeight: 44, minWidth: 92, paddingHorizontal: 16, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    dialogCancel: { backgroundColor: palette.soft },
+    dialogCancelText: { color: palette.brand, fontSize: 14, fontWeight: '700' },
+    dialogSignOut: { backgroundColor: palette.danger },
+    dialogSignOutPressed: { opacity: 0.82 },
+    dialogSignOutText: { color: palette.paper, fontSize: 14, fontWeight: '700' },
+
     footer: { color: palette.muted, fontSize: 12, lineHeight: 17, textAlign: 'center', marginTop: 6 },
 });

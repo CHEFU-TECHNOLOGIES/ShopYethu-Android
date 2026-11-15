@@ -38,7 +38,7 @@ export default function SellingScreen() {
             subtitle="A little business. A world of possibility."
             back
             onRefresh={session ? resource.refresh : undefined}
-            refreshing={resource.loading}
+            refreshing={resource.refreshing}
         >
             {!session ? (
                 <SignInNotice />

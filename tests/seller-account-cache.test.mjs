@@ -28,6 +28,9 @@ test('seller section keeps My Store visible during refresh and an offline error'
   for (const [loading, error] of [[true, ''], [false, 'Offline']]) {
     const tree = SellerAccountSection({ data: { application, store }, loading, error, onRetry() {} });
     assert.ok(nodes(tree).some(node => node.type === 'Row' && node.props.title === 'My Store'));
+    assert.equal(nodes(tree).some(node => node.type === 'Spinner'), false, 'background updates keep cached status quiet');
     assert.equal(nodes(tree).some(node => node.props?.children === 'Loading seller status…'), false);
   }
+  const manual = SellerAccountSection({ data: { application, store }, loading: true, refreshing: true, error: '', onRetry() {} });
+  assert.ok(nodes(manual).some(node => node.type === 'Spinner'), 'explicit refresh still shows progress');
 });

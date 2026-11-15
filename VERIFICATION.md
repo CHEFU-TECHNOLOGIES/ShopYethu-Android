@@ -2,6 +2,13 @@
 
 Latest update: 15 November 2026.
 
+## Longer caching and saved-account correction
+
+- Seller status now reuses the encrypted account snapshot on ordinary account visits, up to seven-day retention and within existing storage/memory budgets. Application and product editor entry uses a one-minute freshness requirement; closing those screens removes that requirement. No polling timer was added. Catalogue, product, storefront, inventory, configuration and order policies are documented in `CACHING.md`.
+- All 34 cache/bridge/resource tests passed. Controlled counters cover twenty account revisits and foreground events across sixty simulated hours using one GET; a day-old encrypted snapshot restores after restart with zero GETs. Unchanged flushes add no writes, and seller status gets priority when inventory would exceed the disk budget. Action-context freshness, manual loading, account isolation and stock-related invalidation are covered. These are automated measurements, not device benchmarks.
+- The companion backend's duplicate chooser entries were caused by saved session slots surviving a fresh sign-in to the same UID, then being returned alongside the active account. Listing now deduplicates verified UIDs, while sign-in/switch/removal reconciles saved cookies. Sixteen account-session tests and all 52 selected account/authentication/phone-enforcement tests passed; backend typecheck, build and lint for the changed files passed. The account web app's 56 SSO tests also passed.
+- Backend deployment is required for saved-account reconciliation. Android changes require an updated app build. No live account cookies were inspected, and these changes were not verified in a browser or on an emulator/device during this task.
+
 ## Order confirmation email
 
 - Confirmed order creation now sends the authenticated buyer a hosted Resend template, `shopyethu-order-confirmation`, with the existing `SY-…` order reference as the collection code. Buyer and seller order cards explain how to use it at collection. No additional database reads/writes or native dependencies were added.

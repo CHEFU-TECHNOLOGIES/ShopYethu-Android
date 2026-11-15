@@ -14,7 +14,7 @@ import { recordSellerApplication } from "@/lib/seller-account";
 import { ui } from "@/constants/market-theme";
 
 function SignedInApplication({ session }: { session: Session }) {
-    const resource = useSellerAccount();
+    const resource = useSellerAccount(true, 60_000);
     const [warning, setWarning] = useState("");
     const [editing, setEditing] = useState(false);
     const application = resource.data?.application;
@@ -42,7 +42,7 @@ function SignedInApplication({ session }: { session: Session }) {
             subtitle="Your next chapter starts here."
             back
             onRefresh={resource.refresh}
-            refreshing={resource.loading}
+            refreshing={resource.refreshing}
         >
             <ResourceState {...resource} loading={resource.loading && !resource.data} retry={resource.refresh} />
             {!!warning && (

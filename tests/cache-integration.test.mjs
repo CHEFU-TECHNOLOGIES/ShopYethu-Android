@@ -31,9 +31,26 @@ test('production bridge restores queries, reuses confirmed store/product/order m
   assert.equal(h.marketCache.get('/me', 'alice').data.store.name, 'Updated store');
   h.mutate({ path: '/seller/products', data: { id: 'p', storeId: 'alice', published: true } });
   assert.equal(h.marketCache.get('/seller/store', 'alice').data.products.length, 1);
+  const inventoryTime = h.marketCache.get('/seller/store', 'alice').updatedAt;
+  h.marketCache.set('/products', 'public', { products: [] });
+  const catalogueTime = h.marketCache.get('/products', 'public').updatedAt;
   h.mutate({ path: '/seller/orders/o', data: { id: 'o', sellerUid: 'alice', buyerUid: 'buyer', storeId: 'alice', status: 'ready' } });
   assert.equal(h.marketCache.get('/seller/orders', 'alice').data.orders[0].status, 'ready');
+  assert.equal(h.marketCache.get('/seller/store', 'alice').updatedAt, inventoryTime);
+  assert.equal(h.marketCache.get('/products', 'public').updatedAt, catalogueTime, 'ready updates do not invalidate unchanged stock');
   assert.equal(h.calls.length, 1); assert.equal(h.notices.length, 4);
+});
+
+test('a stock-changing order invalidates stock snapshots while leaving saved seller status intact', async () => {
+  const h = market(); await h.loadMarketQuery('/me', 'alice');
+  h.marketCache.set('/products', 'public', { products: [] });
+  h.marketCache.set('/seller/store', 'alice', { store: { id: 'alice' }, products: [] });
+  const statusTime = h.marketCache.get('/me', 'alice').updatedAt;
+  h.mutate({ path: '/seller/orders/o', data: { id: 'o', sellerUid: 'alice', buyerUid: 'buyer', storeId: 'alice', status: 'cancelled' } });
+  assert.equal(h.marketCache.get('/products', 'public').updatedAt, null);
+  assert.equal(h.marketCache.get('/seller/store', 'alice').updatedAt, null);
+  assert.equal(h.marketCache.get('/me', 'alice').updatedAt, statusTime);
+  assert.equal(h.calls.length, 1);
 });
 test('the production bridge refuses old-account reads and rejects old-account writes after switching', async () => {
   const h = market(); await h.loadMarketQuery('/me', 'alice');

@@ -11,6 +11,8 @@
     "expo-crypto": "~58.0.8",
     "expo-dev-client": "~58.0.20",
     "expo-device": "~58.0.5",
+    "expo-document-picker": "~58.0.5",
+    "expo-file-system": "~58.0.13",
     "expo-font": "~58.0.12",
     "expo-glass-effect": "~58.0.5",
     "expo-image": "~58.0.18",
@@ -41,7 +43,7 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "test:cache": "node --test tests/query-cache.test.mjs tests/cache-integration.test.mjs tests/seller-account-cache.test.mjs",
+    "test:cache": "node --test tests/query-cache.test.mjs tests/cache-integration.test.mjs tests/seller-account-cache.test.mjs tests/resource-refresh.test.mjs tests/query-freshness.test.mjs",
     "test:account-cache": "node --test tests/seller-account-cache.test.mjs",
     "test:application": "node --test tests/application-draft.test.mjs tests/application-navigation.test.mjs",
     "test:seller": "node --test tests/product-form.test.mjs",

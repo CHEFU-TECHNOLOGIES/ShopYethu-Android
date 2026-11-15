@@ -36,11 +36,13 @@ function StatusPill({ label, tone }: { label: string; tone: Tone }) {
 export function SellerAccountSection({
     data,
     loading,
+    refreshing = false,
     error,
     onRetry,
 }: {
     data: SellerAccount | null;
     loading: boolean;
+    refreshing?: boolean;
     error: string;
     onRetry: () => void;
 }) {
@@ -145,7 +147,7 @@ export function SellerAccountSection({
                     onPress={() => router.push("/application")}
                 />
             ) : null}
-            {data && loading && (
+            {data && refreshing && (
                 <View style={account.statusRefreshing} accessible accessibilityLabel="Updating seller status" accessibilityLiveRegion="polite">
                     <ActivityIndicator size="small" color={palette.muted} accessible={false} />
                     <Text style={account.statusRefreshingText}>Updating status</Text>

@@ -6,6 +6,8 @@ import {
     Text,
     View,
 } from "react-native";
+import * as DocumentPicker from "expo-document-picker";
+import { File } from "expo-file-system";
 import { router, useFocusEffect } from "expo-router";
 import { Button, Page } from "@/components/market/Primitives";
 import { applicationStyles as styles } from "@/constants/application-styles";
@@ -16,7 +18,7 @@ import {
     validateApplicationStep,
 } from "@/lib/application-form";
 import { api } from "@/lib/api";
-import type { Session } from "@/lib/session";
+import { currentSession, type Session } from "@/lib/session";
 import type { SellerApplication } from "@/types/marketplace";
 import {
     BusinessFields,
@@ -44,6 +46,7 @@ export function ApplicationWizard({
     const { form, step, ready, goTo } = draft;
     const [busy, setBusy] = useState(false),
         [error, setError] = useState("");
+    const [uploadingProof, setUploadingProof] = useState(false);
     const lock = useRef(false);
     const responding = previous?.status === "more-info";
     const requiredIssue = (step === 3 ? [0, 1, 2, 3] : [step])
@@ -75,7 +78,7 @@ export function ApplicationWizard({
     );
 
     async function saveAndExit() {
-        if (lock.current || !ready) return;
+        if (lock.current || !ready || uploadingProof) return;
         lock.current = true;
         setBusy(true);
         const saved = await draft.save();
@@ -84,7 +87,7 @@ export function ApplicationWizard({
         if (saved) exit();
     }
     function next() {
-        if (lock.current || !ready || step >= 3) return;
+        if (lock.current || !ready || uploadingProof || step >= 3) return;
         const issue = validateApplicationStep(form, step, responding);
         if (issue) {
             setError(issue);
@@ -93,7 +96,7 @@ export function ApplicationWizard({
         changeStep(step + 1);
     }
     async function submit() {
-        if (lock.current || !ready) return;
+        if (lock.current || !ready || uploadingProof) return;
         for (let index = 0; index < 4; index++) {
             const issue = validateApplicationStep(form, index, responding);
             if (issue) {
@@ -124,10 +127,75 @@ export function ApplicationWizard({
             setBusy(false);
         }
     }
+    async function uploadProof() {
+        if (lock.current || !ready) return;
+        lock.current = true;
+        setUploadingProof(true);
+        setError("");
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: ["application/pdf", "image/jpeg", "image/png", "image/webp"],
+                copyToCacheDirectory: true,
+                multiple: false,
+            });
+            if (result.canceled) return;
+            const asset = result.assets[0];
+            const extension = asset.name.toLowerCase().split(".").pop() || "";
+            const mimeType = asset.mimeType?.toLowerCase() || "";
+            const format =
+                extension === "pdf" || mimeType === "application/pdf"
+                    ? "pdf"
+                    : ["jpg", "jpeg"].includes(extension) ||
+                        mimeType === "image/jpeg"
+                      ? "jpg"
+                      : extension === "png" || mimeType === "image/png"
+                        ? "png"
+                        : extension === "webp" || mimeType === "image/webp"
+                          ? "webp"
+                          : "";
+            if (!format) {
+                throw new Error("Choose a PDF, JPG, PNG or WebP certificate.");
+            }
+            const file = new File(asset.uri);
+            if ((asset.size ?? file.size) > 2 * 1024 * 1024) {
+                throw new Error("Choose a certificate smaller than 2 MB.");
+            }
+            const content = await file.base64();
+            if (!content || content.length > 2_800_000) {
+                throw new Error("Choose a certificate smaller than 2 MB.");
+            }
+            const uploaded = await api<{
+                assetId: string;
+                format: "pdf" | "jpg" | "png" | "webp";
+            }>("/application/proof", {
+                method: "POST",
+                body: JSON.stringify({ file: content, format }),
+            });
+            if (currentSession()?.user.uid !== session.user.uid) {
+                throw new Error(
+                    "Your account changed. Please sign in and try again.",
+                );
+            }
+            draft.update("cipcCertificateId", uploaded.assetId);
+            draft.update("cipcCertificateFormat", uploaded.format);
+            draft.update("cipcCertificateName", asset.name.slice(0, 160));
+        } catch (cause) {
+            setError(
+                cause instanceof Error
+                    ? cause.message
+                    : "Could not upload the CIPC certificate. Please try again.",
+            );
+        } finally {
+            lock.current = false;
+            setUploadingProof(false);
+        }
+    }
     const fields = {
         form,
         email: session.user.email,
-        disabled: busy || !ready,
+        disabled: busy || uploadingProof || !ready,
+        uploadProof,
+        uploadingProof,
         update: draft.update,
     };
     return (
@@ -142,8 +210,8 @@ export function ApplicationWizard({
                         </Text>
                         <Pressable
                             accessibilityRole="button"
-                            accessibilityState={{ disabled: busy || !ready }}
-                            disabled={busy || !ready}
+                            accessibilityState={{ disabled: busy || uploadingProof || !ready }}
+                            disabled={busy || uploadingProof || !ready}
                             onPress={() => void saveAndExit()}
                             style={styles.link}
                         >
@@ -266,7 +334,7 @@ export function ApplicationWizard({
                                 <Button
                                     title="Back"
                                     secondary
-                                    disabled={busy}
+                                    disabled={busy || uploadingProof}
                                     onPress={() => changeStep(step - 1)}
                                 />
                             </View>
@@ -282,7 +350,7 @@ export function ApplicationWizard({
                                               : "Submit application"
                                           : "Continue"
                                 }
-                                disabled={busy || !ready || Boolean(requiredIssue)}
+                                disabled={busy || uploadingProof || !ready || Boolean(requiredIssue)}
                                 onPress={() =>
                                     step === 3 ? void submit() : next()
                                 }

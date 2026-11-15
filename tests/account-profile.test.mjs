@@ -21,6 +21,7 @@ function setup() {
         } },
         "react/jsx-runtime": jsx,
         "react-native": { ActivityIndicator: "ActivityIndicator", Image: "Image", Text: "Text", View: "View" },
+        "expo-image": { Image: "Image" },
         "@/components/market/Primitives": { Button: "Button" },
         "@/constants/account-profile-styles": { profile: {} },
         "@/constants/market-theme": { palette: {} },
@@ -48,7 +49,8 @@ test("profile photo shows after loading, with initials while loading and after a
     assert.ok(nodes.some(node => node.type === "Text" && node.props.children === "AE"));
     const image = nodes.find(node => node.type === "Image");
     assert.equal(image.props.source.uri, profileUser.picture);
-    assert.equal(image.props.resizeMode, "cover");
+    assert.equal(image.props.contentFit, "cover");
+    assert.equal(image.props.cachePolicy, "memory-disk");
     image.props.onLoad();
     nodes = elements(component.avatar(profileUser));
     assert.equal(nodes.some(node => node.type === "Text"), false);

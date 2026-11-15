@@ -38,7 +38,7 @@ export default function ShopScreen() {
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
       onRefresh={resource.refresh}
-      refreshing={!!resource.data && resource.loading}
+      refreshing={resource.refreshing}
       ListHeaderComponent={<View style={{ gap: 18, paddingBottom: 18 }}>
         <View style={home.brand}>
           <Image source={require('@/assets/images/shopyethu-icon.png')} style={home.icon} />

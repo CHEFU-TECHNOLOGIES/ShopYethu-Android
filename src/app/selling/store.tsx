@@ -12,7 +12,7 @@ import { toast } from '@/lib/toast';
 
 export default function StoreEditor() {
   const { session } = useAuth();
-  const resource = useSellerInventory();
+  const resource = useSellerInventory(true, 60_000);
   const initial = resource.data?.store;
   const [form, setForm] = useDraft(`${session?.user.uid}:${initial?.id || 'store'}`, { name: initial?.name || '', description: initial?.description || '', area: initial?.area || '' });
   const [busy, setBusy] = useState(false), [notice, setNotice] = useState(''), [error, setError] = useState('');

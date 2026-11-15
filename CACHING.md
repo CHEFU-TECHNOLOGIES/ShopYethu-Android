@@ -10,21 +10,21 @@ Previously, `useResource` kept each screen's response in its own React state. Mo
 
 The cache provides shared in-flight requests, stale-while-revalidate, explicit invalidation, cancellation, unchanged-response identity preservation, and up to two retries for transient GET failures. Retry delays start at 500 ms and double with jitter. Failed reads have a 30-second automatic retry cooldown; explicit Retry bypasses it. Mutations are never automatically retried by this cache.
 
-Only focused screens count as active readers. Focus and foreground events revalidate stale queries. Fresh tab switches and minimizing/restoring the browser or app do not force new requests. Backgrounding cancels query requests and flushes changed snapshots. Obsolete searches are aborted once their last focused consumer leaves, with a brief grace period for remounts. There are no closed-app background jobs, order polling timers or push/WebSocket integrations.
+Only focused screens count as active readers. Focus and foreground events revalidate stale queries, using the windows below. Ordinary account visits do not recheck a retained seller-status snapshot on a short timer. Opening the seller application or product editor requests status/product details only if the shared snapshot is older than one minute; closing that screen removes its stricter freshness requirement. This is a check when a relevant screen is used, not a one-minute polling timer. Explicit refresh and permission-rejection invalidation can always request current data. Backgrounding cancels query requests and flushes changed snapshots. Obsolete searches are aborted once their last focused consumer leaves, with a brief grace period for remounts. There are no closed-app background jobs, order polling timers or push/WebSocket integrations.
 
 ## Strategies
 
 | Data | Fresh for | Behaviour |
 | --- | --- | --- |
 | Product categories | App configuration | Existing bundled categories require no API read. |
-| Catalogue/search pages | 2 minutes | Shared public cache, 350 ms search debounce, cursor pages. |
-| Public product details | 1 minute | Prefetched on product press; stock and prices remain estimates. |
-| Public storefront | 5 minutes | Cached metadata and cursor pages; cached cards stay mounted during refresh. |
-| Seller application/account status | 5 minutes | Refresh on stale focus/foreground or explicit refresh; backend permissions remain current. |
-| Seller inventory/settings/owned product | 30 seconds | Shared private snapshot; successful writes update relevant records from the response. |
-| Orders | 30 seconds with active orders, otherwise 2 minutes | Revalidate on focus/foreground and pull to refresh. Collected/completed/cancelled orders are terminal. |
+| Catalogue/search pages | 30 minutes | Shared public cache, 350 ms search debounce, cursor pages. |
+| Public product details | 15 minutes | Prefetched on product press; checkout rechecks authoritative stock/prices. |
+| Public storefront | 1 hour | Cached metadata and cursor pages; cached cards stay mounted during refresh. |
+| Seller application/account status | Until a relevant action, invalidation, manual refresh or 7-day retention limit | No routine 5-minute account checks. Application/product screens request a check if status is older than one minute. |
+| Seller inventory/settings/owned product | 15 minutes | Successful writes update relevant records from their response. Editing a product uses a one-minute freshness limit; saving/uploading always passes current backend permission/ownership checks. |
+| Orders | 2 minutes for seller inboxes, active or empty lists; 6 hours for all-terminal buyer histories | Revalidate on focus/foreground or manual refresh. Seller inboxes can discover new orders even if their previous orders are complete. Collected/completed/cancelled orders are terminal. |
 | Customer identity | Existing encrypted auth session | No new profile endpoint reads were introduced. |
-| Marketplace config | 1 hour | Server still decides whether an order/fulfilment action is allowed. |
+| Marketplace config | 24 hours | Server still decides whether an order/fulfilment action is allowed. |
 | Basket | Immediate local state | Encrypted, debounced device persistence; no server cart endpoint or per-quantity API writes. |
 | Images | Native memory/disk image cache | Uses installed `expo-image`; versioned URLs identify changed assets. |
 
@@ -32,11 +32,13 @@ Favorites, product reviews and a notification inbox have no corresponding market
 
 ## Persistence and bounds
 
-`query-persistence.ts` reuses the existing serialized, two-slot chunked SecureStore utility. Public and private snapshots each have a 30,000-character budget. Complete recent snapshots that fit are saved; oversized responses are omitted rather than truncated. Writes are coalesced for ten seconds, flushed on backgrounding and skipped if unchanged. There are no device writes just for reading a cache entry.
+`query-persistence.ts` reuses the existing serialized, two-slot chunked SecureStore utility. Public and private snapshots each have a 30,000-character budget. Seller status and configuration get priority, then complete recent snapshots that fit are saved; oversized responses are omitted rather than truncated. Writes are coalesced for ten seconds, flushed on backgrounding and skipped if unchanged. There are no server writes or device writes just for reading a cache entry.
 
 Encrypted private persistence includes the UID and schema version. Switching accounts or signing out immediately drops protected memory snapshots and schedules deletion of the protected disk namespace. Old in-flight results cannot restore that account's data. Token refresh for the same UID preserves cache identity. Public entries survive account switches.
 
-Public snapshots expire after one day; private snapshots after one hour. These are offline retention limits, not freshness windows or authorization grants. Expired, incompatible and future-dated persisted records are ignored. The memory collector targets at most 60 entries and approximately 1.5 MB of serialized payload, evicting unobserved inactive entries. Currently observed queries are retained; very large active responses can exceed that target.
+Confirmed application, store and product changes update the shared snapshots without a follow-up GET. Order placement/cancellation invalidates stock-dependent snapshots. Preparing, ready and payment updates update loaded orders without invalidating catalogue/inventory stock that has not changed. A staff approval made on another device appears when the applicant opens the application screen or explicitly refreshes; there is no push invalidation. The cached seller status is display data: uploading/saving products, editing a store and changing orders still require fresh backend ownership/status validation, and checkout still checks prices and stock transactionally.
+
+Public snapshots and seller status expire after seven days; other private snapshots after one day. These are retention limits, not freshness windows or authorization grants. Expired, incompatible and future-dated persisted records are ignored. The memory collector targets at most 60 entries and approximately 1.5 MB of serialized payload, evicting unobserved inactive entries only when a budget is exceeded; it no longer evicts valid snapshots simply because they were idle for thirty minutes. Currently observed queries are retained; very large active responses can exceed that target. Cache eviction, missing storage or an oversized snapshot can still require an earlier fetch.
 
 The basket has its own encrypted document because it contains local user intent, not a duplicate server-query cache. It stores compact product snapshots, quantities and any unresolved order attempt. Photos/descriptions are omitted from basket persistence to keep storage small. Basket changes coalesce for 500 ms and flush on backgrounding. There is no cross-device basket synchronization.
 
@@ -44,7 +46,7 @@ An order's key and exact body are written before the first POST. Uncertain resul
 
 ## UI, images and feedback
 
-Home and storefront use virtualized two-column lists, 24-record cursor pages and explicit Load more. Buyer order cards are also virtualized. Catalogue first loads have a card skeleton; previously loaded results stay visible during refresh. Generic resource states show a saved-data timestamp after a refresh error. Seller status retains its existing skeleton and compact background indicator.
+Home and storefront use virtualized two-column lists, 24-record cursor pages and explicit Load more. Buyer order cards are also virtualized. Catalogue first loads have a card skeleton; previously loaded results stay visible during refresh. Generic resource states show a saved-data timestamp after a refresh error. Seller status shows a skeleton only without cached data. Stale background checks keep the existing status visible without a spinner; the compact indicator and header spinner appear only for an explicit refresh. `useResource.refreshing` tracks that user action separately from its shared query's `loading` state.
 
 `MarketImage` uses Expo Image memory/disk caching, a neutral loading background, recycling keys and a short transition. Catalogue thumbnails request a 480px Cloudinary variant, inventory thumbnails 240px, and product galleries 960px, with automatic quality/format. Other image hosts and signed Cloudinary URLs are preserved. Native image cache eviction is managed by the platform library. Account avatars retain their existing initials/error fallback.
 

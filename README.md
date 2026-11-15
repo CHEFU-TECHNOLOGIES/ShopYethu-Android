@@ -62,21 +62,31 @@ Backend records live in Firestore collections `shopyethu_applications`, `shopyet
 | Listing/order reports | `POST /shopyethu/reports` |
 | Staff review/suspension | `GET/PUT /shopyethu/admin/applications/:uid`, `GET/PUT /admin/sellers/:uid` |
 
-Account, seller applications and Add product share a five-minute memory cache for
-`GET /shopyethu/me`. Concurrent consumers share one request. Returning to a screen
-within that period does not reread status; after expiry, the next screen focus
-refreshes in the background while keeping the previous status visible. There is
-no polling, expiry timer or app-resume listener. Use the Account refresh action or
-pull to refresh the application to check an admin decision immediately.
+Account, seller applications and Add product share an account-scoped, encrypted
+cache for `GET /shopyethu/me`. Ordinary account visits reuse that status for up to
+seven days, subject to storage/memory budgets. Opening the seller application or
+product editor requests current details if the snapshot is older than one minute;
+this is a check when needed, not a polling timer. Concurrent consumers share one
+request. Use the Account refresh action or pull to refresh the application to
+check an admin decision immediately. Background checks keep cached content visible
+without a spinner; explicit refresh shows progress.
 
 Successful application submissions and storefront saves update the cache from
 the server response without another GET. Sign-out and account changes clear it;
 old requests cannot restore a previous account's data. Token refresh for the same
-user keeps the cache. It is not persisted: restarting the app makes a fresh read.
+user keeps the cache. Restarting restores encrypted snapshots that fit the cache
+budget, avoiding another status read when the saved snapshot is still valid.
 Connection failures preserve the last known status and offer Retry, with a
 30-second cooldown for automatic retries. Explicit Refresh bypasses the cooldown.
 Authentication/permission failures clear the cached data. The cache only controls
 display; every seller mutation still checks current permissions on the backend.
+
+Catalogue pages cache for thirty minutes, product details and inventory for fifteen
+minutes, storefronts for an hour and configuration for a day. Incoming/active orders
+check on a stale screen visit after two minutes; terminal buyer histories cache for
+six hours. Successful local changes update or invalidate related snapshots. See
+`CACHING.md` for policies, retention limits and the effect of admin changes on
+another device.
 
 The admin website's Applications, Sellers and Complaints views now read the real endpoints. Staff can approve, request more information, reject, suspend/reactivate, and inspect submitted reports. Customer-facing reasons appear in the mobile application. Admin permissions are checked from the current central user profile; seller actions check current store status and ownership on the server, including direct/stale requests. Approval is never granted by the phone.
 

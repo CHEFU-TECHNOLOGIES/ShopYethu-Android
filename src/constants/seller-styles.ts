@@ -2,15 +2,15 @@ import { StyleSheet } from 'react-native';
 import { palette } from './market-theme';
 
 export const sellerStyles = StyleSheet.create({
-  store: { backgroundColor: palette.brand, padding: 22, borderRadius: 24, gap: 18 },
-  storeName: { fontFamily: 'serif', fontSize: 28, lineHeight: 35, color: '#FFFFFF' },
-  storeArea: { fontSize: 14, color: '#DDE7DF' },
+  store: { backgroundColor: palette.brand, padding: 16, borderRadius: 20, gap: 12 },
+  storeName: { fontFamily: 'serif', fontSize: 22, lineHeight: 28, color: '#FFFFFF' },
+  storeArea: { fontSize: 12, lineHeight: 17, color: '#DDE7DF' },
   storeStatus: { color: '#DDE7DF', fontWeight: '600', fontSize: 12 },
-  storeAction: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: '#365F4D' },
-  stats: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#557563', paddingTop: 17 },
-  stat: { flex: 1, gap: 4 },
-  statNumber: { color: '#FFFFFF', fontSize: 23, fontWeight: '600' },
-  statLabel: { color: '#DDE7DF', fontSize: 12 },
+  storeAction: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: '#365F4D' },
+  stats: { flexDirection: 'row', gap: 6, borderTopWidth: 1, borderTopColor: '#557563', paddingTop: 12 },
+  stat: { flex: 1, minWidth: 0, gap: 2 },
+  statNumber: { color: '#FFFFFF', fontSize: 20, lineHeight: 25, fontWeight: '600' },
+  statLabel: { color: '#DDE7DF', fontSize: 11, lineHeight: 16 },
   actions: { flexDirection: 'row', gap: 12 },
   action: { flex: 1 },
   tabs: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

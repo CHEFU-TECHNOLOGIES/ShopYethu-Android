@@ -8,6 +8,7 @@ import { canonicalPath, publicQuery } from './query-policy';
 import { onApiMutation, onApiRejection } from './api-events';
 import { toast, toastStore } from './toast';
 import { readSellerAccount } from './seller-account-cache';
+import { cacheSavedProduct, cacheSavedStore, invalidateOrderStock } from './market-cache-updates';
 import type { Order, Product, SellerAccount, SellerApplication, Storefront } from '@/types/marketplace';
 
 export const marketCache = createQueryCache(async (path, signal, scope) => {
@@ -24,10 +25,10 @@ export function activateMarketCache(uid: string | null) {
 }
 subscribe(session => { void activateMarketCache(session?.user.uid || null); });
 export function queryScope(path: string, uid: string | null) { return publicQuery(path) ? 'public' : uid || 'guest'; }
-export async function loadMarketQuery(path: string, scope: string, force = false) {
+export async function loadMarketQuery(path: string, scope: string, force = false, maxStaleMs?: number) {
   await activateMarketCache(currentSession()?.user.uid || null);
   if (scope !== 'public' && scope !== identity) return;
-  return marketCache.load(canonicalPath(path), scope, force);
+  return marketCache.load(canonicalPath(path), scope, force, maxStaleMs);
 }
 export const flushMarketCache = () => persistence.flush();
 export function prefetchProduct(id: string) { void loadMarketQuery(`/products/${encodeURIComponent(id)}`, 'public'); }
@@ -50,19 +51,21 @@ onApiMutation(({ path, data }) => {
     const store = data as Storefront;
     marketCache.set<SellerAccount>('/me', uid, current => ({ ...current, store }), false);
     marketCache.set<{ store: Storefront; products: Product[] }>('/seller/store', uid, current => ({ ...current, store }), false);
-    marketCache.invalidate(key => key.startsWith('/stores/') || key.startsWith('/products'));
+    cacheSavedStore(marketCache, store);
   } else if (/^\/seller\/products(?:\/|$)/.test(path)) {
     const product = data as Product;
     toast.success(product.published ? 'Your product is published.' : 'Draft saved.');
-    marketCache.invalidate(key => key === '/seller/products/' + product.id, true);
     marketCache.set<{ store: Storefront; products: Product[] }>('/seller/store', uid, current => ({ ...current,
       products: [product, ...current.products.filter(item => item.id !== product.id)] }), false);
-    marketCache.invalidate(key => key.startsWith('/products') || key.split('?')[0] === `/stores/${product.storeId}`);
+    cacheSavedProduct(marketCache, uid, product);
   } else if (path === '/orders' || path.startsWith('/seller/orders/')) {
     toast.success(path === '/orders' ? 'Order placed. Payment is due on collection.' : path.endsWith('/payment') ? 'Payment confirmed as received.' : 'Order status updated.');
     const order = data as Order;
     if (order.buyerUid === uid) updateOrder('/orders', uid, order);
     if (order.sellerUid === uid) updateOrder('/seller/orders', uid, order);
-    marketCache.invalidate(key => key.startsWith('/products') || key.split('?')[0] === `/stores/${order.storeId}` || key === '/seller/store');
+    // Preparing/ready/payment updates do not change stock or catalogue contents.
+    if (path === '/orders' || order.status === 'cancelled') {
+      invalidateOrderStock(marketCache, uid, order);
+    }
   } else if (path === '/reports') toast.success('Your report was received.');
 });

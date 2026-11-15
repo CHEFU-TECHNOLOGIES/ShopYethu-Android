@@ -2,9 +2,9 @@ import { Button } from "@/components/market/Primitives";
 import { profile } from "@/constants/account-profile-styles";
 import { palette } from "@/constants/market-theme";
 import type { Session } from "@/lib/session";
-import Feather from "@expo/vector-icons/Feather";
 import { useState } from "react";
-import { ActivityIndicator, Image, Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
+import { Image } from "expo-image";
 
 function AccountAvatar({
     picture,
@@ -32,7 +32,9 @@ function AccountAvatar({
                 <Image
                     source={{ uri }}
                     style={[profile.avatarPhoto, !loaded && { opacity: 0 }]}
-                    resizeMode="cover"
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                    recyclingKey={uri}
                     accessible={false}
                     onLoad={() => setLoaded(true)}
                     onError={() => setFailed(true)}
@@ -82,21 +84,16 @@ export function AccountIdentity({ user }: { user: Session["user"] }) {
                     >
                         {name}
                     </Text>
+                    <Text
+                        style={profile.email}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                        accessibilityLabel={`Email address, ${email}`}
+                        selectable
+                    >
+                        {email}
+                    </Text>
                 </View>
-            </View>
-            <View style={profile.emailRow}>
-                <View style={profile.emailIcon} accessible={false} importantForAccessibility="no-hide-descendants">
-                    <Feather name="mail" size={15} color={palette.brand} />
-                </View>
-                <Text
-                    style={profile.email}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                    accessibilityLabel={`Email address, ${email}`}
-                    selectable
-                >
-                    {email}
-                </Text>
             </View>
         </View>
     );

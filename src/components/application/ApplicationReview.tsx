@@ -6,7 +6,7 @@ import type { ApplicationFieldsProps } from './ApplicationFields';
 
 export function ApplicationReview({ form, email, disabled, update, edit, requested }: ApplicationFieldsProps & { edit: (step: number) => void; requested?: string }) {
   const sections = [
-    { title: 'Business', lines: [form.businessName, form.businessType === 'individual' ? 'Individual / sole trader' : 'Registered business', `Operating area: ${form.area}`] },
+    { title: 'Business', lines: [form.businessName, form.businessType === 'individual' ? 'Individual / sole trader' : 'Registered business', ...(form.businessType === 'registered-business' ? [`CIPC certificate: ${form.cipcCertificateName || 'Attached'}`] : []), `Operating area: ${form.area}`] },
     { title: 'Products', lines: [form.categories.join(' · '), form.plans] },
     { title: 'Contact & pickup', lines: [form.contactName, email, form.phone, form.phoneConfirmed ? 'Business contact number confirmed by you' : 'Contact number needs confirmation', form.collectionOffered ? `Collection: ${form.collectionArea}` : 'No collection', ...(form.collectionOffered ? [form.pickupHours] : [])] },
   ];

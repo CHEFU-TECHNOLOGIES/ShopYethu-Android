@@ -12,16 +12,27 @@ export function canonicalPath(path: string) {
   return pathname + (params.size ? `?${params}` : '');
 }
 
-export function queryPolicy(path: string, data?: unknown) {
-  let staleMs = 120_000;
-  if (path === '/me') staleMs = 300_000;
-  else if (path === '/config') staleMs = 3_600_000;
-  else if (path.startsWith('/stores/')) staleMs = 300_000;
-  else if (path.startsWith('/products/')) staleMs = 60_000;
-  else if (path.startsWith('/seller')) staleMs = 30_000;
-  if (path.startsWith('/orders') || path === '/seller/orders') {
+export function queryPolicy(path: string) {
+  const minute = 60_000, hour = 60 * minute, day = 24 * hour;
+  const pathname = path.split('?')[0];
+  let staleMs = day, maxAgeMs = 7 * day;
+  if (pathname === '/me') staleMs = Infinity;
+  else if (pathname === '/config') { staleMs = 7 * day; maxAgeMs = 30 * day; }
+  else if (pathname === '/products') staleMs = 6 * hour;
+  return { staleMs, maxAgeMs };
+}
+
+// A screen's use of saved data can need a newer snapshot than ordinary reuse.
+// These checks run on focus/user actions, never on an idle timer or mere resume.
+export function queryUsage(path: string, data?: unknown) {
+  const minute = 60_000, hour = 60 * minute, pathname = path.split('?')[0];
+  if (pathname.startsWith('/products/')) return 15 * minute;
+  if (pathname.startsWith('/stores/')) return 6 * hour;
+  if (pathname === '/seller/store') return hour;
+  if (pathname.startsWith('/seller/products/')) return minute;
+  if (pathname === '/orders' || pathname === '/seller/orders') {
     const orders = (data as { orders?: { status: string }[] } | undefined)?.orders;
-    staleMs = orders?.some(order => !['completed', 'collected', 'cancelled'].includes(order.status)) ? 30_000 : 120_000;
+    return pathname === '/seller/orders' || !orders?.length || orders.some(order => !['completed', 'collected', 'cancelled'].includes(order.status)) ? 2 * minute : 24 * hour;
   }
-  return { staleMs, maxAgeMs: publicQuery(path) ? 86_400_000 : 3_600_000 };
+  return queryPolicy(path).staleMs;
 }

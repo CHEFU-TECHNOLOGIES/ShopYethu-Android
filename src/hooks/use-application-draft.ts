@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { clearApplicationDraft, readApplicationDraft, writeApplicationDraft } from '@/lib/application-drafts';
 import { initialApplication, isApplicationDraft, type ApplicationForm } from '@/lib/application-form';
@@ -16,6 +16,7 @@ export function useApplicationDraft(uid: string, name: string, previous: SellerA
     const [loadAttempt, setLoadAttempt] = useState(0);
     const active = useRef(true), mounted = useRef(false), dirty = useRef(false);
     const baseUpdatedAt = previous?.updatedAt || '';
+    const initial = useMemo(() => initialApplication(previous, name), [previous, name]);
     const snapshot = useRef({ form, step });
   useLayoutEffect(() => { snapshot.current = { form, step }; }, [form, step]);
 
@@ -43,7 +44,7 @@ export function useApplicationDraft(uid: string, name: string, previous: SellerA
             if (cancelled) return;
             if (draft !== null && !isApplicationDraft(draft)) throw new Error('Invalid draft');
             if (draft && draft.baseUpdatedAt === baseUpdatedAt) {
-                setForm(draft.form); setStep(draft.step); setSavedAt(draft.savedAt);
+                setForm({ ...initial, ...draft.form }); setStep(draft.step); setSavedAt(draft.savedAt);
             }
             setReady(true);
         }).catch(() => {
@@ -51,7 +52,7 @@ export function useApplicationDraft(uid: string, name: string, previous: SellerA
         });
         const listener = AppState.addEventListener('change', state => { if (state !== 'active') void save(); });
         return () => { cancelled = true; mounted.current = false; listener.remove(); void save(); };
-    }, [uid, baseUpdatedAt, save, loadAttempt]);
+    }, [uid, baseUpdatedAt, save, loadAttempt, initial]);
 
     useEffect(() => {
         if (!ready || !dirty.current || !active.current) return;

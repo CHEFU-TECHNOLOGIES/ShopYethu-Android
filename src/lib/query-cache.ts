@@ -5,6 +5,7 @@ export type SavedQuery = { path: string; scope: string; data: unknown; updatedAt
 type Entry = {
   path: string; scope: string; state: QuerySnapshot; listeners: Set<() => void>;
   active: number; touched: number; retryAt: number; generation: number;
+  observers: Set<{ maxStaleMs?: number }>;
   controller?: AbortController; pending?: Promise<void>;
 };
 const EMPTY: QuerySnapshot = Object.freeze({ data: null, error: '', loading: false, updatedAt: null });
@@ -35,7 +36,7 @@ export function createQueryCache(
     const id = key(path, scope);
     let entry = entries.get(id);
     if (!entry) {
-      entry = { path: canonicalPath(path), scope, state: EMPTY, listeners: new Set(), active: 0, touched: now(), retryAt: 0, generation: 0 };
+      entry = { path: canonicalPath(path), scope, state: EMPTY, listeners: new Set(), active: 0, observers: new Set(), touched: now(), retryAt: 0, generation: 0 };
       entries.set(id, entry);
     }
     entry.touched = now();
@@ -50,16 +51,17 @@ export function createQueryCache(
     const idle = [...entries.values()].filter(entry => !entry.active && !entry.pending && !entry.listeners.size).sort((a, b) => a.touched - b.touched);
     let bytes = [...entries.values()].reduce((sum, entry) => sum + JSON.stringify(entry.state.data).length * 2, 0);
     for (const entry of idle) {
-      if (entries.size <= (options.maxEntries || 60) && bytes <= (options.maxBytes || 1_500_000) && now() - entry.touched < 1_800_000) break;
+      if (entries.size <= (options.maxEntries || 60) && bytes <= (options.maxBytes || 1_500_000)) break;
       bytes -= JSON.stringify(entry.state.data).length * 2;
       entries.delete(key(entry.path, entry.scope));
     }
   }
-  async function load(path: string, scope: string, force = false) {
+  async function load(path: string, scope: string, force = false, maxStaleMs?: number) {
     const entry = ensure(path, scope);
     if (entry.pending) return entry.pending;
-    const policy = queryPolicy(entry.path, entry.state.data);
-    if (!force && (now() < entry.retryAt || entry.state.updatedAt !== null && now() - entry.state.updatedAt < policy.staleMs)) return;
+    const policy = queryPolicy(entry.path);
+    const freshFor = Math.min(policy.staleMs, policy.maxAgeMs, maxStaleMs ?? Infinity);
+    if (!force && (now() < entry.retryAt || !entry.state.error && entry.state.updatedAt !== null && now() - entry.state.updatedAt < freshFor)) return;
     const controller = new AbortController(), generation = entry.generation;
     entry.controller = controller;
     entry.state = { ...entry.state, loading: true, error: '' }; emit(entry);
@@ -106,10 +108,11 @@ export function createQueryCache(
       const entry = ensure(path, scope); entry.listeners.add(listener);
       return () => { entry.listeners.delete(listener); collect(); };
     },
-    observe(path: string, scope: string) {
-      const entry = ensure(path, scope); entry.active++;
+    observe(path: string, scope: string, maxStaleMs?: number) {
+      const entry = ensure(path, scope), observer = { maxStaleMs };
+      entry.observers.add(observer); entry.active = entry.observers.size;
       return () => {
-        entry.active = Math.max(0, entry.active - 1);
+        entry.observers.delete(observer); entry.active = entry.observers.size;
         setTimeout(() => {
           if (!entry.active && entry.pending) {
             entry.generation++; entry.controller?.abort(); entry.pending = undefined;
@@ -121,8 +124,13 @@ export function createQueryCache(
     },
     refreshActive(reconnected = false) {
       for (const entry of entries.values()) if (entry.active) {
+        // Resume/reconnection repairs failed or invalidated reads. Retained data
+        // is checked at its next screen use or explicit refresh, not every resume.
+        if (entry.state.data !== null && !entry.state.error && entry.state.updatedAt !== null &&
+          now() - entry.state.updatedAt < queryPolicy(entry.path).maxAgeMs) continue;
         if (reconnected) entry.retryAt = 0;
-        void load(entry.path, entry.scope);
+        const maxStaleMs = Math.min(...[...entry.observers].map(observer => observer.maxStaleMs ?? Infinity));
+        void load(entry.path, entry.scope, false, maxStaleMs);
       }
     },
     cancelAll() {
@@ -138,6 +146,17 @@ export function createQueryCache(
       const data = typeof update === 'function' ? (update as (data: T) => T)(entry.state.data as T) : update;
       entry.state = { data, error: '', loading: false, updatedAt: fresh ? now() : entry.state.updatedAt };
       entry.retryAt = 0; emit(entry, true); collect();
+    },
+    patch<T>(predicate: (path: string, scope: string) => boolean, update: (data: T) => T) {
+      for (const entry of entries.values()) if (entry.state.data !== null && predicate(entry.path, entry.scope)) {
+        const data = update(entry.state.data as T);
+        if (data === entry.state.data) continue;
+        entry.generation++; entry.controller?.abort(); entry.pending = undefined;
+        // Partial responses do not renew freshness for the rest of a snapshot.
+        entry.state = { ...entry.state, data, error: '', loading: false };
+        entry.retryAt = 0; emit(entry, true);
+      }
+      collect();
     },
     invalidate(predicate: (path: string, scope: string) => boolean, remove = false) {
       for (const entry of entries.values()) if (predicate(entry.path, entry.scope)) {

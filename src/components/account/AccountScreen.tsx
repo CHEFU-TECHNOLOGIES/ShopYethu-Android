@@ -5,6 +5,7 @@ import Feather from "@expo/vector-icons/Feather";
 import { Page } from "@/components/market/Primitives";
 import { AccountRow, AccountSection } from "./AccountMenu";
 import { AccountIdentity, AccountSignIn } from "./AccountProfile";
+import { SignOutConfirmation } from "./SignOutConfirmation";
 import { SellerAccountSection } from "./SellerAccountSection";
 import { account } from "@/constants/account-styles";
 import { palette } from "@/constants/market-theme";
@@ -16,6 +17,7 @@ export default function AccountScreen() {
     const resource = useSellerAccount();
     const signOutLock = useRef(false);
     const [signingOut, setSigningOut] = useState(false);
+    const [confirmingSignOut, setConfirmingSignOut] = useState(false);
     const [actionError, setActionError] = useState("");
     const authBusy = busy || signingOut;
 
@@ -52,22 +54,22 @@ export default function AccountScreen() {
                         <Pressable
                             accessibilityRole="button"
                             accessibilityLabel={
-                                resource.loading
+                                resource.refreshing
                                     ? "Refreshing account and seller status"
                                     : "Refresh account and seller status"
                             }
                             accessibilityState={{
-                                disabled: resource.loading,
-                                busy: resource.loading,
+                                disabled: resource.loading || resource.refreshing,
+                                busy: resource.refreshing,
                             }}
-                            disabled={resource.loading}
+                            disabled={resource.loading || resource.refreshing}
                             onPress={resource.refresh}
                             style={({ pressed }) => [
                                 account.refresh,
                                 pressed && account.pressed,
                             ]}
                         >
-                            {resource.loading ? (
+                            {resource.refreshing ? (
                                 <ActivityIndicator
                                     size="small"
                                     color={palette.brand}
@@ -159,7 +161,7 @@ export default function AccountScreen() {
                                     title={
                                         signingOut ? "Signing out…" : "Sign out"
                                     }
-                                    onPress={() => void handleSignOut()}
+                                    onPress={() => setConfirmingSignOut(true)}
                                     disabled={authBusy}
                                     danger
                                     trailingIcon={null}
@@ -170,6 +172,14 @@ export default function AccountScreen() {
                 </>
             )}
         </Page>
+        <SignOutConfirmation
+            visible={confirmingSignOut}
+            onCancel={() => setConfirmingSignOut(false)}
+            onConfirm={() => {
+                setConfirmingSignOut(false);
+                void handleSignOut();
+            }}
+        />
         </View>
     );
 }

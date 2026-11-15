@@ -1,16 +1,18 @@
-import { Text, View } from "react-native";
-import { Field } from "@/components/market/Primitives";
+import { Button, Field } from "@/components/market/Primitives";
 import { palette, ui } from "@/constants/market-theme";
 import {
     applicationCategories,
     type ApplicationForm,
 } from "@/lib/application-form";
+import { ActivityIndicator, Text, View } from "react-native";
 import { CategoryChoices, Choice } from "./ApplicationChoices";
 
 export type ApplicationFieldsProps = {
     form: ApplicationForm;
     disabled: boolean;
     email: string;
+    uploadProof?: () => Promise<void>;
+    uploadingProof?: boolean;
     update: <K extends keyof ApplicationForm>(
         field: K,
         value: ApplicationForm[K],
@@ -21,9 +23,12 @@ export function BusinessFields({
     form,
     update,
     disabled,
+    uploadProof,
+    uploadingProof,
 }: ApplicationFieldsProps) {
     return (
         <>
+           
             <Text style={ui.subtitle}>
                 A few details about the business you want to grow.
             </Text>
@@ -40,6 +45,42 @@ export function BusinessFields({
                 onPress={() => update("businessType", "registered-business")}
                 disabled={disabled}
             />
+            {form.businessType === "registered-business" && (
+                <View style={{ gap: 8 }}>
+                    <Text style={ui.heading}>Registration certificate</Text>
+                    <Text style={ui.small}>
+                        Upload proof of registration as a PDF, JPG, PNG or WebP (up to 2 MB). Your document is stored privately for review.
+                    </Text>
+                    <Button
+                        title={
+                            uploadingProof
+                                ? "Uploading certificate…"
+                                : form.cipcCertificateId
+                                  ? "Replace certificate"
+                                  : "Upload certificate"
+                        }
+                        secondary
+                        disabled={disabled || uploadingProof}
+                        onPress={() => void uploadProof?.()}
+                        trailingIcon={
+                            uploadingProof ? (
+                                <ActivityIndicator
+                                    size="small"
+                                    color={palette.brand}
+                                    accessible={false}
+                                />
+                            ) : undefined
+                        }
+                    />
+                    {form.cipcCertificateId ? (
+                        <Text style={ui.small}>
+                            Attached: {form.cipcCertificateName || "CIPC certificate"}
+                        </Text>
+                    ) : (
+                        <Text style={ui.small}>Required for registered businesses.</Text>
+                    )}
+                </View>
+            )}
             <Field
                 label="Business or trading name"
                 value={form.businessName}

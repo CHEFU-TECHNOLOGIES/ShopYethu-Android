@@ -20,7 +20,9 @@ export function createQueryPersistence(cache: Cache, storage: Storage) {
   }
   function envelope(target: string): Envelope {
     const result: Envelope = { version: 1, scope: target, rows: [] };
-    for (const row of cache.export(target)) {
+    const rows = cache.export(target).sort((a, b) =>
+      Number(b.path === '/me' || b.path === '/config') - Number(a.path === '/me' || a.path === '/config'));
+    for (const row of rows) {
       // Save complete snapshots only; truncating a list would misrepresent its contents.
       if (JSON.stringify({ ...result, rows: [...result.rows, row] }).length <= 30_000) result.rows.push(row);
     }

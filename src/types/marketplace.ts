@@ -6,6 +6,7 @@ export type SellerApplication = {
   phone: string; area: string; plans: string; response: string; status: ApplicationStatus;
   reason: string; updatedAt: string;
   businessType?: 'individual' | 'registered-business'; categories?: string[];
+  cipcCertificateId?: string; cipcCertificateFormat?: 'pdf' | 'jpg' | 'png' | 'webp';
   phoneConfirmed?: boolean; contactConfirmedAt?: string;
   collectionOffered?: boolean; collectionArea?: string; pickupHours?: string;
   createdAt?: string; history?: ApplicationEvent[];

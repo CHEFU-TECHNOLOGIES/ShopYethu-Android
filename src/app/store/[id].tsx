@@ -48,7 +48,7 @@ export default function StoreScreen() {
                 />
             )}
             onRefresh={resource.refresh}
-            refreshing={!!resource.data && resource.loading}
+            refreshing={resource.refreshing}
             header={
                 <>
                     <ResourceState

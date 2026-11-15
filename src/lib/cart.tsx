@@ -9,6 +9,7 @@ import { api, ApiError } from './api';
 import { createApplicationDraftStore } from './application-draft-store';
 import { createCartStore } from './cart-store';
 import { toast } from './toast';
+import { productForUse } from './product-cache';
 export type { CartLine } from './cart-store';
 
 const basket = createCartStore(createApplicationDraftStore(SecureStore));
@@ -50,7 +51,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   async function refreshPrices() {
     if (locked.current || state.attempt) return;
     const revision = sessionRevision(), original = basket.get().items;
-    const updated = await Promise.all(original.map(async line => ({ ...line, product: (await api<{ product: Product }>(`/products/${line.product.id}`)).product })));
+    const updated = await Promise.all(original.map(async line => ({ ...line, product: await productForUse(line.product.id, true) })));
     if (revision !== sessionRevision() || original !== basket.get().items) return;
     basket.change(() => updated); toast.success('Prices and availability updated.');
   }

@@ -24,15 +24,7 @@ export const profile = StyleSheet.create({
     identity: { flex: 1, minWidth: 0, gap: 6 },
     profileLabel: { color: palette.muted, fontSize: 12, lineHeight: 17, fontWeight: "500" },
     name: { color: palette.ink, fontSize: 22, lineHeight: 29, fontWeight: "700", letterSpacing: -0.5 },
-    emailRow: {
-        flexDirection: "row", alignItems: "center", gap: 10, marginTop: 20,
-        paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: palette.line,
-    },
-    emailIcon: {
-        width: 30, height: 30, borderRadius: 10, backgroundColor: palette.soft,
-        alignItems: "center", justifyContent: "center", flexShrink: 0,
-    },
-    email: { flex: 1, minWidth: 0, color: palette.muted, fontSize: 13, lineHeight: 20 },
+    email: { minWidth: 0, color: palette.muted, fontSize: 13, lineHeight: 20 },
     signIn: {
         alignItems: "stretch",
         paddingTop: 24,

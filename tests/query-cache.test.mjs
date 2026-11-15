@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { loadTs } from './load-ts.mjs';
 const { createQueryCache } = loadTs('src/lib/query-cache.ts');
 const { createQueryPersistence } = loadTs('src/lib/query-persistence.ts');
-const { canonicalPath, queryPolicy } = loadTs('src/lib/query-policy.ts');
+const { canonicalPath, queryPolicy, queryUsage } = loadTs('src/lib/query-policy.ts');
 const { createCartStore } = loadTs('src/lib/cart-store.ts');
 const { createToastStore } = loadTs('src/lib/toast.ts');
 const tick = () => new Promise(setImmediate);
@@ -23,8 +23,8 @@ function storage() {
 test('stable keys normalize empty filters, query order, case and old order cache busters', () => {
   assert.equal(canonicalPath('/products?q=Shoes&category=&page=1'), '/products?page=1&q=shoes');
   assert.equal(canonicalPath('/orders?updated=abc'), '/orders');
-  assert.equal(queryPolicy('/me').staleMs, 300000);
-  assert.equal(queryPolicy('/orders', { orders: [{ status: 'placed' }] }).staleMs, 30000);
+  assert.equal(queryPolicy('/me').staleMs, Infinity);
+  assert.equal(queryUsage('/orders', { orders: [{ status: 'placed' }] }), 120000);
 });
 test('three simultaneous consumers and twenty repeat visits use one GET, not twenty-three', async () => {
   const h = setup();
@@ -32,10 +32,10 @@ test('three simultaneous consumers and twenty repeat visits use one GET, not twe
   for (let visit = 0; visit < 20; visit++) await h.cache.load('/products', 'public');
   assert.equal(h.calls(), 1);
   assert.ok(h.cache.get('/products', 'public').data);
-  h.advance(120000); await h.cache.load('/products', 'public'); assert.equal(h.calls(), 2);
+  h.advance(queryPolicy('/products').staleMs); await h.cache.load('/products', 'public'); assert.equal(h.calls(), 2);
 });
 test('cached data stays visible during an expired background read and survives network failure', async () => {
-  const h = setup(); await h.cache.load('/products', 'public'); h.advance(120000);
+  const h = setup(); await h.cache.load('/products', 'public'); h.advance(queryPolicy('/products').staleMs);
   let finish; h.respond(() => new Promise(resolve => { finish = resolve; }));
   const request = h.cache.load('/products', 'public'); await tick();
   assert.ok(h.cache.get('/products', 'public').data); assert.equal(h.cache.get('/products', 'public').loading, true);
@@ -83,9 +83,11 @@ test('targeted invalidation leaves unrelated queries fresh and keeps existing co
   await h.cache.load('/orders', 'alice'); assert.equal(h.calls(), 2);
   await h.cache.load('/products', 'public'); assert.equal(h.calls(), 3);
 });
-test('foreground refresh reads only stale observed queries; cancelling discards obsolete searches', async () => {
+test('foreground keeps saved snapshots, repairs invalidated active queries and cancels obsolete searches', async () => {
   const h = setup(); await h.cache.load('/products', 'public'); await h.cache.load('/orders', 'alice');
-  const stop = h.cache.observe('/products', 'public'); h.advance(120000); h.cache.refreshActive(); await tick();
+  const stop = h.cache.observe('/products', 'public'); h.advance(queryPolicy('/products').staleMs); h.cache.refreshActive(); await tick();
+  assert.equal(h.calls(), 2);
+  h.cache.invalidate(path => path === '/products'); h.cache.refreshActive(); await tick();
   assert.equal(h.calls(), 3); stop();
   let signal; h.respond((_path, incoming) => { signal = incoming; return new Promise(() => {}); });
   void h.cache.load('/products?q=old', 'public'); await tick(); h.cache.cancelAll();
@@ -121,7 +123,7 @@ test('switching accounts removes disk snapshots and a different uid cannot hydra
 test('cache schema, future timestamps and expired data are ignored on restore', () => {
   const h = setup(); h.cache.restore([{ path: '/me', scope: 'alice', data: {}, updatedAt: 2000 }], 'alice');
   assert.equal(h.cache.get('/me', 'alice').data, null);
-  h.advance(4000000); h.cache.restore([{ path: '/me', scope: 'alice', data: {}, updatedAt: 1000 }], 'alice');
+  h.advance(queryPolicy('/me').maxAgeMs + 1); h.cache.restore([{ path: '/me', scope: 'alice', data: {}, updatedAt: 1000 }], 'alice');
   assert.equal(h.cache.get('/me', 'alice').data, null);
 });
 
