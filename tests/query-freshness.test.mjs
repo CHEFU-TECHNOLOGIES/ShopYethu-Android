@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { loadTs } from './load-ts.mjs';
 const { createQueryCache } = loadTs('src/lib/query-cache.ts');
 const { createQueryPersistence } = loadTs('src/lib/query-persistence.ts');
-const { queryPolicy, queryUsage } = loadTs('src/lib/query-policy.ts');
+const { publicQuery, queryPolicy, queryUsage } = loadTs('src/lib/query-policy.ts');
 const minute = 60_000, hour = 60 * minute, day = 24 * hour;
 const tick = () => new Promise(setImmediate);
 function setup() {
@@ -11,6 +11,18 @@ function setup() {
   const cache = createQueryCache(async () => { calls++; return { application: null, store: null }; }, { now: () => now });
   return { cache, calls: () => calls, advance: amount => { now += amount; } };
 }
+
+test('place-label lookups share the public cache', async () => {
+  assert.equal(publicQuery('/areas/place-id'), true);
+  const policy = queryPolicy('/areas/place-id');
+  assert.equal(policy.staleMs, day);
+  assert.equal(policy.maxAgeMs, 7 * day);
+  let calls = 0;
+  const cache = createQueryCache(async () => { calls++; return { label: 'Test area' }; });
+  await Promise.all(Array.from({ length: 3 }, () => cache.load('/areas/place-id', 'public')));
+  for (let visit = 0; visit < 20; visit++) await cache.load('/areas/place-id', 'public');
+  assert.equal(calls, 1);
+});
 
 test('freshness reflects how each screen uses data, including empty incoming-order lists', () => {
   for (const [path, data, expected] of [

@@ -1,5 +1,6 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from "react-native";
+import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import Feather from '@expo/vector-icons/Feather';
 import { account } from '@/constants/account-styles';
 import { palette } from '@/constants/market-theme';

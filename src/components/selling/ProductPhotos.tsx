@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
+import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { MarketImage } from "@/components/market/MarketImage";
 import { Ionicons } from "@expo/vector-icons";
 import { Button, Field } from "@/components/market/Primitives";

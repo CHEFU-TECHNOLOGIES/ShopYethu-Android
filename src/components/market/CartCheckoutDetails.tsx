@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { Field } from "@/components/market/Primitives";
 import { palette, ui } from "@/constants/market-theme";
 import type { Fulfilment } from "@/types/marketplace";

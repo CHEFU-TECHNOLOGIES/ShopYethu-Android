@@ -1,10 +1,14 @@
 import { Button } from "@/components/market/Primitives";
+import { ExternalLink } from "@/components/external-link";
 import { profile } from "@/constants/account-profile-styles";
 import { palette } from "@/constants/market-theme";
+import { ACCOUNT_BASE } from "@/lib/config";
 import type { Session } from "@/lib/session";
 import { useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
+import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { Image } from "expo-image";
+import Feather from "@expo/vector-icons/Feather";
 
 function AccountAvatar({
     picture,
@@ -66,36 +70,60 @@ export function AccountIdentity({ user }: { user: Session["user"] }) {
         .toLocaleUpperCase();
 
     return (
-        <View style={profile.identityCard}>
-            <View style={profile.identityHeader}>
-                <View style={profile.avatarFrame}>
-                    <AccountAvatar
-                        key={`${user.uid}:${user.picture || ""}`}
-                        picture={user.picture}
-                        initials={initials}
+        <ExternalLink
+            href={`${ACCOUNT_BASE}/account?section=personal-info`}
+            asChild
+        >
+            <Pressable
+                accessibilityRole="link"
+                accessibilityLabel="Manage your account and personal information"
+                accessibilityHint="Opens My Account."
+                style={({ pressed }) => [
+                    profile.identityCard,
+                    pressed && profile.identityCardPressed,
+                ]}
+            >
+                <View style={profile.identityHeader}>
+                    <View style={profile.avatarFrame}>
+                        <AccountAvatar
+                            key={`${user.uid}:${user.picture || ""}`}
+                            picture={user.picture}
+                            initials={initials}
+                        />
+                    </View>
+                    <View style={profile.identity}>
+                        <Text
+                            accessibilityRole="header"
+                            style={profile.name}
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                        >
+                            {name}
+                        </Text>
+                        <Text
+                            style={profile.email}
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                            accessibilityLabel={`Email address, ${email}`}
+                            selectable
+                        >
+                            {email}
+                        </Text>
+                    </View>
+                </View>
+                <View style={profile.manageAccount}>
+                    <Text style={profile.manageAccountText}>
+                        Manage account
+                    </Text>
+                    <Feather
+                        name="external-link"
+                        size={15}
+                        color={palette.brand}
+                        accessible={false}
                     />
                 </View>
-                <View style={profile.identity}>
-                    <Text
-                        accessibilityRole="header"
-                        style={profile.name}
-                        numberOfLines={1}
-                        ellipsizeMode="tail"
-                    >
-                        {name}
-                    </Text>
-                    <Text
-                        style={profile.email}
-                        numberOfLines={1}
-                        ellipsizeMode="tail"
-                        accessibilityLabel={`Email address, ${email}`}
-                        selectable
-                    >
-                        {email}
-                    </Text>
-                </View>
-            </View>
-        </View>
+            </Pressable>
+        </ExternalLink>
     );
 }
 

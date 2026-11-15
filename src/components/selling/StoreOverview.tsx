@@ -1,4 +1,5 @@
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { sellerStyles as styles } from "@/constants/seller-styles";
@@ -38,7 +39,7 @@ export function StoreOverview({ data }: { data: SellerInventory }) {
                 <Pressable
                     accessibilityRole="button"
                     accessibilityLabel="Edit storefront"
-                    onPress={() => router.push("/selling/store")}
+                    onPress={() => router.navigate("/selling/store")}
                     style={styles.storeAction}
                     hitSlop={6}
                 >

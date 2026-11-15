@@ -1,11 +1,11 @@
 import { useState } from "react";
 import {
-    Pressable,
-    ScrollView,
+    FlatList,
     Text,
     useWindowDimensions,
     View,
 } from "react-native";
+import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { MarketImage } from "@/components/market/MarketImage";
@@ -18,6 +18,7 @@ import { useCart } from "@/lib/cart";
 import { toast } from "@/lib/toast";
 import type { Product, Storefront } from "@/types/marketplace";
 import { OperatingAreaLabel } from "@/components/market/OperatingAreaLabel";
+import { ReportLink } from "@/components/market/ReportLink";
 
 export default function ProductScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -57,7 +58,7 @@ export default function ProductScreen() {
                 <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`View basket${basketCount ? `, ${basketCount} items` : ""}`}
-                    onPress={() => router.push("/cart")}
+                    onPress={() => router.navigate("/cart")}
                     style={styles.basketButton}
                 >
                     <Ionicons
@@ -90,22 +91,22 @@ export default function ProductScreen() {
                                 },
                             ]}
                         >
-                            <ScrollView
+                            <FlatList
                                 horizontal
                                 pagingEnabled
                                 showsHorizontalScrollIndicator={false}
-                                onMomentumScrollEnd={({ nativeEvent }) =>
-                                    setActivePhoto(
-                                        Math.round(
-                                            nativeEvent.contentOffset.x /
-                                                galleryWidth,
-                                        ),
-                                    )
-                                }
-                            >
-                                {product.photos.map((photo) => (
+                                data={product.photos}
+                                keyExtractor={(photo, index) => `${index}:${photo}`}
+                                initialNumToRender={1}
+                                maxToRenderPerBatch={2}
+                                windowSize={3}
+                                getItemLayout={(_, index) => ({
+                                    length: galleryWidth,
+                                    offset: galleryWidth * index,
+                                    index,
+                                })}
+                                renderItem={({ item: photo }) => (
                                     <MarketImage
-                                        key={photo}
                                         accessibilityLabel={`${product.name} photo`}
                                         uri={photo}
                                         width={960}
@@ -114,8 +115,16 @@ export default function ProductScreen() {
                                             { width: galleryWidth },
                                         ]}
                                     />
-                                ))}
-                            </ScrollView>
+                                )}
+                                onMomentumScrollEnd={({ nativeEvent }) =>
+                                    setActivePhoto(
+                                        Math.round(
+                                            nativeEvent.contentOffset.x /
+                                                galleryWidth,
+                                        ),
+                                    )
+                                }
+                            />
                             {product.photos.length > 1 && (
                                 <View style={styles.galleryCounter}>
                                     <Text style={styles.galleryCounterText}>
@@ -217,7 +226,7 @@ export default function ProductScreen() {
                         accessibilityRole="button"
                         accessibilityLabel={`Visit ${store.name} storefront`}
                         onPress={() =>
-                            router.push({
+                            router.navigate({
                                 pathname: "/store/[id]",
                                 params: { id: store.id },
                             })
@@ -358,23 +367,15 @@ export default function ProductScreen() {
                         )}
                     </View>
 
-                    <Pressable
-                        accessibilityRole="button"
+                    <ReportLink
+                        title="Report this listing"
                         onPress={() =>
-                            router.push({
+                            router.navigate({
                                 pathname: "/report",
                                 params: { productId: product.id },
                             })
                         }
-                        style={[styles.reportButton, styles.contentBlock]}
-                    >
-                        <Ionicons
-                            name="flag-outline"
-                            size={15}
-                            color={palette.muted}
-                        />
-                        <Text style={styles.reportText}>Report this listing</Text>
-                    </Pressable>
+                    />
                 </>
             )}
         </Page>

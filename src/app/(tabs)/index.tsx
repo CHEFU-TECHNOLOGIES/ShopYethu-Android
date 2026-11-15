@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react';
-import { FlatList, Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import {
+  FlatList,
+  Image,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, ResourceState } from '@/components/market/Primitives';
 import { CatalogSkeleton } from '@/components/market/CatalogSkeleton';
@@ -20,7 +28,7 @@ export default function ShopScreen() {
   }, [search]);
 
   const resource = useProductFeed(
-    `/products?page=1&q=${encodeURIComponent(query)}&category=${encodeURIComponent(category === 'All' ? '' : category)}`,
+    `/products?page=1&view=compact&q=${encodeURIComponent(query)}&category=${encodeURIComponent(category === 'All' ? '' : category)}`,
   );
 
   return (

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { MarketImage } from '@/components/market/MarketImage';
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -28,7 +29,7 @@ export function InventoryRow({ product }: { product: Product }) {
             accessibilityLabel={`Edit ${product.name}, ${product.published ? "published" : "draft"}, ${product.stock} in stock`}
             style={styles.productRow}
             onPress={() =>
-                router.push({
+                router.navigate({
                     pathname: "/selling/product",
                     params: { id: product.id },
                 })

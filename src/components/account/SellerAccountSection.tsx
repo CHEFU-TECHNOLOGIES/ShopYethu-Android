@@ -72,11 +72,9 @@ export function SellerAccountSection({
                         title="My Store"
                         description={store.name}
                         accessibilityLabel={`My Store, ${store.name}, ${
-                            store.status === "active"
-                                ? "Active"
-                                : "Suspended"
+                            store.status === "active" ? "Active" : "Suspended"
                         }`}
-                        onPress={() => router.push("/selling")}
+                        onPress={() => router.navigate("/selling")}
                         trailingIcon={null}
                         titleAccessory={
                             <StatusPill
@@ -86,7 +84,9 @@ export function SellerAccountSection({
                                         : "Suspended"
                                 }
                                 tone={
-                                    store.status === "active" ? "success" : "danger"
+                                    store.status === "active"
+                                        ? "success"
+                                        : "danger"
                                 }
                             />
                         }
@@ -111,7 +111,7 @@ export function SellerAccountSection({
                                 : "Seller application"
                         }
                         description={application.businessName}
-                        onPress={() => router.push("/application")}
+                        onPress={() => router.navigate("/application")}
                     />
                     <View style={account.statusBody}>
                         <StatusPill
@@ -126,16 +126,10 @@ export function SellerAccountSection({
                                         : "review"
                             }
                         />
-                        {!!application.reason ? (
+                        {!!application.reason && (
                             <Text style={account.message}>
                                 {application.reason}
                             </Text>
-                        ) : (
-                            application.status === "pending" && (
-                                <Text style={account.message}>
-                                    Your application is under review.
-                                </Text>
-                            )
                         )}
                     </View>
                 </>
@@ -144,13 +138,24 @@ export function SellerAccountSection({
                     icon="briefcase"
                     title="Start selling"
                     description="Apply to open your store"
-                    onPress={() => router.push("/application")}
+                    onPress={() => router.navigate("/application")}
                 />
             ) : null}
             {data && refreshing && (
-                <View style={account.statusRefreshing} accessible accessibilityLabel="Updating seller status" accessibilityLiveRegion="polite">
-                    <ActivityIndicator size="small" color={palette.muted} accessible={false} />
-                    <Text style={account.statusRefreshingText}>Updating status</Text>
+                <View
+                    style={account.statusRefreshing}
+                    accessible
+                    accessibilityLabel="Updating seller status"
+                    accessibilityLiveRegion="polite"
+                >
+                    <ActivityIndicator
+                        size="small"
+                        color={palette.muted}
+                        accessible={false}
+                    />
+                    <Text style={account.statusRefreshingText}>
+                        Updating status
+                    </Text>
                 </View>
             )}
         </AccountSection>

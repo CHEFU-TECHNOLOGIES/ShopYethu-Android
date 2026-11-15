@@ -1,11 +1,11 @@
 import { useEffect, useSyncExternalStore } from "react";
 import {
-    Pressable,
     StyleSheet,
     Text,
     View,
     useColorScheme,
 } from "react-native";
+import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import { toastStore, type ToastMessage } from "@/lib/toast";

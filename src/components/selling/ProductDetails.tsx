@@ -1,4 +1,5 @@
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { Field } from "@/components/market/Primitives";
 import { categories } from "@/lib/config";
 import type { ProductForm } from "@/lib/product-form";

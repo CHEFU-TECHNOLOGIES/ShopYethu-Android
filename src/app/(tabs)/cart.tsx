@@ -97,7 +97,7 @@ export default function CartScreen() {
             ) : !ready ? (
                 <CartLoadingState message={basketError || undefined} />
             ) : !items.length ? (
-                <EmptyBasket onBrowse={() => router.push("/")} />
+                <EmptyBasket onBrowse={() => router.navigate("/")} />
             ) : (
                 <>
                     {basketError && (

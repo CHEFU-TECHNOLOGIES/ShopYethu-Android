@@ -172,12 +172,4 @@ export const productDetailStyles = StyleSheet.create({
         fontSize: 13,
         fontWeight: "700",
     },
-    reportButton: {
-        minHeight: 44,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 6,
-    },
-    reportText: { color: palette.muted, fontSize: 12, fontWeight: "600" },
 });

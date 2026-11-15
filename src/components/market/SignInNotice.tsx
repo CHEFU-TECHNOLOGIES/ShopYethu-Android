@@ -12,7 +12,7 @@ export function SignInNotice() {
             </Text>
             <Button
                 title="Go to account"
-                onPress={() => router.push("/account")}
+                onPress={() => router.navigate("/account")}
             />
         </View>
     );

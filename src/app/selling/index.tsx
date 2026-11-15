@@ -14,7 +14,8 @@ import { useAuth } from "@/lib/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 
 export default function SellingScreen() {
     const { session } = useAuth();
@@ -49,7 +50,7 @@ export default function SellingScreen() {
                         <Button
                             title="View seller application"
                             secondary
-                            onPress={() => router.push("/application")}
+                            onPress={() => router.navigate("/application")}
                         />
                     )}
                     {resource.data && (
@@ -60,7 +61,7 @@ export default function SellingScreen() {
                                     <Button
                                         title="Add product"
                                         onPress={() =>
-                                            router.push("/selling/product")
+                                            router.navigate("/selling/product")
                                         }
                                         trailingIcon={
                                             <Ionicons
@@ -76,7 +77,7 @@ export default function SellingScreen() {
                                         title="Orders"
                                         secondary
                                         onPress={() =>
-                                            router.push("/selling/orders")
+                                            router.navigate("/selling/orders")
                                         }
                                         trailingIcon={
                                             <Ionicons

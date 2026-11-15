@@ -2,10 +2,10 @@ import { useCallback, useRef, useState } from "react";
 import {
     ActivityIndicator,
     BackHandler,
-    Pressable,
     Text,
     View,
 } from "react-native";
+import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import * as DocumentPicker from "expo-document-picker";
 import { File } from "expo-file-system";
 import { router, useFocusEffect } from "expo-router";

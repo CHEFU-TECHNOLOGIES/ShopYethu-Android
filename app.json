@@ -16,6 +16,7 @@
     },
     "android": {
       "package": "za.co.chefu.shopyethu",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#244D3B",
         "foregroundImage": "./assets/images/shopyethu-icon.png"

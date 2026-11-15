@@ -55,7 +55,7 @@ export default function ProductScreen() {
                             </Text>
                             <Button
                                 title="View application"
-                                onPress={() => router.push("/application")}
+                                onPress={() => router.navigate("/application")}
                             />
                         </View>
                     )}

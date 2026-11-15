@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { FlatList, Pressable, Text, View, type FlatListProps } from 'react-native';
+import { FlatList, Text, View, type FlatListProps } from "react-native";
+import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ui } from '@/constants/market-theme';

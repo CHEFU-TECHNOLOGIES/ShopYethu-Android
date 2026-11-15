@@ -60,7 +60,7 @@ export function ApplicationStatus({
                     store?.status === "active" && (
                         <Button
                             title="Open My Store"
-                            onPress={() => router.push("/selling")}
+                            onPress={() => router.navigate("/selling")}
                         />
                     )}
                 {store?.status === "suspended" && (

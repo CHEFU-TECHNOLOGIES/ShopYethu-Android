@@ -55,6 +55,7 @@ function setup(step, form = completeForm(), previous = null) {
         "expo-file-system": { File: class {} },
         "expo-router": { router: { replace: path => destinations.push(path) }, useFocusEffect() {} },
         "@/components/market/Primitives": { Button: "Button", Page: "Page" },
+        "@/components/ui/DebouncedPressable": { DebouncedPressable: "Pressable" },
         "@/constants/application-styles": { applicationStyles: {} },
         "@/constants/market-theme": { palette: {}, ui: {} },
         "@/hooks/use-application-draft": { useApplicationDraft: () => draft },

@@ -1,4 +1,5 @@
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { Ionicons } from "@expo/vector-icons";
 import { palette } from "@/constants/market-theme";
 import { applicationStyles as styles } from "@/constants/application-styles";

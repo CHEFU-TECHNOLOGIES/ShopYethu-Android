@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import type { Product } from "@/types/marketplace";
@@ -9,12 +10,14 @@ import { prefetchProduct } from "@/lib/market-cache";
 export function ProductCard({
     product,
     onAddToBasket,
+    hideSellerName = false,
 }: {
     product: Product & { storeName?: string };
     onAddToBasket?: (product: Product) => void;
+    hideSellerName?: boolean;
 }) {
     function openProduct() {
-        router.push({
+        router.navigate({
             pathname: "/product/[id]",
             params: { id: product.id },
         });
@@ -66,29 +69,53 @@ export function ProductCard({
                     </Pressable>
                 )}
             </View>
-            <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${product.name}, ${money(product.priceCents)}`}
-                onPressIn={() => prefetchProduct(product.id)}
-                onPress={openProduct}
-                style={styles.details}
-            >
-                <Text style={ui.small} numberOfLines={1}>
-                    {product.storeName || product.category}
-                </Text>
-                <Text
-                    style={[ui.body, styles.productName]}
-                    numberOfLines={2}
+            <View style={styles.details}>
+                {!hideSellerName &&
+                    (product.storeName ? (
+                        <Pressable
+                            accessibilityRole="link"
+                            accessibilityLabel={`Visit ${product.storeName} storefront`}
+                            onPress={() =>
+                                router.navigate({
+                                    pathname: "/store/[id]",
+                                    params: { id: product.storeId },
+                                })
+                            }
+                            style={({ pressed }) => [
+                                styles.sellerLink,
+                                pressed && styles.sellerLinkPressed,
+                            ]}
+                        >
+                            <Text style={styles.sellerName} numberOfLines={1}>
+                                {product.storeName}
+                            </Text>
+                        </Pressable>
+                    ) : (
+                        <Text style={ui.small} numberOfLines={1}>
+                            {product.category}
+                        </Text>
+                    ))}
+                <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`${product.name}, ${money(product.priceCents)}`}
+                    onPressIn={() => prefetchProduct(product.id)}
+                    onPress={openProduct}
+                    style={styles.productDetails}
                 >
-                    {product.name}
-                </Text>
-                <Text style={[ui.heading, styles.price]}>
-                    {money(product.priceCents)}
-                </Text>
-                {product.stock === 0 && (
-                    <Text style={ui.error}>Sold out</Text>
-                )}
-            </Pressable>
+                    <Text
+                        style={[ui.body, styles.productName]}
+                        numberOfLines={2}
+                    >
+                        {product.name}
+                    </Text>
+                    <Text style={[ui.heading, styles.price]}>
+                        {money(product.priceCents)}
+                    </Text>
+                    {product.stock === 0 && (
+                        <Text style={ui.error}>Sold out</Text>
+                    )}
+                </Pressable>
+            </View>
         </View>
     );
 }
@@ -132,6 +159,15 @@ const styles = StyleSheet.create({
         backgroundColor: palette.brand,
     },
     details: { paddingTop: 10, gap: 4 },
+    sellerLink: { alignSelf: "flex-start", maxWidth: "100%" },
+    sellerLinkPressed: { opacity: 0.7 },
+    sellerName: {
+        color: palette.brand,
+        fontSize: 12,
+        fontWeight: "600",
+        textDecorationLine: "underline",
+    },
+    productDetails: { gap: 4 },
     productName: { fontSize: 14, fontWeight: "600" },
     price: { fontSize: 16 },
 });

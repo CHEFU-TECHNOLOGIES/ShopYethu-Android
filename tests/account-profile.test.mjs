@@ -22,9 +22,12 @@ function setup() {
         "react/jsx-runtime": jsx,
         "react-native": { ActivityIndicator: "ActivityIndicator", Image: "Image", Text: "Text", View: "View" },
         "expo-image": { Image: "Image" },
+        "@/components/external-link": { ExternalLink: "ExternalLink" },
         "@/components/market/Primitives": { Button: "Button" },
+        "@/components/ui/DebouncedPressable": { DebouncedPressable: "Pressable" },
         "@/constants/account-profile-styles": { profile: {} },
         "@/constants/market-theme": { palette: {} },
+        "@/lib/config": { ACCOUNT_BASE: "https://myaccount.chefu.co.za" },
         "@expo/vector-icons/Feather": { default: () => null },
     };
     const loaded = { exports: {} };

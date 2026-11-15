@@ -9,7 +9,8 @@ const card = {
 };
 
 export const profile = StyleSheet.create({
-    identityCard: { ...card, padding: 20 },
+    identityCard: { ...card, padding: 20, gap: 14 },
+    identityCardPressed: { opacity: 0.8 },
     identityHeader: { flexDirection: "row", alignItems: "center", gap: 16 },
     avatarFrame: {
         padding: 4, borderRadius: 999, borderWidth: 1, borderColor: palette.line,
@@ -25,6 +26,8 @@ export const profile = StyleSheet.create({
     profileLabel: { color: palette.muted, fontSize: 12, lineHeight: 17, fontWeight: "500" },
     name: { color: palette.ink, fontSize: 22, lineHeight: 29, fontWeight: "700", letterSpacing: -0.5 },
     email: { minWidth: 0, color: palette.muted, fontSize: 13, lineHeight: 20 },
+    manageAccount: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 6 },
+    manageAccountText: { color: palette.brand, fontSize: 12, lineHeight: 18, fontWeight: "700" },
     signIn: {
         alignItems: "stretch",
         paddingTop: 24,

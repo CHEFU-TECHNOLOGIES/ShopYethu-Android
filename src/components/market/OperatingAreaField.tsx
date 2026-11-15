@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
-    Pressable,
     StyleSheet,
     Text,
     View,
 } from "react-native";
+import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { randomUUID } from "expo-crypto";
 import { Field } from "@/components/market/Primitives";
 import { palette, ui } from "@/constants/market-theme";
+import { useResource } from "@/hooks/use-resource";
 import { api } from "@/lib/api";
 
 type Suggestion = { placeId: string; text: string };
@@ -31,6 +32,13 @@ export function OperatingAreaField({
     const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
     const [message, setMessage] = useState("");
     const onChangeRef = useRef(onChange);
+    const savedArea = useResource<{ label: string }>(
+        `/areas/${encodeURIComponent(placeId || "")}`,
+        editable && !!placeId && !value,
+    );
+    const visibleMessage = message || (
+        editable && placeId && !value ? savedArea.error || "" : ""
+    );
 
     useEffect(() => {
         onChangeRef.current = onChange;
@@ -38,24 +46,10 @@ export function OperatingAreaField({
 
     useEffect(() => {
         if (!placeId || value || !editable) return;
-        let active = true;
-        void api<{ label: string }>(`/areas/${encodeURIComponent(placeId)}`)
-            .then(({ label }) => {
-                if (active) onChangeRef.current(label, placeId, sessionToken);
-            })
-            .catch((error: unknown) => {
-                if (active) {
-                    setMessage(
-                        error instanceof Error
-                            ? error.message
-                            : "Could not load this saved location.",
-                    );
-                }
-            });
-        return () => {
-            active = false;
-        };
-    }, [editable, placeId, sessionToken, value]);
+        if (savedArea.data?.label) {
+            onChangeRef.current(savedArea.data.label, placeId, sessionToken);
+        }
+    }, [editable, placeId, savedArea.data?.label, savedArea.error, sessionToken, value]);
 
     useEffect(() => {
         if (!shouldSearch || !editable || placeId || value.trim().length < 3) return;
@@ -146,17 +140,15 @@ export function OperatingAreaField({
                 </View>
             )}
             {shouldSearch && !searching && value.trim().length >= 3 &&
-                suggestions.length === 0 && !message && (
+                suggestions.length === 0 && !visibleMessage && (
                     <Text style={ui.small}>No matching South African areas found.</Text>
                 )}
-            {!!message && (
+            {!!visibleMessage && (
                 <Text accessibilityRole="alert" style={ui.error}>
-                    {message}
+                    {visibleMessage}
                 </Text>
             )}
-            {(suggestions.length > 0 || placeId) && (
-                <Text style={styles.attribution}>Google Maps</Text>
-            )}
+            
             <Text style={ui.small}>Choose a town or suburb, not a private street address.</Text>
         </View>
     );
