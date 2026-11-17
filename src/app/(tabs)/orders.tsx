@@ -2,10 +2,13 @@ import { ResourceState, SignInNotice } from "@/components/market/Primitives";
 import { ListPage } from "@/components/market/ListPage";
 import { OrderListRow } from "@/components/market/OrderListRow";
 import { OrdersSkeleton } from "@/components/market/OrdersSkeleton";
+import { OrdersEmptyState } from "@/components/market/OrdersEmptyState";
 import { useResource } from "@/hooks/use-resource";
 import { useAuth } from "@/lib/auth";
 import type { Order } from "@/types/marketplace";
 import { router } from "expo-router";
+import { Text } from "react-native";
+import { ui } from "@/constants/market-theme";
 
 export default function OrdersScreen() {
     const { session } = useAuth();
@@ -28,20 +31,26 @@ export default function OrdersScreen() {
             )}
             onRefresh={session ? resource.refresh : undefined}
             refreshing={resource.refreshing}
+            ListEmptyComponent={
+                session && resource.data?.orders.length === 0 ? (
+                    <OrdersEmptyState onBrowse={() => router.navigate("/")} />
+                ) : undefined
+            }
             header={
                 !session ? (
                     <SignInNotice />
                 ) : (
-                    <ResourceState
-                        {...resource}
-                        retry={resource.refresh}
-                        loadingFallback={<OrdersSkeleton />}
-                        empty={
-                            resource.data?.orders.length === 0
-                                ? "No orders yet. Your first local find is waiting."
-                                : undefined
-                        }
-                    />
+                    <>
+                        <Text style={ui.subtitle}>
+                            Keep track of your purchases, status, and collection
+                            details.
+                        </Text>
+                        <ResourceState
+                            {...resource}
+                            retry={resource.refresh}
+                            loadingFallback={<OrdersSkeleton />}
+                        />
+                    </>
                 )
             }
         />

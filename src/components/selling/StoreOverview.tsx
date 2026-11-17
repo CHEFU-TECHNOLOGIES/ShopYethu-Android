@@ -1,34 +1,26 @@
 import { OperatingAreaLabel } from "@/components/market/OperatingAreaLabel";
-import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { ui } from "@/constants/market-theme";
 import { sellerStyles as styles } from "@/constants/seller-styles";
 import type { SellerInventory } from "@/types/marketplace";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { Text, View } from "react-native";
+import { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { StoreActionsMenu } from "./StoreActionsMenu";
+import { StoreStats } from "./StoreStats";
 
 export function StoreOverview({ data }: { data: SellerInventory }) {
-    const stats = [
-        [
-            "Published",
-            data.products.filter((product) => product.published).length,
-        ],
-        [
-            "Drafts",
-            data.products.filter((product) => !product.published).length,
-        ],
-        [
-            "Out of stock",
-            data.products.filter(
-                (product) => product.published && product.stock === 0,
-            ).length,
-        ],
-    ];
+    const [menuOpen, setMenuOpen] = useState(false);
+
     return (
-        <View style={styles.store}>
+        <View style={[styles.store, menuOpen && overviewStyles.menuOpen]}>
             <View style={ui.between}>
                 <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
-                    <Text style={styles.storeName} numberOfLines={1} ellipsizeMode="tail">{data.store.name}</Text>
+                    <Text
+                        style={styles.storeName}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                    >
+                        {data.store.name}
+                    </Text>
                     <OperatingAreaLabel
                         area={data.store.area}
                         placeId={data.store.areaPlaceId}
@@ -36,24 +28,20 @@ export function StoreOverview({ data }: { data: SellerInventory }) {
                         numberOfLines={1}
                     />
                 </View>
-                <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Edit storefront"
-                    onPress={() => router.navigate("/selling/store")}
-                    style={styles.storeAction}
-                    hitSlop={6}
-                >
-                    <Ionicons name="create-outline" size={20} color="#FFFFFF" />
-                </Pressable>
+                <StoreActionsMenu
+                    store={data.store}
+                    open={menuOpen}
+                    onOpenChange={setMenuOpen}
+                />
             </View>
-            <View style={styles.stats}>
-                {stats.map(([label, count]) => (
-                    <View key={label} style={styles.stat} accessible accessibilityLabel={`${label}: ${count}`}>
-                        <Text style={styles.statNumber} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{count}</Text>
-                        <Text style={styles.statLabel}>{label}</Text>
-                    </View>
-                ))}
-            </View>
+            <StoreStats products={data.products} />
         </View>
     );
 }
+
+const overviewStyles = StyleSheet.create({
+    menuOpen: {
+        zIndex: 2,
+        elevation: 2,
+    },
+});

@@ -19,6 +19,7 @@ import { toast } from "@/lib/toast";
 import type { Product, Storefront } from "@/types/marketplace";
 import { OperatingAreaLabel } from "@/components/market/OperatingAreaLabel";
 import { ReportLink } from "@/components/market/ReportLink";
+import { ProductDetailsSkeleton } from "@/components/market/ProductDetailsSkeleton";
 
 export default function ProductScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -79,7 +80,11 @@ export default function ProductScreen() {
             }
             
         >
-            <ResourceState {...resource} retry={resource.refresh} />
+            <ResourceState
+                {...resource}
+                retry={resource.refresh}
+                loadingFallback={<ProductDetailsSkeleton />}
+            />
             {product && store && (
                 <>
                     {product.photos.length ? (

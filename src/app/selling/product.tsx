@@ -12,6 +12,7 @@ import { useSellerAccount } from "@/hooks/use-seller-account";
 import { useAuth } from "@/lib/auth";
 import type { Product, Storefront } from "@/types/marketplace";
 import { ui } from "@/constants/market-theme";
+import { ProductEditorSkeleton } from "@/components/selling/ProductEditorSkeleton";
 
 export default function ProductScreen() {
     const { id } = useLocalSearchParams<{ id?: string }>();
@@ -40,7 +41,11 @@ export default function ProductScreen() {
                 <SignInNotice />
             ) : (
                 <>
-                    <ResourceState {...resource} retry={resource.refresh} />
+                    <ResourceState
+                        {...resource}
+                        retry={resource.refresh}
+                        loadingFallback={<ProductEditorSkeleton />}
+                    />
                     {!id && account.data && !allowed && (
                         <View style={ui.card}>
                             <Text style={ui.heading}>

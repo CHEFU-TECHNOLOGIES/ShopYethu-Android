@@ -1,4 +1,4 @@
-import { Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { router } from "expo-router";
 import { OperatingAreaLabel } from "@/components/market/OperatingAreaLabel";
@@ -14,7 +14,13 @@ export function OrderSellerLink({ storeId }: { storeId: string }) {
     const store = resource.data?.store;
 
     if (!store) {
-        return <ResourceState {...resource} retry={resource.refresh} />;
+        return (
+            <ResourceState
+                {...resource}
+                retry={resource.refresh}
+                loadingFallback={<SellerLinkSkeleton />}
+            />
+        );
     }
 
     return (
@@ -53,3 +59,33 @@ export function OrderSellerLink({ storeId }: { storeId: string }) {
         </View>
     );
 }
+
+function SellerLinkSkeleton() {
+    return (
+        <View
+            accessibilityRole="progressbar"
+            accessibilityLabel="Loading seller details"
+            accessibilityState={{ busy: true }}
+            accessibilityLiveRegion="polite"
+            style={[ui.card, { gap: 8 }]}
+        >
+            <View
+                style={styles.skeleton}
+                accessible={false}
+                importantForAccessibility="no-hide-descendants"
+            >
+                <View style={[styles.block, styles.label]} />
+                <View style={[styles.block, styles.name]} />
+                <View style={[styles.block, styles.area]} />
+            </View>
+        </View>
+    );
+}
+
+const styles = StyleSheet.create({
+    skeleton: { gap: 8 },
+    block: { height: 12, borderRadius: 6, backgroundColor: palette.soft },
+    label: { width: 52, height: 10 },
+    name: { width: 150, height: 17 },
+    area: { width: 115, height: 11 },
+});

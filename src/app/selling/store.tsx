@@ -17,6 +17,7 @@ import type { Storefront } from "@/types/marketplace";
 import { ui } from "@/constants/market-theme";
 import { toast } from "@/lib/toast";
 import { storeHasChanges } from "@/lib/store-form";
+import { StoreEditorSkeleton } from "@/components/selling/StoreEditorSkeleton";
 
 export default function StoreEditor() {
     const { session } = useAuth();
@@ -93,7 +94,11 @@ export default function StoreEditor() {
                 <SignInNotice />
             ) : (
                 <>
-                    <ResourceState {...resource} retry={resource.refresh} />
+                    <ResourceState
+                        {...resource}
+                        retry={resource.refresh}
+                        loadingFallback={<StoreEditorSkeleton />}
+                    />
                     {resource.data && (
                         <>
                             <Field

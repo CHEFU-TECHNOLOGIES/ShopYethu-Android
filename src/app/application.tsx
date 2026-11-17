@@ -13,6 +13,7 @@ import type { Session } from "@/lib/session";
 import { useSellerAccount } from "@/hooks/use-seller-account";
 import { recordSellerApplication } from "@/lib/seller-account";
 import { ui } from "@/constants/market-theme";
+import { ApplicationSkeleton } from "@/components/application/ApplicationSkeleton";
 
 function SignedInApplication({ session }: { session: Session }) {
     const resource = useSellerAccount();
@@ -45,7 +46,12 @@ function SignedInApplication({ session }: { session: Session }) {
             onRefresh={resource.refresh}
             refreshing={resource.refreshing}
         >
-            <ResourceState {...resource} loading={resource.loading && !resource.data} retry={resource.refresh} />
+            <ResourceState
+                {...resource}
+                loading={resource.loading && !resource.data}
+                retry={resource.refresh}
+                loadingFallback={<ApplicationSkeleton />}
+            />
             {!!warning && (
                 <Text accessibilityRole="alert" style={ui.error}>
                     {warning}

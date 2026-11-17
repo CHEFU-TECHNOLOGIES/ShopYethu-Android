@@ -2,6 +2,7 @@ import { useLocalSearchParams } from "expo-router";
 import { useRef, useState } from "react";
 import { Text } from "react-native";
 import { OrderCard } from "@/components/market/OrderCard";
+import { OrderDetailsSkeleton } from "@/components/market/OrderDetailsSkeleton";
 import { Page } from "@/components/market/Page";
 import { ResourceState, SignInNotice } from "@/components/market/Primitives";
 import { useResource } from "@/hooks/use-resource";
@@ -74,7 +75,11 @@ export default function SellerOrderDetails() {
                 <SignInNotice />
             ) : (
                 <>
-                    <ResourceState {...resource} retry={resource.refresh} />
+                    <ResourceState
+                        {...resource}
+                        retry={resource.refresh}
+                        loadingFallback={<OrderDetailsSkeleton selling />}
+                    />
                     {error && (
                         <Text accessibilityRole="alert" style={ui.error}>
                             {error}

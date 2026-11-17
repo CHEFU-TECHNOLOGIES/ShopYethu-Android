@@ -12,11 +12,31 @@
     "scheme": "shopyethu",
     "userInterfaceStyle": "light",
     "ios": {
-      "bundleIdentifier": "za.co.chefu.shopyethu"
+      "bundleIdentifier": "za.co.chefu.shopyethu",
+      "associatedDomains": [
+        "applinks:api.chefu.co.za"
+      ]
     },
     "android": {
       "package": "za.co.chefu.shopyethu",
       "versionCode": 1,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "api.chefu.co.za",
+              "pathPrefix": "/shopyethu/store/"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#244D3B",
         "foregroundImage": "./assets/images/shopyethu-icon.png"

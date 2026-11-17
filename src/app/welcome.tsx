@@ -60,7 +60,7 @@ export default function WelcomeScreen() {
                             {"Your local market.\nIn your pocket."}
                         </Text>
                         <Text style={welcome.description}>
-                            Discover products from local sellers and small
+                            Discover products from kasi sellers and small
                             businesses, or bring your own business online.
                         </Text>
                     </View>
