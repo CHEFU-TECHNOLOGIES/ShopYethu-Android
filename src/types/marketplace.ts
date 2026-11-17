@@ -19,10 +19,24 @@ export type Storefront = {
 export type SellerInventory = { store: Storefront; products: Product[]; nextCursor: string | null };
 export type SellerAccount = { application: SellerApplication | null; store: Storefront | null };
 export type Fulfilment = 'collection' | 'local-delivery';
+export type CatalogSort = 'newest' | 'price-low' | 'price-high';
 export type Product = {
     id: string; storeId: string; ownerUid: string; name: string; description: string;
     category: string; priceCents: number; stock: number; photos: string[]; published: boolean;
-    fulfilment: Fulfilment[]; updatedAt: string;
+    fulfilment: Fulfilment[]; reviewCount?: number; ratingTotal?: number; updatedAt: string;
+};
+export type ProductReview = {
+    id: string;
+    rating: number;
+    comment: string;
+    createdAt: string;
+    verifiedPurchase: boolean;
+};
+export type ProductReviewFeed = {
+    reviewCount: number;
+    averageRating: number | null;
+    reviews: ProductReview[];
+    nextCursor: string | null;
 };
 export type OrderStatus = 'placed' | 'accepted' | 'preparing' | 'ready' | 'dispatched' | 'completed' | 'collected' | 'cancelled';
 export type DeletedProduct = { id: string; storeId: string; ownerUid: string; deleted: true; deletedAt: string };

@@ -1,17 +1,18 @@
 import { OperatingAreaLabel } from "@/components/market/OperatingAreaLabel";
+import { CatalogSortSelector } from "@/components/market/CatalogSortSelector";
 import { MaterialIcons } from "@expo/vector-icons";
 import { palette, ui } from "@/constants/market-theme";
-import type { Storefront } from "@/types/marketplace";
+import type { CatalogSort, Storefront } from "@/types/marketplace";
 import { StyleSheet, Text, View } from "react-native";
 
 export function StorefrontHeader({
     store,
-    productCount,
-    hasMore,
+    sort,
+    onSortChange,
 }: {
     store: Storefront;
-    productCount: number;
-    hasMore: boolean;
+    sort: CatalogSort;
+    onSortChange: (value: CatalogSort) => void;
 }) {
     return (
         <>
@@ -53,13 +54,7 @@ export function StorefrontHeader({
                     <Text style={ui.heading}>Shop products</Text>
                     <Text style={ui.small}>Available from this seller</Text>
                 </View>
-                <View style={styles.productCount}>
-                    <Text style={styles.productCountText}>
-                        {productCount}
-                        {hasMore ? "+" : ""}{" "}
-                        {productCount === 1 ? "product" : "products"}
-                    </Text>
-                </View>
+                <CatalogSortSelector value={sort} onChange={onSortChange} />
             </View>
         </>
     );
@@ -102,15 +97,4 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     productsTitle: { flex: 1, gap: 2 },
-    productCount: {
-        paddingVertical: 6,
-        paddingHorizontal: 10,
-        borderRadius: 16,
-        backgroundColor: palette.soft,
-    },
-    productCountText: {
-        color: palette.brand,
-        fontSize: 11,
-        fontWeight: "700",
-    },
 });

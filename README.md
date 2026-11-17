@@ -49,13 +49,14 @@ Both workflows use Node.js 24 and Temurin Java 17. Gradle receives an 8 GB heap,
 
 ## Shared backend
 
-Deploy the companion `chefu-inc-backend` changes and `CheFu-Account` mobile redirect-policy change before signing in. Mobile uses public OAuth client `shopyethu-mobile`, authorization code + S256 PKCE, scopes `openid profile email`, and the exact callback `shopyethu://sso-callback`. Credentials are stored with Expo SecureStore; a refresh request is shared across concurrent callers. Account changes clear the basket and discard responses for the previous identity. The admin website continues using its central browser cookie.
+Deploy the companion `chefu-inc-backend` changes and `CheFu-Account` mobile redirect-policy change before signing in. Mobile uses public OAuth client `shopyethu-mobile`, authorization code + S256 PKCE, scopes `openid profile email`, and the exact callback `shopyethu://sso-callback`. Credentials are stored with Expo SecureStore; a refresh request is shared across concurrent callers. Guest baskets and UID-specific signed-in baskets are stored separately; sign-in merges compatible baskets and preserves different-store baskets for an explicit switch. Account changes never display another account's basket. The admin website continues using its central browser cookie.
 
-Backend records live in Firestore collections `shopyethu_applications`, `shopyethu_stores`, `shopyethu_products`, `shopyethu_orders`, `shopyethu_idempotency`, and `shopyethu_reports`. Mobile clients must not have direct Firestore write access to these collections. The backend's service account performs writes after authentication and authorization.
+Backend records live in Firestore collections `shopyethu_applications`, `shopyethu_stores`, `shopyethu_products`, `shopyethu_orders`, `shopyethu_reviews`, `shopyethu_idempotency`, and `shopyethu_reports`. Mobile clients must not have direct Firestore write access to these collections. The backend's service account performs writes after authentication and authorization.
 
 | Flow | API |
 | --- | --- |
-| Browse/search/category/store | `GET /shopyethu/products`, `/products/:id`, `/stores/:id` |
+| Browse/search/category/store | `GET /shopyethu/products`, `/products/:id`, `/stores/:id`; product pages support newest and price sorting |
+| Product reviews | Public `GET /shopyethu/products/:id/reviews`; authenticated `POST /shopyethu/products/:id/reviews` |
 | Capabilities | `GET /shopyethu/config` |
 | Own application and store permissions | `GET /shopyethu/me` |
 | Apply/respond/resubmit | `POST /shopyethu/application` |
@@ -66,7 +67,7 @@ Backend records live in Firestore collections `shopyethu_applications`, `shopyet
 | Move a published product to draft | `PUT /shopyethu/seller/products/:id/draft` |
 | Delete a product | `DELETE /shopyethu/seller/products/:id` |
 | Device photo upload | `POST /shopyethu/seller/photos` |
-| Customer orders | `GET/POST /shopyethu/orders` |
+| Customer orders | `GET/POST /shopyethu/orders`; completed/collected orders can be reviewed using `GET /shopyethu/orders/:id/reviews` |
 | Incoming seller orders/status | `GET /shopyethu/seller/orders`, `PUT /seller/orders/:id` |
 | Listing/order reports | `POST /shopyethu/reports` |
 | Staff review/suspension | `GET/PUT /shopyethu/admin/applications/:uid`, `GET/PUT /admin/sellers/:uid` |
@@ -142,11 +143,13 @@ The company-store Paystack integration is not a marketplace payment provider con
 
 Device photos upload through the backend's existing Cloudinary storage module, using the configured `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET`. JPEG, PNG and WebP are limited to 2 MB, five per product. Failed uploads show errors. Public HTTPS photo links are also supported. Removed photo links are detached from a product; automatic deletion of orphaned Cloudinary uploads is not implemented.
 
-Each order contains products from one store. Checkout revalidates price, stock, seller status and fulfilment in a Firestore transaction. It decrements stock atomically and saves a server-side idempotency record. Double taps are locked in the client. The basket and unresolved order key/body are encrypted on the device; uncertain retries reuse the exact attempt, including after reopening the app. Server replay returns the original order without decrementing stock twice. Cancellation restores stock once. Signing out or switching accounts clears protected basket/cache data.
+Each order contains products from one store. Checkout revalidates price, stock, seller status and fulfilment in a Firestore transaction. It decrements stock atomically and saves a server-side idempotency record. Double taps are locked in the client. Guest and UID-specific baskets, plus any unresolved order key/body, are encrypted on the device. Guests can add and manage products but must sign in to place an order. On sign-in, a compatible guest basket merges into the signed-in basket; baskets from different stores remain separately saved and can be switched without losing either. Uncertain order retries reuse the exact attempt, including after reopening the app. Server replay returns the original order without decrementing stock twice. Cancellation restores stock once. Signing out clears private query cache data but keeps the account's locally saved basket isolated for that UID.
 
-Shop, storefront and seller inventory screens request 24 products per cursor page rather than fetching the full catalogue or inventory. Shop search and My Store search/filtering apply to loaded pages; keep loading more pages to search further. Public product text matching still filters each scanned page; full-text indexing is not implemented. Order queries retain their existing 100-record cap. Order screens reuse saved lists; pull to refresh checks for new orders/status changes. Foregrounding only repairs missing/invalidated queries. There is no order polling. Reports are recorded for staff follow-up; automatic support messaging is not configured.
+Shop, storefront and seller inventory screens request 24 products per cursor page rather than fetching the full catalogue or inventory. Shop and storefront screens offer a sort selector for newest, lowest price and highest price; sorting and cursor pagination are performed by the backend. Shop product cards show a verified badge only when the backend confirms the seller has an approved registered-business application with its certificate on record. The Shop screen also keeps debounced search/category browsing. My Store search/filtering applies to loaded pages; keep loading more pages to search further. Public product text matching still filters each scanned page; full-text indexing is not implemented. Order queries retain their existing 100-record cap. Order screens reuse saved lists; pull to refresh checks for new orders/status changes. Foregrounding only repairs missing/invalidated queries. There is no order polling. Reports are recorded for staff follow-up; automatic support messaging is not configured.
 
-Deploy the companion `chefu-inc-backend` seller-inventory cursor endpoint before releasing the Android update. The app explicitly reports an outdated backend response that omits the pagination cursor rather than presenting a silently truncated inventory.
+Buyers can leave a 1–5 star product review, with optional text, from a completed or collected order. The backend verifies order ownership and product inclusion, marks the review as a verified purchase, and allows one review per product per order. Product detail screens show the public rating summary and recent reviews. Seller/store reviews are not included.
+
+Deploy the companion `chefu-inc-backend` catalogue sorting, verified review and seller-inventory cursor endpoints, and the required Firestore indexes, before releasing the Android update. The app explicitly reports an outdated backend response that omits the pagination cursor rather than presenting a silently truncated inventory.
 
 Shared cache behaviour, per-feature freshness, encrypted persistence, offline recovery, toast coverage, backend/index deployment and measured request-count tests are documented in [CACHING.md](CACHING.md). No dependencies were added for this work.
 

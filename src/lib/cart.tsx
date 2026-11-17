@@ -14,8 +14,9 @@ export type { CartLine } from './cart-store';
 
 const basket = createCartStore(createApplicationDraftStore(SecureStore));
 subscribe(session => { void basket.activate(session?.user.uid || null); });
-type Cart = { items: ReturnType<typeof basket.get>['items']; ready: boolean; error: string; pending: boolean;
+type Cart = { items: ReturnType<typeof basket.get>['items']; alternates: ReturnType<typeof basket.get>['alternates']; ready: boolean; error: string; pending: boolean;
   add: (product: Product) => void; quantity: (id: string, amount: number) => void;
+  switchAlternative: (index: number) => Promise<void>;
   checkout: (fulfilment: Fulfilment, contact: string, address: string) => Promise<Order>; refreshPrices: () => Promise<void> };
 const Context = createContext<Cart | null>(null);
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -29,7 +30,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return () => listener.remove();
   }, []);
   function add(product: Product) {
-    if (!uid) throw new Error('Sign in before adding to your basket.');
+    if (basket.get().uid !== uid || !basket.get().ready) throw new Error('Your basket is still opening. Please wait.');
     if (locked.current) throw new Error('Your order is submitting. Please wait.');
     basket.change(items => {
       if (items.length && items[0].product.storeId !== product.storeId) throw new Error('Each order supports one store. Place your current order first.');
@@ -48,7 +49,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (amount <= 0) toast.info('Removed from your basket.');
     } catch (error) { toast.warning((error as Error).message); }
   }
+  async function switchAlternative(index: number) {
+    if (basket.get().uid !== uid) throw new Error('Your account changed. Please retry.');
+    if (locked.current) throw new Error('Your order is submitting. Please wait.');
+    await basket.switchAlternative(index);
+  }
   async function refreshPrices() {
+    if (basket.get().uid !== uid || !basket.get().ready) throw new Error('Your basket is still opening. Please wait.');
     if (locked.current || state.attempt) return;
     const revision = sessionRevision(), original = basket.get().items;
     const updated = await Promise.all(original.map(async line => ({ ...line, product: await productForUse(line.product.id, true) })));
@@ -57,7 +64,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }
   async function checkout(fulfilment: Fulfilment, contact: string, address: string) {
     const snapshot = basket.get(), revision = sessionRevision();
-    if (!uid || !snapshot.ready || !snapshot.items.length || currentSession()?.user.uid !== uid) throw new Error('Your basket is not ready or your session has ended.');
+    if (!uid || snapshot.uid !== uid || !snapshot.ready || !snapshot.items.length || currentSession()?.user.uid !== uid) throw new Error('Your basket is not ready or your session has ended.');
     if (locked.current) throw new Error('Your order is already submitting.');
     const body = JSON.stringify({ items: snapshot.items.map(line => ({ productId: line.product.id, quantity: line.quantity, expectedPriceCents: line.product.priceCents })), fulfilment, contact, address });
     const attempt = snapshot.attempt || { key: randomUUID(), body };
@@ -78,7 +85,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } finally { locked.current = false; }
   }
   const visible = state.uid === uid;
-  return <Context.Provider value={{ items: visible ? state.items : [], ready: visible && state.ready,
-    error: visible ? state.error : '', pending: visible && !!state.attempt, add, quantity, checkout, refreshPrices }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ items: visible ? state.items : [], alternates: visible ? state.alternates : [], ready: visible && state.ready,
+    error: visible ? state.error : '', pending: visible && !!state.attempt, add, quantity, switchAlternative, checkout, refreshPrices }}>{children}</Context.Provider>;
 }
 export function useCart() { const value = useContext(Context); if (!value) throw new Error('CartProvider is required.'); return value; }

@@ -1,5 +1,13 @@
 # Verification record
 
+## Guest baskets, catalogue sorting and verified product reviews
+
+- Guest baskets persist separately from UID-specific account baskets. Sign-in merges compatible same-store baskets, while different-store baskets remain saved and switchable. Checkout remains sign-in-only.
+- Catalogue sorting supports newest, lowest price and highest price through backend cursor queries. Completed/collected order items can receive one verified product review per order/product; product pages show public rating summaries and reviews.
+- Android typecheck, targeted ESLint and 22 focused cart/cache tests passed. Backend typecheck and 17 targeted marketplace/catalog tests passed; targeted ESLint passed for changed runtime files and `catalog-cache.spec.ts`. The Firestore index JSON parsed successfully.
+- Linting the full `marketplace.spec.ts` still reports six `no-floating-promises` findings, including a newly added test call. The tests pass; the full spec's lint findings remain unresolved.
+- Firestore indexes have not been deployed, and no native device smoke test or live backend acceptance flow was performed.
+
 ## Cache-first navigation and unchanged storefront saves — 17 November 2026
 
 - Every query reuses saved data without time-based expiry: catalogue, products, storefronts, inventory, account, application status, config and buyer/seller orders, including empty lists. Screen focus/resume does not recheck saved snapshots by age. Owned-product details reuse full inventory; manual/conflict reload still fetches the server.

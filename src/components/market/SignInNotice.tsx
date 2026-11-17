@@ -3,13 +3,17 @@ import { router } from "expo-router";
 import { ui } from "@/constants/market-theme";
 import { Button } from "./Button";
 
-export function SignInNotice() {
+export function SignInNotice({
+    title = "Make yourself at home",
+    subtitle = "Sign in to start a basket, track orders, or start selling.",
+}: {
+    title?: string;
+    subtitle?: string;
+}) {
     return (
         <View style={ui.card}>
-            <Text style={ui.heading}>Make yourself at home</Text>
-            <Text style={ui.subtitle}>
-                Sign in to start a basket, track orders, or start selling.
-            </Text>
+            <Text style={ui.heading}>{title}</Text>
+            <Text style={ui.subtitle}>{subtitle}</Text>
             <Button
                 title="Go to account"
                 onPress={() => router.navigate("/account")}

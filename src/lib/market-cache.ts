@@ -109,7 +109,18 @@ function updateOrder(path: string, uid: string, order: Order) {
 onApiMutation(({ path, data }) => {
     const uid = currentSession()?.user.uid;
     if (!uid) return;
-    if (path === "/application") {
+    if (/^\/products\/[^/]+\/reviews$/.test(path)) {
+        toast.success("Your verified product review was submitted.");
+        const productPath = path.slice(0, -"/reviews".length);
+        marketCache.invalidate(
+            (queryPath, scope) =>
+                scope === "public" &&
+                (queryPath === path ||
+                    queryPath.split("?")[0] === productPath ||
+                    queryPath.split("?")[0] === "/products"),
+            true,
+        );
+    } else if (path === "/application") {
         toast.success("Your seller application was submitted.");
         marketCache.set<SellerAccount>(
             "/me",

@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { loadTs } from './load-ts.mjs';
 const { createQueryCache } = loadTs('src/lib/query-cache.ts');
 const { createQueryPersistence } = loadTs('src/lib/query-persistence.ts');
-const { canonicalPath, canReuseSnapshot } = loadTs('src/lib/query-policy.ts');
+const { canonicalPath, canReuseSnapshot, publicQuery } = loadTs('src/lib/query-policy.ts');
 const { createCartStore } = loadTs('src/lib/cart-store.ts');
 const { createToastStore } = loadTs('src/lib/toast.ts');
 const tick = () => new Promise(setImmediate);
@@ -25,6 +25,10 @@ test('stable keys normalize empty filters, query order, case and old order cache
   assert.equal(canonicalPath('/orders?updated=abc'), '/orders');
   assert.equal(canReuseSnapshot({ data: { orders: [] }, updatedAt: 0 }), true);
   assert.equal(canReuseSnapshot({ data: { orders: [] }, updatedAt: null }), false);
+});
+test('public product reads stay anonymous but product review submissions require authentication', () => {
+  assert.equal(publicQuery('/products/item/reviews'), true);
+  assert.equal(publicQuery('/products/item/reviews', 'POST'), false);
 });
 test('three simultaneous consumers and twenty repeat visits use one GET, not twenty-three', async () => {
   const h = setup();
@@ -133,18 +137,97 @@ test('basket changes are immediate and coalesced; order key is durable before a 
   cart.change(() => [{ product, quantity: 1 }]); cart.change(lines => lines.map(line => ({ ...line, quantity: 2 })));
   assert.equal(cart.get().items[0].quantity, 2); assert.equal(disk.writes.length, 0);
   await cart.reserve({ key: 'durable-order-key', body: '{"items":[]}' });
-  assert.equal(disk.rows.get('shopyethu.basket.v1').attempt.key, 'durable-order-key');
+  assert.equal(disk.rows.get('shopyethu.basket.v1.alice').attempt.key, 'durable-order-key');
   const reopened = createCartStore(disk); await reopened.activate('alice');
   assert.equal(reopened.get().attempt.key, 'durable-order-key');
   assert.throws(() => reopened.change(() => []), /previous order/);
-  await reopened.complete(); assert.equal(reopened.get().items.length, 0); assert.equal(disk.rows.get('shopyethu.basket.v1').attempt, null);
+  await reopened.complete(); assert.equal(reopened.get().items.length, 0);   assert.equal(disk.rows.get('shopyethu.basket.v1.alice').attempt, null);
 });
-test('basket activation deduplicates concurrent hydration and clears account data on sign-out', async () => {
+test('guest baskets migrate on sign-in and signed-in baskets remain isolated on sign-out', async () => {
+  const disk = storage(), cart = createCartStore(disk);
+  const product = { id: 'guest-product', storeId: 'store-a', priceCents: 100, fulfilment: ['collection'], updatedAt: '2026-01-01' };
+  await cart.activate(null);
+  cart.change(() => [{ product, quantity: 1 }]); await cart.flush();
+  assert.equal(disk.rows.get('shopyethu.guest-basket.v1').items[0].product.id, 'guest-product');
+
+  const reopened = createCartStore(disk); await reopened.activate(null);
+  assert.equal(reopened.get().items[0].product.id, 'guest-product');
+  await reopened.activate('alice');
+  assert.equal(reopened.get().items[0].product.id, 'guest-product');
+  assert.equal(disk.rows.has('shopyethu.guest-basket.v1'), false);
+  assert.equal(disk.rows.get('shopyethu.basket.v1.alice').uid, 'alice');
+
+  await reopened.activate(null);
+  assert.equal(reopened.get().items.length, 0);
+  assert.equal(disk.rows.has('shopyethu.basket.v1.alice'), true);
+  await reopened.activate('alice');
+  assert.equal(reopened.get().items[0].product.id, 'guest-product');
+});
+test('signing in immediately after an add flushes the guest basket before activation', async () => {
+  const disk = storage(), cart = createCartStore(disk);
+  const product = { id: 'fast-add', storeId: 'store-a', priceCents: 100, fulfilment: ['collection'] };
+  await cart.activate(null);
+  cart.change(() => [{ product, quantity: 1 }]);
+  await cart.activate('alice');
+  assert.equal(cart.get().items[0].product.id, 'fast-add');
+  assert.equal(disk.rows.has('shopyethu.guest-basket.v1'), false);
+  assert.equal(disk.rows.get('shopyethu.basket.v1.alice').items[0].product.id, 'fast-add');
+});
+test('legacy account baskets migrate to uid-specific storage without being exposed to another account', async () => {
+  const disk = storage();
+  const product = { id: 'legacy-product', storeId: 'store-a', priceCents: 100, fulfilment: ['collection'] };
+  disk.rows.set('shopyethu.basket.v1', {
+    version: 1, uid: 'alice', items: [{ product, quantity: 1 }], attempt: null,
+  });
+  const bob = createCartStore(disk); await bob.activate('bob');
+  assert.equal(bob.get().items.length, 0);
+  assert.equal(disk.rows.has('shopyethu.basket.v1'), true);
+
+  const alice = createCartStore(disk); await alice.activate('alice');
+  assert.equal(alice.get().items[0].product.id, 'legacy-product');
+  assert.equal(disk.rows.has('shopyethu.basket.v1'), false);
+  assert.equal(disk.rows.has('shopyethu.basket.v1.alice'), true);
+});
+test('same-store guest and account baskets merge without losing line quantities', async () => {
+  const disk = storage(), cart = createCartStore(disk);
+  const product = { id: 'shared', storeId: 'store-a', priceCents: 100, fulfilment: ['collection'], updatedAt: '2026-01-01' };
+  const second = { ...product, id: 'second' };
+  await cart.activate('alice');
+  cart.change(() => [{ product, quantity: 1 }]); await cart.flush();
+  await cart.activate(null);
+  cart.change(() => [{ product, quantity: 2 }, { product: second, quantity: 1 }]); await cart.flush();
+  await cart.activate('alice');
+  assert.deepEqual(JSON.parse(JSON.stringify(cart.get().items.map(line => [line.product.id, line.quantity]))), [['shared', 3], ['second', 1]]);
+  assert.equal(cart.get().alternates.length, 0);
+  assert.equal(disk.rows.has('shopyethu.guest-basket.v1'), false);
+});
+test('different-store baskets stay separate and can be switched without data loss', async () => {
+  const disk = storage(), cart = createCartStore(disk);
+  const accountProduct = { id: 'account-product', storeId: 'store-a', priceCents: 100, fulfilment: ['collection'] };
+  const guestProduct = { id: 'guest-product', storeId: 'store-b', priceCents: 200, fulfilment: ['collection'] };
+  await cart.activate('alice');
+  cart.change(() => [{ product: accountProduct, quantity: 1 }]); await cart.flush();
+  await cart.activate(null);
+  cart.change(() => [{ product: guestProduct, quantity: 2 }]); await cart.flush();
+  await cart.activate('alice');
+  assert.equal(cart.get().items[0].product.id, 'account-product');
+  assert.equal(cart.get().alternates[0][0].product.id, 'guest-product');
+
+  await cart.switchAlternative(0);
+  assert.equal(cart.get().items[0].product.id, 'guest-product');
+  assert.equal(cart.get().alternates[0][0].product.id, 'account-product');
+  const reopened = createCartStore(disk); await reopened.activate('alice');
+  assert.equal(reopened.get().items[0].product.id, 'guest-product');
+  assert.equal(reopened.get().alternates[0][0].product.id, 'account-product');
+});
+test('basket activation deduplicates concurrent hydration and retains account data after sign-out', async () => {
   const disk = storage(), cart = createCartStore(disk); await Promise.all([cart.activate('alice'), cart.activate('alice')]);
   assert.equal(cart.get().ready, true);
   await cart.reserve({ key: 'attempt', body: '{}' }); await cart.activate(null);
-  assert.equal(cart.get().items.length, 0); assert.equal(disk.rows.has('shopyethu.basket.v1'), false);
-  await cart.activate('bob'); assert.equal(cart.get().attempt, null);
+  assert.equal(cart.get().items.length, 0);   assert.equal(disk.rows.has('shopyethu.basket.v1.alice'), true);
+  await cart.activate('bob');
+  assert.equal(cart.get().items.length, 0);
+  await cart.activate('alice'); assert.equal(cart.get().attempt.key, 'attempt');
 });
 test('toast deduplication, bounded queue, dismissal and identity clearing are centralized', () => {
   const toast = createToastStore(); let changes = 0; toast.subscribe(() => changes++);

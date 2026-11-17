@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import type { Product } from "@/types/marketplace";
 import { money, palette, ui } from "@/constants/market-theme";
 import { MarketImage } from "./MarketImage";
@@ -12,7 +12,7 @@ export function ProductCard({
     onAddToBasket,
     hideSellerName = false,
 }: {
-    product: Product & { storeName?: string };
+    product: Product & { storeName?: string; storeVerified?: boolean };
     onAddToBasket?: (product: Product) => void;
     hideSellerName?: boolean;
 }) {
@@ -72,24 +72,39 @@ export function ProductCard({
             <View style={styles.details}>
                 {!hideSellerName &&
                     (product.storeName ? (
-                        <Pressable
-                            accessibilityRole="link"
-                            accessibilityLabel={`Visit ${product.storeName} storefront`}
-                            onPress={() =>
-                                router.navigate({
-                                    pathname: "/store/[id]",
-                                    params: { id: product.storeId },
-                                })
-                            }
-                            style={({ pressed }) => [
-                                styles.sellerLink,
-                                pressed && styles.sellerLinkPressed,
-                            ]}
-                        >
-                            <Text style={styles.sellerName} numberOfLines={1}>
-                                {product.storeName}
-                            </Text>
-                        </Pressable>
+                        <View style={styles.sellerRow}>
+                            <Pressable
+                                accessibilityRole="link"
+                                accessibilityLabel={`Visit ${product.storeName} storefront`}
+                                onPress={() =>
+                                    router.navigate({
+                                        pathname: "/store/[id]",
+                                        params: { id: product.storeId },
+                                    })
+                                }
+                                style={({ pressed }) => [
+                                    styles.sellerLink,
+                                    pressed && styles.sellerLinkPressed,
+                                ]}
+                            >
+                                <Text
+                                    style={styles.sellerName}
+                                    numberOfLines={1}
+                                >
+                                    {product.storeName}
+                                </Text>
+                            </Pressable>
+                            {product.storeVerified === true && (
+                                <MaterialIcons
+                                    name="verified"
+                                    size={14}
+                                    color={palette.brand}
+                                    accessible
+                                    accessibilityRole="image"
+                                    accessibilityLabel="Verified seller"
+                                />
+                            )}
+                        </View>
                     ) : (
                         <Text style={ui.small} numberOfLines={1}>
                             {product.category}
@@ -158,7 +173,13 @@ const styles = StyleSheet.create({
         backgroundColor: palette.brand,
     },
     details: { paddingTop: 10, gap: 4 },
-    sellerLink: { alignSelf: "flex-start", maxWidth: "100%" },
+    sellerRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 4,
+        maxWidth: "100%",
+    },
+    sellerLink: { flexShrink: 1, minWidth: 0 },
     sellerLinkPressed: { opacity: 0.7 },
     sellerName: {
         color: palette.brand,

@@ -7,12 +7,25 @@ export const home = StyleSheet.create({
   name: { color: palette.ink, fontSize: 23, fontWeight: '700' },
   search: {
     minHeight: 50,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingRight: 8,
     borderRadius: 14,
     backgroundColor: palette.paper,
+  },
+  searchInput: {
+    flex: 1,
+    minHeight: 50,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     color: palette.ink,
     fontSize: 15,
+  },
+  clearSearch: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   categories: { gap: 22 },
   category: {

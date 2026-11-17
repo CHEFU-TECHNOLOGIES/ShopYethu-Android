@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import { Button, ResourceState } from "@/components/market/Primitives";
 import { ListPage } from "@/components/market/ListPage";
@@ -7,18 +8,19 @@ import { StorefrontSkeleton } from "@/components/market/StorefrontSkeleton";
 import { useProductFeed } from "@/hooks/use-product-feed";
 import { useCart } from "@/lib/cart";
 import { toast } from "@/lib/toast";
-import type { Product, Storefront } from "@/types/marketplace";
+import type { CatalogSort, Product, Storefront } from "@/types/marketplace";
 
 export default function StoreScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const { add } = useCart();
+    const [sort, setSort] = useState<CatalogSort>("newest");
     const resource = useProductFeed<{
         store: Storefront;
         products: Product[];
         nextCursor?: string | null;
     }>(
-        `/stores/${id}?page=1&view=compact`,
-        `/products?page=1&view=compact&store=${encodeURIComponent(id)}`,
+        `/stores/${id}?page=1&view=compact&sort=${sort}&includeStoreVerification=1`,
+        `/products?page=1&view=compact&store=${encodeURIComponent(id)}&sort=${sort}&includeStoreVerification=1`,
     );
 
     function addToBasket(product: Product) {
@@ -55,8 +57,8 @@ export default function StoreScreen() {
                     {resource.data && (
                         <StorefrontHeader
                             store={resource.data.store}
-                            productCount={resource.data.products.length}
-                            hasMore={!!resource.data.nextCursor}
+                            sort={sort}
+                            onSortChange={setSort}
                         />
                     )}
                     <ResourceState

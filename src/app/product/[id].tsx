@@ -14,6 +14,7 @@ import { productDetailStyles as styles } from "@/constants/product-detail-styles
 import { money, palette, ui } from "@/constants/market-theme";
 import { OperatingAreaLabel } from "@/components/market/OperatingAreaLabel";
 import { ProductDetailsSkeleton } from "@/components/market/ProductDetailsSkeleton";
+import { ProductReviews } from "@/components/market/ProductReviews";
 import { useProductDetailScreen } from "@/hooks/use-product-detail-screen";
 
 export default function ProductScreen() {
@@ -191,6 +192,8 @@ export default function ProductScreen() {
                             description={product.description}
                         />
                     </View>
+
+                    <ProductReviews productId={product.id} />
 
                     <View style={[styles.section, styles.contentBlock]}>
                         <Text style={styles.sectionTitle}>How you can get it</Text>

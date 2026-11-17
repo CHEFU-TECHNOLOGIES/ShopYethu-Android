@@ -9,7 +9,7 @@ export class ApiError extends Error { constructor(message: string, readonly stat
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
     const identity = currentSession()?.user.uid;
     const revision = sessionRevision();
-    const isPublic = publicQuery(path);
+    const isPublic = publicQuery(path, options.method);
     const token = isPublic ? null : await accessToken();
     if (!isPublic && (currentSession()?.user.uid !== identity || sessionRevision() !== revision)) throw new ApiError('Your account changed. Please retry.', 401);
     const headers = new Headers(options.headers);

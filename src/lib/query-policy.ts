@@ -1,5 +1,5 @@
-export function publicQuery(path: string) {
-  return /^\/(config(?:\?|$)|products(?:\/|\?|$)|stores\/|areas\/)/.test(path);
+export function publicQuery(path: string, method = 'GET') {
+  return method === 'GET' && /^\/(config(?:\?|$)|products(?:\/|\?|$)|stores\/|areas\/)/.test(path);
 }
 
 export function canonicalPath(path: string) {

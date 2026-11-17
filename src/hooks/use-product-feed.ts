@@ -5,7 +5,7 @@ import { canonicalPath } from '@/lib/query-policy';
 import { toast } from '@/lib/toast';
 import type { Product } from '@/types/marketplace';
 
-export type ProductFeed = { products: (Product & { storeName?: string })[]; nextCursor?: string | null };
+export type ProductFeed = { products: (Product & { storeName?: string; storeVerified?: boolean })[]; nextCursor?: string | null };
 export function useProductFeed<T extends ProductFeed = ProductFeed>(path: string, morePath = path) {
   const resource = useResource<T>(path);
   const lock = useRef(false), [loadingMore, setLoadingMore] = useState(false);

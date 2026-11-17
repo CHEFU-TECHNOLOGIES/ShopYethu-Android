@@ -9,7 +9,9 @@ export function useCartScreen() {
     const { session } = useAuth();
     const {
         items,
+        alternates,
         quantity: updateQuantity,
+        switchAlternative,
         checkout,
         refreshPrices,
         ready,
@@ -72,10 +74,24 @@ export function useCartScreen() {
         }
     }
 
+    async function switchBasket(index: number) {
+        try {
+            await switchAlternative(index);
+        } catch (cause) {
+            toast.error(
+                cause instanceof Error
+                    ? cause.message
+                    : "Could not switch baskets.",
+            );
+        }
+    }
+
     return {
         session,
         items,
+        alternates,
         updateQuantity,
+        switchBasket,
         ready,
         basketError,
         pending,
