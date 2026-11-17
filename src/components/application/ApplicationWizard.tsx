@@ -46,6 +46,7 @@ export function ApplicationWizard({
     const { form, step, ready, goTo } = draft;
     const [busy, setBusy] = useState(false),
         [error, setError] = useState("");
+    const [submitting, setSubmitting] = useState(false);
     const [uploadingProof, setUploadingProof] = useState(false);
     const lock = useRef(false);
     const responding = previous?.status === "more-info";
@@ -106,6 +107,7 @@ export function ApplicationWizard({
         }
         lock.current = true;
         setBusy(true);
+        setSubmitting(true);
         setError("");
         try {
             const application = await api<SellerApplication>("/application", {
@@ -122,6 +124,7 @@ export function ApplicationWizard({
             onSubmitted(application, warning);
         } catch (cause) {
             setError((cause as Error).message);
+            setSubmitting(false);
             lock.current = false;
             setBusy(false);
         }
@@ -279,6 +282,14 @@ export function ApplicationWizard({
                 )
             ) : (
                 <>
+                    {submitting && (
+                        <View style={ui.card} accessibilityLiveRegion="polite">
+                            <Text style={ui.heading}>Sending your application</Text>
+                            <Text style={ui.subtitle}>
+                                Your application is not confirmed yet. Please wait while we send it.
+                            </Text>
+                        </View>
+                    )}
                     {responding && step === 0 && (
                         <View style={ui.card}>
                             <Text style={ui.heading}>

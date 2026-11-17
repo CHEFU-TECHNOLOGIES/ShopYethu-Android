@@ -1,6 +1,7 @@
 import { ResourceState, SignInNotice } from "@/components/market/Primitives";
 import { ListPage } from "@/components/market/ListPage";
 import { OrderListRow } from "@/components/market/OrderListRow";
+import { OrdersSkeleton } from "@/components/market/OrdersSkeleton";
 import { useResource } from "@/hooks/use-resource";
 import { useAuth } from "@/lib/auth";
 import type { Order } from "@/types/marketplace";
@@ -34,6 +35,7 @@ export default function OrdersScreen() {
                     <ResourceState
                         {...resource}
                         retry={resource.refresh}
+                        loadingFallback={<OrdersSkeleton />}
                         empty={
                             resource.data?.orders.length === 0
                                 ? "No orders yet. Your first local find is waiting."

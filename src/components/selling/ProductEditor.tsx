@@ -138,6 +138,14 @@ export function ProductEditor({
                             }}
                         />
                     )}
+                    {busy && step === 3 && (
+                        <View style={ui.card} accessibilityLiveRegion="polite">
+                            <Text style={ui.heading}>Saving your product</Text>
+                            <Text style={ui.subtitle}>
+                                These changes are not confirmed yet. Your listing will update when the save succeeds.
+                            </Text>
+                        </View>
+                    )}
                     {!!editor.error && (
                         <Text accessibilityRole="alert" style={ui.error}>
                             {editor.error}

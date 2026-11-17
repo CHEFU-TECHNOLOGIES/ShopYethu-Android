@@ -54,6 +54,8 @@ export default function ProductScreen() {
         <Page
             title={product?.name || "Product details"}
             back
+            onRefresh={resource.refresh}
+            refreshing={resource.refreshing}
             backAccessory={
                 <Pressable
                     accessibilityRole="button"

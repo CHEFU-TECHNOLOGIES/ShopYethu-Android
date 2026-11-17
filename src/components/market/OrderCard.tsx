@@ -53,6 +53,13 @@ export function OrderCard({
                 <Text style={ui.heading}>{order.reference}</Text>
                 <OrderStatusBadge status={order.status} />
             </View>
+            {selling && loadingAction && (
+                <Text accessibilityLiveRegion="polite" style={ui.small}>
+                    {loadingAction === "payment"
+                        ? "Payment confirmation is pending. It is not confirmed yet."
+                        : "Order update is pending confirmation."}
+                </Text>
+            )}
             {order.fulfilment === 'collection' && !['cancelled', 'collected', 'completed'].includes(order.status) && (
                 <Text style={ui.small}>
                     {selling ? 'Match this order code with the customer at collection.' : 'Show this order code to your seller when collecting. Wait until your order is ready.'}

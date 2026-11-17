@@ -22,12 +22,15 @@ export function ProductThumbnail({ url }: { url?: string }) {
         <Ionicons name="image-outline" size={28} color={palette.muted} />
     );
 }
-export function InventoryRow({ product }: { product: Product }) {
+export function InventoryRow({ product, onActions }: { product: Product; onActions: (product: Product) => void }) {
     return (
+        <View style={styles.productCard}>
         <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Edit ${product.name}, ${product.published ? "published" : "draft"}, ${product.stock} in stock`}
-            style={styles.productRow}
+            accessibilityHint="Tap to edit. Touch and hold to manage this product."
+            style={[styles.productRow, styles.productMain]}
+            onLongPress={() => onActions(product)}
             onPress={() =>
                 router.navigate({
                     pathname: "/selling/product",
@@ -60,7 +63,13 @@ export function InventoryRow({ product }: { product: Product }) {
                         : `${product.stock} in stock`}
                 </Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={palette.muted} />
         </Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel={`Manage ${product.name}`}
+            accessibilityHint="Edit, move to draft or delete this product"
+            onLongPress={() => onActions(product)}
+            onPress={() => onActions(product)} style={styles.productMenu}>
+            <Ionicons name="ellipsis-vertical" size={21} color={palette.muted} />
+        </Pressable>
+        </View>
     );
 }

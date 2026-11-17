@@ -17,6 +17,7 @@ export function ProductCard({
     hideSellerName?: boolean;
 }) {
     function openProduct() {
+        prefetchProduct(product.id);
         router.navigate({
             pathname: "/product/[id]",
             params: { id: product.id },
@@ -29,7 +30,6 @@ export function ProductCard({
                 <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`View ${product.name}`}
-                    onPressIn={() => prefetchProduct(product.id)}
                     onPress={openProduct}
                     style={styles.imagePressable}
                 >
@@ -98,7 +98,6 @@ export function ProductCard({
                 <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`${product.name}, ${money(product.priceCents)}`}
-                    onPressIn={() => prefetchProduct(product.id)}
                     onPress={openProduct}
                     style={styles.productDetails}
                 >

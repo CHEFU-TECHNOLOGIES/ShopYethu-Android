@@ -1,5 +1,26 @@
 # Verification record
 
+## Cache-first navigation and unchanged storefront saves — 17 November 2026
+
+- Every query reuses saved data without time-based expiry: catalogue, products, storefronts, inventory, account, application status, config and buyer/seller orders, including empty lists. Screen focus/resume does not recheck saved snapshots by age. Owned-product details reuse full inventory; manual/conflict reload still fetches the server.
+- Product-card scrolling/touch cancellation makes zero detail requests; a completed tap and the screen share one request. Confirmed edits/drafts/deletions update loaded lists without unnecessary invalidation. New matching publications and unknown current stock still invalidate affected snapshots.
+- Storefront Save is disabled when unchanged and the handler refuses unchanged submissions. Whitespace, a resolved label for the same place ID, autocomplete tokens and a stale locked name do not enable Save. Changing and reverting editable fields disables it again. Product and storefront pages offer explicit pull-to-refresh.
+- All 44 cache tests, 10 seller tests and 14 application tests passed. Request-counter tests cover 90–100 days of repeat screen visits with no additional GETs, a restart with 90-day-old status, Check status applying backend approval, zero offline-resume probes, inventory reuse, relevant invalidation, forced refresh and zero-request unchanged saves. Typecheck passed; lint has zero errors and the existing unused `accountUserDiagnostics` warning.
+- Authentication expiry/refresh, seller authorization, ownership, stock/price validation, order idempotency and payment checks remain server enforced in action requests. Application Check status and pull-to-refresh explicitly fetch decisions/new orders/status updates. There are no polling or freshness timers and no automatic offline connectivity probes. Missing, evicted or known-invalidated data can still require a read. Remote changes require explicit refresh until push invalidation is added. These are automated request counts, not measured production savings. No emulator/device or live-account verification was performed for this audit.
+
+## Registered-business store names — 17 November 2026
+
+- Registered business names are read-only in the store editor and cannot be renamed through a direct API request. Individual sellers can still rename their stores. Unsaved names from stale drafts are ignored when the rule is locked; descriptions and operating areas remain editable.
+- Approval stores the rule on the storefront. Existing stores resolve it from their original application; unchanged reads/saves add no writes. The existing account/store responses carry the rule, so no separate client permission call is needed.
+- Eleven targeted backend policy, store-area and approval tests passed. Eight mobile seller form/action/name tests passed, including stale-draft payload protection and individual renaming. Typechecks passed; mobile lint has one existing warning and no errors. The rule requires deploying the backend with the mobile update; native visual verification was not performed.
+
+## My Store draft and delete actions — 17 November 2026
+
+- Each inventory row has a product-actions menu with Edit, Move to draft (published products) and Delete. Delete requires confirmation; in-flight requests block repeat taps and dismissal. Server errors stay in the sheet for retry. The new component is separate from the store screen.
+- Seven new backend tests passed: fresh authorization/ownership, stock-preserving draft updates, idempotent retries, deletion with existing orders, stale-save rejection, fulfilment after deletion, route guards and public-cache invalidation. Backend typecheck, build and lint for changed runtime/new test files passed. Full marketplace suite: 56 passed, 2 existing failures in order-email tests (template alias mismatch and missing HTML fixture).
+- Android: 6 seller form/action tests and 36 cache/integration tests passed. Draft/delete responses update loaded inventory without an extra GET. Typecheck passed; lint has no errors and one existing unused-import warning in `auth.tsx`.
+- Backend deployment and an updated app build are needed. Native visual interaction has not been verified on an emulator/device for these actions. Existing orders remain valid; deleting does not cancel them or change their payment status.
+
 Latest update: 15 November 2026.
 
 ## Longer caching and saved-account correction

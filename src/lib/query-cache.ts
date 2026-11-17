@@ -1,11 +1,11 @@
-import { canonicalPath, publicQuery, queryPolicy } from './query-policy';
+import { canReuseSnapshot, canonicalPath, publicQuery } from './query-policy';
 
 export type QuerySnapshot<T = unknown> = { data: T | null; error: string; loading: boolean; updatedAt: number | null };
 export type SavedQuery = { path: string; scope: string; data: unknown; updatedAt: number };
 type Entry = {
   path: string; scope: string; state: QuerySnapshot; listeners: Set<() => void>;
   active: number; touched: number; retryAt: number; generation: number;
-  observers: Set<{ maxStaleMs?: number }>;
+  observers: Set<object>;
   controller?: AbortController; pending?: Promise<void>;
 };
 const EMPTY: QuerySnapshot = Object.freeze({ data: null, error: '', loading: false, updatedAt: null });
@@ -56,12 +56,10 @@ export function createQueryCache(
       entries.delete(key(entry.path, entry.scope));
     }
   }
-  async function load(path: string, scope: string, force = false, maxStaleMs?: number) {
+  async function load(path: string, scope: string, force = false) {
     const entry = ensure(path, scope);
     if (entry.pending) return entry.pending;
-    const policy = queryPolicy(entry.path);
-    const freshFor = Math.min(policy.staleMs, policy.maxAgeMs, maxStaleMs ?? Infinity);
-    if (!force && (now() < entry.retryAt || !entry.state.error && entry.state.updatedAt !== null && now() - entry.state.updatedAt < freshFor)) return;
+    if (!force && (now() < entry.retryAt || canReuseSnapshot(entry.state))) return;
     const controller = new AbortController(), generation = entry.generation;
     entry.controller = controller;
     entry.state = { ...entry.state, loading: true, error: '' }; emit(entry);
@@ -97,19 +95,14 @@ export function createQueryCache(
   return {
     load,
     get<T>(path: string, scope: string): QuerySnapshot<T> {
-      const entry = ensure(path, scope);
-      // Do not notify React subscribers while another component reads its snapshot.
-      if (entry.state.updatedAt !== null && now() - entry.state.updatedAt > queryPolicy(entry.path).maxAgeMs) {
-        entry.state = EMPTY; setTimeout(() => emit(entry, true), 0);
-      }
-      return entry.state as QuerySnapshot<T>;
+      return ensure(path, scope).state as QuerySnapshot<T>;
     },
     subscribe(path: string, scope: string, listener: () => void) {
       const entry = ensure(path, scope); entry.listeners.add(listener);
       return () => { entry.listeners.delete(listener); collect(); };
     },
-    observe(path: string, scope: string, maxStaleMs?: number) {
-      const entry = ensure(path, scope), observer = { maxStaleMs };
+    observe(path: string, scope: string) {
+      const entry = ensure(path, scope), observer = {};
       entry.observers.add(observer); entry.active = entry.observers.size;
       return () => {
         entry.observers.delete(observer); entry.active = entry.observers.size;
@@ -124,13 +117,11 @@ export function createQueryCache(
     },
     refreshActive(reconnected = false) {
       for (const entry of entries.values()) if (entry.active) {
-        // Resume/reconnection repairs failed or invalidated reads. Retained data
-        // is checked at its next screen use or explicit refresh, not every resume.
-        if (entry.state.data !== null && !entry.state.error && entry.state.updatedAt !== null &&
-          now() - entry.state.updatedAt < queryPolicy(entry.path).maxAgeMs) continue;
+        // Repair missing/invalidated reads only. Even a failed manual refresh
+        // must not turn saved data into a new request on every resume.
+        if (canReuseSnapshot(entry.state)) continue;
         if (reconnected) entry.retryAt = 0;
-        const maxStaleMs = Math.min(...[...entry.observers].map(observer => observer.maxStaleMs ?? Infinity));
-        void load(entry.path, entry.scope, false, maxStaleMs);
+        void load(entry.path, entry.scope);
       }
     },
     cancelAll() {
@@ -147,12 +138,12 @@ export function createQueryCache(
       entry.state = { data, error: '', loading: false, updatedAt: fresh ? now() : entry.state.updatedAt };
       entry.retryAt = 0; emit(entry, true); collect();
     },
-    patch<T>(predicate: (path: string, scope: string) => boolean, update: (data: T) => T) {
+    patch<T>(predicate: (path: string, scope: string) => boolean, update: (data: T, path: string) => T) {
       for (const entry of entries.values()) if (entry.state.data !== null && predicate(entry.path, entry.scope)) {
-        const data = update(entry.state.data as T);
+        const data = update(entry.state.data as T, entry.path);
         if (data === entry.state.data) continue;
         entry.generation++; entry.controller?.abort(); entry.pending = undefined;
-        // Partial responses do not renew freshness for the rest of a snapshot.
+        // Partial responses preserve the snapshot's timestamp/invalidation.
         entry.state = { ...entry.state, data, error: '', loading: false };
         entry.retryAt = 0; emit(entry, true);
       }
@@ -175,7 +166,7 @@ export function createQueryCache(
     restore(rows: SavedQuery[], scope: string) {
       for (const row of rows) {
         if (!row || row.scope !== scope || typeof row.path !== 'string' || !row.path.startsWith('/') ||
-          publicQuery(row.path) !== (scope === 'public') || !Number.isFinite(row.updatedAt) || row.updatedAt > now() || now() - row.updatedAt > queryPolicy(row.path).maxAgeMs) continue;
+          publicQuery(row.path) !== (scope === 'public') || !Number.isFinite(row.updatedAt) || row.updatedAt > now()) continue;
         const entry = ensure(row.path, scope);
         if (entry.state.updatedAt !== null || entry.pending) continue;
         entry.state = { data: row.data, error: '', loading: false, updatedAt: row.updatedAt }; emit(entry);

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Text } from "react-native";
 import {
+    Button,
     Page,
     ResourceState,
     SignInNotice,
@@ -14,7 +15,7 @@ import { recordSellerApplication } from "@/lib/seller-account";
 import { ui } from "@/constants/market-theme";
 
 function SignedInApplication({ session }: { session: Session }) {
-    const resource = useSellerAccount(true, 60_000);
+    const resource = useSellerAccount();
     const [warning, setWarning] = useState("");
     const [editing, setEditing] = useState(false);
     const application = resource.data?.application;
@@ -51,11 +52,22 @@ function SignedInApplication({ session }: { session: Session }) {
                 </Text>
             )}
             {application && (
-                <ApplicationStatus
-                    application={application}
-                    store={resource.data?.store || null}
-                    onEdit={() => setEditing(true)}
-                />
+                <>
+                    <Button
+                        title="Check status"
+                        secondary
+                        compact
+                        inline
+                        loading={resource.refreshing}
+                        disabled={resource.refreshing}
+                        onPress={resource.refresh}
+                    />
+                    <ApplicationStatus
+                        application={application}
+                        store={resource.data?.store || null}
+                        onEdit={() => setEditing(true)}
+                    />
+                </>
             )}
         </Page>
     );

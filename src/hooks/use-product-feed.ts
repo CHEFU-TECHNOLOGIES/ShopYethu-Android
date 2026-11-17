@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { useResource } from './use-resource';
 import { loadMarketQuery, marketCache } from '@/lib/market-cache';
-import { canonicalPath, queryUsage } from '@/lib/query-policy';
+import { canonicalPath } from '@/lib/query-policy';
 import { toast } from '@/lib/toast';
 import type { Product } from '@/types/marketplace';
 
@@ -16,7 +16,7 @@ export function useProductFeed<T extends ProductFeed = ProductFeed>(path: string
     const base = canonicalPath(morePath);
     const next = `${base}${base.includes('?') ? '&' : '?'}after=${encodeURIComponent(cursor)}`;
     try {
-      await loadMarketQuery(next, 'public', false, queryUsage(next));
+      await loadMarketQuery(next, 'public');
       const page = marketCache.get<ProductFeed>(next, 'public');
       if (page.error) { toast.error(page.error); return; }
       if (!page.data) return;

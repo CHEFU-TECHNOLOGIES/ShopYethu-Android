@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { loadTs } from './load-ts.mjs';
 const { createQueryCache } = loadTs('src/lib/query-cache.ts');
 const { createQueryPersistence } = loadTs('src/lib/query-persistence.ts');
-const { publicQuery, queryPolicy, queryUsage } = loadTs('src/lib/query-policy.ts');
+const { publicQuery, canReuseSnapshot } = loadTs('src/lib/query-policy.ts');
 const minute = 60_000, hour = 60 * minute, day = 24 * hour;
 const tick = () => new Promise(setImmediate);
 function setup() {
@@ -14,9 +14,7 @@ function setup() {
 
 test('place-label lookups share the public cache', async () => {
   assert.equal(publicQuery('/areas/place-id'), true);
-  const policy = queryPolicy('/areas/place-id');
-  assert.equal(policy.staleMs, day);
-  assert.equal(policy.maxAgeMs, 7 * day);
+  assert.equal(canReuseSnapshot({ data: { label: 'Test area' }, updatedAt: 0 }), true);
   let calls = 0;
   const cache = createQueryCache(async () => { calls++; return { label: 'Test area' }; });
   await Promise.all(Array.from({ length: 3 }, () => cache.load('/areas/place-id', 'public')));
@@ -24,15 +22,27 @@ test('place-label lookups share the public cache', async () => {
   assert.equal(calls, 1);
 });
 
-test('freshness reflects how each screen uses data, including empty incoming-order lists', () => {
-  for (const [path, data, expected] of [
-    ['/me', null, Infinity], ['/config', null, 7 * day], ['/products?page=1', null, 6 * hour],
-    ['/products/p', null, 15 * minute], ['/stores/s', null, 6 * hour], ['/seller/store', null, hour],
-    ['/orders', { orders: [] }, 2 * minute], ['/seller/orders', { orders: [] }, 2 * minute],
-    ['/seller/orders', { orders: [{ status: 'collected' }] }, 2 * minute],
-    ['/orders', { orders: [{ status: 'ready' }] }, 2 * minute],
-    ['/orders', { orders: [{ status: 'collected' }, { status: 'cancelled' }] }, 24 * hour],
-  ]) assert.equal(queryUsage(path, data), expected, path);
+test('saved snapshots, including empty and active order lists, need no time-based status checks', () => {
+  for (const data of [{ orders: [] }, { orders: [{ status: 'ready' }] }, { orders: [{ status: 'collected' }] }, { application: null }, { products: [] }]) {
+    assert.equal(canReuseSnapshot({ data, updatedAt: 0 }), true);
+    assert.equal(canReuseSnapshot({ data, updatedAt: null }), false);
+  }
+  assert.equal(canReuseSnapshot({ data: null, updatedAt: 1000 }), false);
+});
+
+test('revisiting every resource type for ninety days adds no reads until explicit refresh', async () => {
+  let now = 1000, calls = 0;
+  const cache = createQueryCache(async () => { calls++; return { products: [] }; }, { now: () => now });
+  const paths = ['/products?page=1', '/products/p', '/stores/s?page=1', '/seller/store', '/seller/products/p', '/orders', '/seller/orders', '/me', '/config', '/areas/place-id'];
+  for (const path of paths) await cache.load(path, publicQuery(path) ? 'public' : 'alice');
+  for (let visit = 0; visit < 10; visit++) {
+    now += 9 * day;
+    for (const path of paths) await cache.load(path, publicQuery(path) ? 'public' : 'alice');
+    cache.refreshActive();
+  }
+  assert.equal(calls, paths.length);
+  await cache.load('/seller/store', 'alice', true);
+  assert.equal(calls, paths.length + 1, 'explicit refresh still obtains current data');
 });
 
 test('idle collection keeps long-lived snapshots while respecting the existing memory budget', async () => {
@@ -43,28 +53,27 @@ test('idle collection keeps long-lived snapshots while respecting the existing m
   assert.equal(h.calls(), 1, 'a 30-minute idle eviction must not defeat week-long retention');
 });
 
-test('only a focused action context requests recent permissions; leaving it restores account cache reuse', async () => {
+test('only an explicit status-check action or known invalidation reloads saved status', async () => {
   const h = setup(); await h.cache.load('/me', 'alice');
   const accountStop = h.cache.observe('/me', 'alice');
   try {
     h.advance(day); h.cache.refreshActive(); await tick(); assert.equal(h.calls(), 1);
-    const actionStop = h.cache.observe('/me', 'alice', minute);
-    h.cache.refreshActive(); await tick(); assert.equal(h.calls(), 1, 'resuming does not check a retained action snapshot');
-    await h.cache.load('/me', 'alice', false, minute); assert.equal(h.calls(), 2);
-    actionStop(); h.advance(hour); h.cache.refreshActive(); await tick();
-    assert.equal(h.calls(), 2, 'leaving the product/application screen removes its freshness requirement');
+    await h.cache.load('/me', 'alice'); assert.equal(h.calls(), 1, 'opening status is still a cache read');
+    await h.cache.load('/me', 'alice', true); assert.equal(h.calls(), 2, 'Check status deliberately reaches the server');
+    h.advance(90 * day); h.cache.refreshActive(); await tick();
+    assert.equal(h.calls(), 2, 'saved status does not expire on resume');
     h.cache.invalidate(path => path === '/me'); await h.cache.load('/me', 'alice');
     assert.equal(h.calls(), 3, 'permission rejection can still invalidate the long-lived status');
   } finally { accountStop(); }
 });
 
-test('retention limits remain enforced even when event-driven status has no short freshness timer', async () => {
+test('a known change invalidates status immediately without waiting for any timer', async () => {
   const h = setup(); await h.cache.load('/me', 'alice');
-  h.advance(7 * day + 1); await h.cache.load('/me', 'alice');
-  assert.equal(h.calls(), 2, 'load must enforce max age even without a preceding get');
+  h.cache.invalidate(path => path === '/me'); await h.cache.load('/me', 'alice');
+  assert.equal(h.calls(), 2);
 });
 
-test('day-old encrypted status survives an app restart with zero GETs and unchanged flushes add no writes', async t => {
+test('ninety-day-old encrypted status survives restart with zero GETs and unchanged flushes add no writes', async t => {
   const rows = new Map(); let writes = 0;
   const storage = {
     read: async key => structuredClone(rows.get(key) || null),
@@ -74,7 +83,7 @@ test('day-old encrypted status survives an app restart with zero GETs and unchan
   const first = setup(), p = createQueryPersistence(first.cache, storage); t.after(() => p.dispose());
   await p.activate('alice'); await first.cache.load('/me', 'alice'); await p.flush();
   const second = setup(), restored = createQueryPersistence(second.cache, storage); t.after(() => restored.dispose());
-  second.advance(day); await restored.activate('alice'); await second.cache.load('/me', 'alice');
+  second.advance(90 * day); await restored.activate('alice'); await second.cache.load('/me', 'alice');
   assert.equal(second.calls(), 0); assert.ok(second.cache.get('/me', 'alice').data);
   await restored.flush(); const baseline = writes;
   for (let visit = 0; visit < 20; visit++) { await second.cache.load('/me', 'alice'); await restored.flush(); }

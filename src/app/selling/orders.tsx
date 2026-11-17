@@ -1,6 +1,7 @@
 import { ListPage } from "@/components/market/ListPage";
 import { ResourceState, SignInNotice } from "@/components/market/Primitives";
 import { OrderListRow } from "@/components/market/OrderListRow";
+import { OrdersSkeleton } from "@/components/market/OrdersSkeleton";
 import { useAuth } from "@/lib/auth";
 import { useResource } from "@/hooks/use-resource";
 import type { Order } from "@/types/marketplace";
@@ -46,6 +47,7 @@ export default function SellerOrders() {
                     <ResourceState
                         {...resource}
                         retry={resource.refresh}
+                        loadingFallback={<OrdersSkeleton />}
                         empty={
                             resource.data?.orders.length === 0
                                 ? "No incoming orders yet. Your published products are ready to be discovered."

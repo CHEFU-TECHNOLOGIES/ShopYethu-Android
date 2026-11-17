@@ -13,8 +13,10 @@ export type SellerApplication = {
 };
 export type Storefront = {
   id: string; ownerUid: string; name: string; description: string; area: string; areaPlaceId?: string;
+  nameEditable?: boolean;
   status: 'active' | 'suspended'; reason: string; updatedAt: string;
 };
+export type SellerInventory = { store: Storefront; products: Product[]; nextCursor: string | null };
 export type SellerAccount = { application: SellerApplication | null; store: Storefront | null };
 export type Fulfilment = 'collection' | 'local-delivery';
 export type Product = {
@@ -23,6 +25,7 @@ export type Product = {
   fulfilment: Fulfilment[]; updatedAt: string;
 };
 export type OrderStatus = 'placed' | 'accepted' | 'preparing' | 'ready' | 'dispatched' | 'completed' | 'collected' | 'cancelled';
+export type DeletedProduct = { id: string; storeId: string; ownerUid: string; deleted: true; deletedAt: string };
 export type OrderItem = { productId: string; name: string; quantity: number; priceCents: number; photo: string };
 export type Order = {
   id: string; reference: string; buyerUid: string; storeId: string; sellerUid: string;

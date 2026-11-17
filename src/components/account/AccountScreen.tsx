@@ -189,6 +189,14 @@ export default function AccountScreen() {
                         )}
                     </>
                 )}
+                <Text
+                    style={{
+                        color: "#888",
+                        fontSize: 12,
+                    }}
+                >
+                    Version {version} - ({versionCode})
+                </Text>
             </Page>
             <SignOutConfirmation
                 visible={confirmingSignOut}
@@ -198,18 +206,6 @@ export default function AccountScreen() {
                     void handleSignOut();
                 }}
             />
-            <Text
-                style={{
-                    color: "#888",
-                    fontSize: 12,
-                    textAlign: "left",
-                    marginBottom: 8,
-                    marginLeft: 16,
-                    marginTop: 4,
-                }}
-            >
-                Version {version} - ({versionCode})
-            </Text>
         </View>
     );
 }

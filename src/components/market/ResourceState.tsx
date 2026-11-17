@@ -1,4 +1,5 @@
 import { ActivityIndicator, Text, View } from "react-native";
+import type { ReactNode } from "react";
 import { palette, ui } from "@/constants/market-theme";
 import { Button } from "./Button";
 
@@ -9,6 +10,7 @@ export function ResourceState({
     empty,
     data,
     updatedAt,
+    loadingFallback,
 }: {
     loading: boolean;
     error: string;
@@ -16,6 +18,7 @@ export function ResourceState({
     empty?: string;
     data?: unknown;
     updatedAt?: number | null;
+    loadingFallback?: ReactNode;
 }) {
     if (data !== null && data !== undefined) {
         if (error)
@@ -33,6 +36,7 @@ export function ResourceState({
             );
         return empty ? <Text style={ui.subtitle}>{empty}</Text> : null;
     }
+    if (loading && loadingFallback) return loadingFallback;
     if (loading)
         return (
             <View

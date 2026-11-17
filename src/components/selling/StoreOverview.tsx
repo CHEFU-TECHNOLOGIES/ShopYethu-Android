@@ -1,11 +1,11 @@
-import { Text, View } from "react-native";
+import { OperatingAreaLabel } from "@/components/market/OperatingAreaLabel";
 import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
+import { ui } from "@/constants/market-theme";
+import { sellerStyles as styles } from "@/constants/seller-styles";
+import type { SellerInventory } from "@/types/marketplace";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { sellerStyles as styles } from "@/constants/seller-styles";
-import { ui } from "@/constants/market-theme";
-import type { SellerInventory } from "@/hooks/use-seller-inventory";
-import { OperatingAreaLabel } from "@/components/market/OperatingAreaLabel";
+import { Text, View } from "react-native";
 
 export function StoreOverview({ data }: { data: SellerInventory }) {
     const stats = [

@@ -61,6 +61,13 @@ export default function ReportScreen() {
                         Your report is open for our staff to follow up.
                     </Text>
                 </View>
+            ) : busy ? (
+                <View style={ui.card} accessibilityLiveRegion="polite">
+                    <Text style={ui.heading}>Sending your report</Text>
+                    <Text style={ui.subtitle}>
+                        Your report is not confirmed yet. Please wait while we send it.
+                    </Text>
+                </View>
             ) : (
                 <>
                     <Field

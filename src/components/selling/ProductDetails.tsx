@@ -46,7 +46,7 @@ export function ProductDetails({ form, disabled, update }: ProductFieldsProps) {
                             checked: form.category === category,
                             disabled,
                         }}
-                        hitSlop={2}
+                        hitSlop={{ top: 6, bottom: 6, left: 2, right: 2 }}
                         disabled={disabled}
                         style={[
                             styles.categoryTab,

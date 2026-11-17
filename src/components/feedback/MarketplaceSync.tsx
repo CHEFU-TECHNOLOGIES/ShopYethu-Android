@@ -28,13 +28,6 @@ export function MarketplaceSync() {
     });
     return () => listener.remove();
   }, []);
-  useEffect(() => {
-    if (online !== false) return;
-    const listener = AppState.addEventListener('change', state => {
-      if (state === 'active') void retryMarketplaceConnection().catch(() => undefined);
-    });
-    return () => listener.remove();
-  }, [online]);
   if (online !== false) return null;
   return <Pressable accessibilityRole="button" accessibilityLabel="Connection unavailable. Showing saved data. Tap to retry."
     onPress={() => { void retryMarketplaceConnection().catch(() => undefined); }}

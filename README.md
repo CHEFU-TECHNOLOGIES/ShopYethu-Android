@@ -60,40 +60,51 @@ Backend records live in Firestore collections `shopyethu_applications`, `shopyet
 | Own application and store permissions | `GET /shopyethu/me` |
 | Apply/respond/resubmit | `POST /shopyethu/application` |
 | South Africa–restricted area search | `POST /shopyethu/application/areas/suggestions`, `GET /shopyethu/areas/:placeId` |
-| Store/inventory | `GET/PUT /shopyethu/seller/store` |
+| Store/inventory | `GET/PUT /shopyethu/seller/store`; opt into 24-product cursor pages with `GET /shopyethu/seller/store?page=1` and `?after=<cursor>` |
 | Own product for editing | `GET /shopyethu/seller/products/:id` |
 | Create/update/publish/unpublish | `POST /shopyethu/seller/products`, `PUT /seller/products/:id` |
+| Move a published product to draft | `PUT /shopyethu/seller/products/:id/draft` |
+| Delete a product | `DELETE /shopyethu/seller/products/:id` |
 | Device photo upload | `POST /shopyethu/seller/photos` |
 | Customer orders | `GET/POST /shopyethu/orders` |
 | Incoming seller orders/status | `GET /shopyethu/seller/orders`, `PUT /seller/orders/:id` |
 | Listing/order reports | `POST /shopyethu/reports` |
 | Staff review/suspension | `GET/PUT /shopyethu/admin/applications/:uid`, `GET/PUT /admin/sellers/:uid` |
 
+Registered businesses cannot rename their storefront. Approval sets a server-owned
+`nameEditable` rule; older stores resolve it from their original seller application.
+The editor displays the current name as read-only and the backend rejects attempts
+to change it. Individual sellers retain renaming, and other storefront details
+remain editable. The existing store response carries this rule; no separate client
+permission request or data migration is needed. Deploy the backend with the app.
+
 Account, seller applications and Add product share an account-scoped, encrypted
-cache for `GET /shopyethu/me`. Ordinary account visits reuse that status for up to
-seven days, subject to storage/memory budgets. Opening the seller application or
-product editor requests current details if the snapshot is older than one minute;
-this is a check when needed, not a polling timer. Concurrent consumers share one
-request. Use the Account refresh action or pull to refresh the application to
-check an admin decision immediately. Background checks keep cached content visible
-without a spinner; explicit refresh shows progress.
+cache for `GET /shopyethu/me`. Opening a screen reuses saved data without an
+age-based backend check. This applies to every marketplace screen, including
+application status, orders, catalogue, products, storefronts and inventory.
+Owned-product editors can reuse the full inventory record. Saving/uploading
+still checks current permissions on the backend. Concurrent consumers share one
+request. Use Account refresh, application **Check status**, or pull to refresh to
+fetch current data. Explicit refresh keeps saved content visible and shows progress.
 
 Successful application submissions and storefront saves update the cache from
 the server response without another GET. Sign-out and account changes clear it;
 old requests cannot restore a previous account's data. Token refresh for the same
 user keeps the cache. Restarting restores encrypted snapshots that fit the cache
-budget, avoiding another status read when the saved snapshot is still valid.
-Connection failures preserve the last known status and offer Retry, with a
-30-second cooldown for automatic retries. Explicit Refresh bypasses the cooldown.
+budget, avoiding another status read. Connection failures preserve saved data and
+offer Retry. Failed refreshes do not cause navigation/resume requests when usable
+saved data exists. Missing-data retries have a 30-second cooldown; explicit
+Refresh bypasses it.
 Authentication/permission failures clear the cached data. The cache only controls
 display; every seller mutation still checks current permissions on the backend.
 
-Catalogue pages cache for thirty minutes, product details and inventory for fifteen
-minutes, storefronts for an hour and configuration for a day. Incoming/active orders
-check on a stale screen visit after two minutes; terminal buyer histories cache for
-six hours. Successful local changes update or invalidate related snapshots. See
-`CACHING.md` for policies, retention limits and the effect of admin changes on
-another device.
+There are no daily, hourly or per-minute query expiries. Cache misses, explicit
+refresh, and known changes that invalidate related snapshots can request data.
+Successful writes reuse their response; checkout and seller mutations validate
+current server state inside their requests without an extra permission preflight.
+Snapshots remain bounded by storage/memory budgets and clear on account changes.
+Updates made elsewhere, new listings/orders and admin decisions require explicit
+refresh until push invalidation is implemented. See `CACHING.md` for details.
 
 The admin website's Applications, Sellers and Complaints views now read the real endpoints. Staff can approve, request more information, reject, suspend/reactivate, and inspect submitted reports. Customer-facing reasons appear in the mobile application. Admin permissions are checked from the current central user profile; seller actions check current store status and ownership on the server, including direct/stale requests. Approval is never granted by the phone.
 
@@ -133,7 +144,9 @@ Device photos upload through the backend's existing Cloudinary storage module, u
 
 Each order contains products from one store. Checkout revalidates price, stock, seller status and fulfilment in a Firestore transaction. It decrements stock atomically and saves a server-side idempotency record. Double taps are locked in the client. The basket and unresolved order key/body are encrypted on the device; uncertain retries reuse the exact attempt, including after reopening the app. Server replay returns the original order without decrementing stock twice. Cancellation restores stock once. Signing out or switching accounts clears protected basket/cache data.
 
-Catalogue and storefront screens support 24-record cursor pages and virtualized product lists. Text matching still filters each scanned page; full-text indexing is not implemented. Seller inventory and order queries retain their existing 100-record caps. Orders refresh when stale on focus/foreground and through explicit refresh; there is no order polling. Reports are recorded for staff follow-up; automatic support messaging is not configured.
+Shop, storefront and seller inventory screens request 24 products per cursor page rather than fetching the full catalogue or inventory. Shop search and My Store search/filtering apply to loaded pages; keep loading more pages to search further. Public product text matching still filters each scanned page; full-text indexing is not implemented. Order queries retain their existing 100-record cap. Order screens reuse saved lists; pull to refresh checks for new orders/status changes. Foregrounding only repairs missing/invalidated queries. There is no order polling. Reports are recorded for staff follow-up; automatic support messaging is not configured.
+
+Deploy the companion `chefu-inc-backend` seller-inventory cursor endpoint before releasing the Android update. The app explicitly reports an outdated backend response that omits the pagination cursor rather than presenting a silently truncated inventory.
 
 Shared cache behaviour, per-feature freshness, encrypted persistence, offline recovery, toast coverage, backend/index deployment and measured request-count tests are documented in [CACHING.md](CACHING.md). No dependencies were added for this work.
 

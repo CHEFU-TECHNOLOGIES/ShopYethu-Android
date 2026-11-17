@@ -2,10 +2,10 @@ import { useCallback, useState, useSyncExternalStore } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { useAuth } from '@/lib/auth';
 import { loadMarketQuery, marketCache, queryScope } from '@/lib/market-cache';
-import { canonicalPath, publicQuery, queryUsage } from '@/lib/query-policy';
+import { canonicalPath, publicQuery } from '@/lib/query-policy';
 import { toast } from '@/lib/toast';
 
-export function useResource<T>(path: string, enabled = true, maxStaleMs?: number) {
+export function useResource<T>(path: string, enabled = true) {
   const { session, ready } = useAuth();
   const uid = ready ? session?.user.uid || null : null;
   const canonical = canonicalPath(path), scope = queryScope(canonical, uid);
@@ -14,13 +14,12 @@ export function useResource<T>(path: string, enabled = true, maxStaleMs?: number
   const subscribe = useCallback((listener: () => void) => marketCache.subscribe(canonical, scope, listener), [canonical, scope]);
   const snapshot = useCallback(() => marketCache.get<T>(canonical, scope), [canonical, scope]);
   const state = useSyncExternalStore(subscribe, snapshot, snapshot);
-  const useStaleMs = maxStaleMs ?? queryUsage(canonical, state.data);
   useFocusEffect(useCallback(() => {
     if (!allowed) return;
-    const stop = marketCache.observe(canonical, scope, useStaleMs);
-    void loadMarketQuery(canonical, scope, false, useStaleMs);
+    const stop = marketCache.observe(canonical, scope);
+    void loadMarketQuery(canonical, scope);
     return stop;
-  }, [canonical, scope, allowed, useStaleMs]));
+  }, [canonical, scope, allowed]));
   const refresh = useCallback(() => {
     if (!allowed) return;
     const request = { path: canonical, scope };

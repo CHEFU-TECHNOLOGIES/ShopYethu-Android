@@ -30,14 +30,28 @@ export default function SellerOrderDetails() {
         path: string,
         body: string,
         action: "status" | "cancel" | "payment" | "collect",
+        targetStatus: OrderStatus | null = null,
     ) {
-        if (!id || locked.current) return;
+        if (!id || !order || locked.current) return;
         locked.current = true;
         setLoadingAction(action);
         setError("");
+        const previous = order;
+        const optimistic = targetStatus ? { ...previous, status: targetStatus } : null;
+        if (optimistic) {
+            resource.mutate((current) => ({
+                ...current,
+                orders: current.orders.map((item) => item.id === id ? optimistic : item),
+            }));
+        }
         try {
             await api(path, { method: "PUT", body });
         } catch (cause) {
+            if (optimistic) {
+                resource.mutate((current) => current.orders.some((item) => item.id === id && item === optimistic)
+                    ? { ...current, orders: current.orders.map((item) => item.id === id ? previous : item) }
+                    : current);
+            }
             const message =
                 cause instanceof Error ? cause.message : "Unable to update this order.";
             setError(message);
@@ -83,6 +97,7 @@ export default function SellerOrderDetails() {
                                     `/seller/orders/${order.id}`,
                                     JSON.stringify({ status }),
                                     action,
+                                    status,
                                 );
                             }}
                             confirmPayment={() =>

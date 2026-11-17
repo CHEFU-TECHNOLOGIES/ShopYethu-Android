@@ -16,11 +16,10 @@ import { ui } from "@/constants/market-theme";
 export default function ProductScreen() {
     const { id } = useLocalSearchParams<{ id?: string }>();
     const { session } = useAuth();
-    const account = useSellerAccount(!id, 60_000);
+    const account = useSellerAccount(!id);
     const product = useResource<{ product: Product; store: Storefront }>(
         `/seller/products/${encodeURIComponent(id || "")}`,
         !!session && !!id,
-        60_000,
     );
     const resource = id ? product : account;
     const allowed =

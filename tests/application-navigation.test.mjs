@@ -193,7 +193,7 @@ test("valid submissions retain duplicate-tap protection and missing fields do no
     assert.equal(forward.props.disabled, false);
     forward.props.onPress(); forward.props.onPress();
     assert.equal(state.requests.length, 1);
-    assert.equal(state.forward().props.disabled, true);
+    assert.ok(elements(state.render()).some(node => node.type === "Text" && node.props.children === "Sending your application"));
     finish({ id: "application", status: "pending" });
     await new Promise(setImmediate);
     assert.equal(state.submitted.length, 1);
@@ -201,4 +201,14 @@ test("valid submissions retain duplicate-tap protection and missing fields do no
     const back = elements(incomplete.render()).find(node => node.type === "Button" && node.props.title === "Back");
     assert.equal(back.props.disabled, false);
     assert.equal(incomplete.render().props.header.props.children[0].props.children[1].props.disabled, false, "Save & exit remains available");
+});
+
+test("a rejected application submission returns to the editable form", async () => {
+    const state = setup(3);
+    state.respond(async () => { throw new Error("Application was rejected."); });
+    state.forward().props.onPress();
+    await new Promise(setImmediate);
+    const rendered = elements(state.render());
+    assert.ok(rendered.some(node => node.type === "Button" && node.props.title === "Submit application"));
+    assert.ok(rendered.some(node => node.props?.accessibilityRole === "alert" && node.props.children === "Application was rejected."));
 });
