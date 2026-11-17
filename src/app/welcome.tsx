@@ -1,46 +1,14 @@
-import { useRef, useState } from "react";
 import { Image, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
 import Feather from "@expo/vector-icons/Feather";
 import { Button } from "@/components/market/Primitives";
 import { palette } from "@/constants/market-theme";
 import { welcome } from "@/constants/welcome-styles";
-import { useAuth } from "@/lib/auth";
-import { useWelcome } from "@/lib/welcome";
+import { useWelcomeScreen } from "@/hooks/use-welcome-screen";
 
 export default function WelcomeScreen() {
-    const { ready, session, signIn, busy: authBusy, error } = useAuth();
-    const { complete } = useWelcome();
-    const entering = useRef(false);
-    const [busy, setBusy] = useState(false);
-
-    async function enter(destination: "/" | "/account") {
-        if (entering.current || authBusy) return;
-        entering.current = true;
-        setBusy(true);
-        try {
-            await complete();
-            router.replace(destination);
-        } finally {
-            entering.current = false;
-            setBusy(false);
-        }
-    }
-
-    async function openAccount() {
-        if (entering.current || authBusy) return;
-        if (session) { await enter("/account"); return; }
-        entering.current = true;
-        setBusy(true);
-        try {
-            await complete();
-            await signIn();
-        } finally {
-            entering.current = false;
-            setBusy(false);
-        }
-    }
+    const { ready, session, authBusy, error, busy, enter, openAccount } =
+        useWelcomeScreen();
 
     return (
         <SafeAreaView style={welcome.page}>

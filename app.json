@@ -8,7 +8,7 @@
       "android",
       "ios"
     ],
-    "icon": "./assets/images/shopyethu-icon.png",
+    "icon": "./assets/images/shopyethu-launcher-icon.png",
     "scheme": "shopyethu",
     "userInterfaceStyle": "light",
     "ios": {
@@ -43,8 +43,8 @@
         }
       ],
       "adaptiveIcon": {
-        "backgroundColor": "#244D3B",
-        "foregroundImage": "./assets/images/shopyethu-icon.png"
+        "backgroundColor": "#12483D",
+        "foregroundImage": "./assets/images/shopyethu-adaptive-foreground.png"
       },
       "predictiveBackGestureEnabled": false
     },
@@ -72,7 +72,8 @@
           "microphonePermission": false
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,

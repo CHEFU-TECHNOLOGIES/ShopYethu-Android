@@ -13,12 +13,27 @@ const tint = {
     neutral: '#F0F1EB',
 };
 
-// Row metrics also drive the separator inset, so dividers line up with the text, not the icon.
+// Keep dividers aligned with the row text.
 const ROW_PADDING_X = 16;
-const ROW_ICON = 40;
 const ROW_GAP = 14;
 
 export const account = StyleSheet.create({
+    settings: { flex: 1, paddingHorizontal: 20, paddingTop: 20 },
+    settingsFixed: { gap: 12 },
+    settingsScroll: { flex: 1 },
+    settingsScrollContent: { gap: 18, paddingTop: 18, paddingBottom: 36 },
+    profileDivider: {
+        height: 2,
+        borderRadius: 1,
+        backgroundColor: palette.line,
+        marginTop: 4,
+        marginHorizontal: -20,
+        shadowColor: palette.brand,
+        shadowOpacity: 0.18,
+        shadowRadius: 4,
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 2,
+    },
     // Header
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 48 },
     heading: { fontSize: 30, lineHeight: 38, fontWeight: '700', letterSpacing: -0.7, color: palette.ink },
@@ -37,7 +52,6 @@ export const account = StyleSheet.create({
         minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: ROW_GAP,
         paddingVertical: 14, paddingHorizontal: ROW_PADDING_X,
     },
-    rowIcon: { width: ROW_ICON, height: ROW_ICON, borderRadius: 12, backgroundColor: palette.soft, alignItems: 'center', justifyContent: 'center' },
     rowText: { flex: 1, minWidth: 0, gap: 2 },
     rowTitle: { color: palette.ink, fontSize: 16, lineHeight: 22, fontWeight: '600' },
     rowTitleLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
@@ -45,9 +59,8 @@ export const account = StyleSheet.create({
     rowDescription: { color: palette.muted, fontSize: 13, lineHeight: 18 },
     separator: {
         height: StyleSheet.hairlineWidth, backgroundColor: palette.line,
-        marginLeft: ROW_PADDING_X + ROW_ICON + ROW_GAP, marginRight: 0,
+        marginLeft: ROW_PADDING_X, marginRight: 0,
     },
-    dangerIcon: { backgroundColor: tint.danger },
     dangerText: { color: palette.danger },
 
     // Seller status
@@ -76,7 +89,6 @@ export const account = StyleSheet.create({
     message: { color: palette.muted, fontSize: 14, lineHeight: 21 },
 
     // Loading and error states
-    loading: { paddingVertical: 48, paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
     error: {
         flexDirection: 'row', alignItems: 'flex-start', gap: 10, padding: 14, borderRadius: 16,
         backgroundColor: tint.danger, borderWidth: 1, borderColor: tint.dangerLine,

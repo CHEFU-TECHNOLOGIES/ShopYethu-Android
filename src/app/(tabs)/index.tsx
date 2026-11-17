@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import {
   FlatList,
   Image,
@@ -14,22 +13,10 @@ import { CatalogSkeleton } from '@/components/market/CatalogSkeleton';
 import { ProductCard } from '@/components/market/ProductCard';
 import { home } from '@/constants/home-styles';
 import { palette, ui } from '@/constants/market-theme';
-import { categories } from '@/lib/config';
-import { useProductFeed } from '@/hooks/use-product-feed';
+import { useShopScreen } from '@/hooks/use-shop-screen';
 
 export default function ShopScreen() {
-  const [search, setSearch] = useState('');
-  const [query, setQuery] = useState('');
-  const [category, setCategory] = useState('All');
-
-  useEffect(() => {
-    const timer = setTimeout(() => setQuery(search), 350);
-    return () => clearTimeout(timer);
-  }, [search]);
-
-  const resource = useProductFeed(
-    `/products?page=1&view=compact&q=${encodeURIComponent(query)}&category=${encodeURIComponent(category === 'All' ? '' : category)}`,
-  );
+  const { search, setSearch, query, category, setCategory, categories, resource } = useShopScreen();
 
   return (
     <SafeAreaView style={ui.page} edges={['top']}>

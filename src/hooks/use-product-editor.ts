@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert } from 'react-native';
 import { usePreventRemove } from 'expo-router';
 import { randomUUID } from 'expo-crypto';
 import * as ImagePicker from 'expo-image-picker';
@@ -24,6 +23,8 @@ export function useProductEditor(uid: string, initial?: Product) {
     const [pending, setPending] = useState<ProductSaveAttempt | null>(null);
     const [blocked, setBlocked] = useState(false), [conflict, setConflict] = useState(false);
     const [allowLeave, setAllowLeave] = useState(false);
+    const [leaveConfirmationOpen, setLeaveConfirmationOpen] = useState(false);
+    const pendingNavigation = useRef<(() => void) | null>(null);
     const locked = useRef(false), mounted = useRef(false);
     const [stagedPhotos, setStagedPhotos] = useState(() => new Map<string, string>());
     const dirty = JSON.stringify(form) !== baseline;
@@ -32,14 +33,26 @@ export function useProductEditor(uid: string, initial?: Product) {
         : !validateProductStep(form, step, new Set(stagedPhotos.keys()));
 
     usePreventRemove(!allowLeave && (dirty || busy || !!pending), ({ repeat }) => {
-        if (locked.current) { Alert.alert('Please wait', 'Your product is still being saved or a photo is uploading.'); return; }
-        Alert.alert(pending ? 'Save not confirmed' : 'Leave without saving?', pending
-            ? 'The save may have reached your store. Your save attempt is kept on this device so you can retry safely when you return.'
-            : 'Changes you haven’t saved will be lost.', [
-            { text: 'Keep editing', style: 'cancel' },
-            { text: 'Leave', style: 'destructive', onPress: () => { setAllowLeave(true); repeat(); } },
-        ]);
+        if (locked.current) {
+            toast.info("Please wait while your product is being saved.");
+            return;
+        }
+        pendingNavigation.current = repeat;
+        setLeaveConfirmationOpen(true);
     });
+
+    function cancelLeave() {
+        pendingNavigation.current = null;
+        setLeaveConfirmationOpen(false);
+    }
+
+    function confirmLeave() {
+        const repeat = pendingNavigation.current;
+        pendingNavigation.current = null;
+        setAllowLeave(true);
+        setLeaveConfirmationOpen(false);
+        repeat?.();
+    }
 
     useEffect(() => {
         mounted.current = true;
@@ -191,6 +204,7 @@ export function useProductEditor(uid: string, initial?: Product) {
     return {
         form, current, step, busy, ready, error, pending, blocked, conflict, loadError, canContinue,
         dirty, update, next, goTo, save, uploadPhotos,
+        leaveConfirmationOpen, cancelLeave, confirmLeave,
         retryLoad: () => { setLoadError(''); setLoadAttempt(value => value + 1); },
     };
 }

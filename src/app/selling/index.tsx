@@ -12,37 +12,29 @@ import { ProductActions } from "@/components/selling/ProductActions";
 import type { Product } from "@/types/marketplace";
 import { palette, ui } from "@/constants/market-theme";
 import { sellerStyles as styles } from "@/constants/seller-styles";
-import { useSellerInventory } from "@/hooks/use-seller-inventory";
-import { useAuth } from "@/lib/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useState } from "react";
 import { Text, View } from "react-native";
 import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
+import { useSellingInventoryScreen } from "@/hooks/use-selling-inventory-screen";
 
 export default function SellingScreen() {
-    const { session } = useAuth();
-    const resource = useSellerInventory();
-    const [filter, setFilter] = useState("All");
-    const [search, setSearch] = useState("");
-    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-    const [optimisticProducts, setOptimisticProducts] = useState<Record<string, Product | null>>({});
-    const products = (resource.data?.products || []).flatMap((product) => {
-        if (!Object.prototype.hasOwnProperty.call(optimisticProducts, product.id)) return [product];
-        const optimistic = optimisticProducts[product.id];
-        return optimistic ? [optimistic] : [];
-    });
-    const inventory = resource.data ? { ...resource.data, products } : null;
-    const visible = products.filter(
-        (product) =>
-            (filter === "All" ||
-                (filter === "Published"
-                    ? product.published
-                    : !product.published)) &&
-            `${product.name} ${product.category}`
-                .toLowerCase()
-                .includes(search.trim().toLowerCase()),
-    );
+    const {
+        session,
+        resource,
+        filter,
+        setFilter,
+        search,
+        setSearch,
+        selectedProduct,
+        setSelectedProduct,
+        products,
+        inventory,
+        visible,
+        onOptimistic,
+        onSettled,
+        clearFilters,
+    } = useSellingInventoryScreen();
     return (
         <ListPage<Product>
             title="My Store"
@@ -92,8 +84,7 @@ export default function SellingScreen() {
                         <Pressable
                             accessibilityRole="button"
                             onPress={() => {
-                                setFilter("All");
-                                setSearch("");
+                                clearFilters();
                             }}
                             style={styles.clearFilters}
                         >
@@ -254,15 +245,8 @@ export default function SellingScreen() {
             {session && selectedProduct?.ownerUid === session.user.uid && (
                 <ProductActions key={`${session.user.uid}:${selectedProduct.id}`} product={selectedProduct}
                     onClose={() => setSelectedProduct(null)}
-                    onOptimistic={(action, product) => setOptimisticProducts((current) => ({
-                        ...current,
-                        [product.id]: action === "delete" ? null : { ...product, published: false },
-                    }))}
-                    onSettled={(productId) => setOptimisticProducts((current) => {
-                        const next = { ...current };
-                        delete next[productId];
-                        return next;
-                    })} />
+                    onOptimistic={onOptimistic}
+                    onSettled={onSettled} />
             )}
         </ListPage>
     );

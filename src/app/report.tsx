@@ -1,4 +1,3 @@
-import { useRef, useState } from "react";
 import { Text, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import {
@@ -8,9 +7,8 @@ import {
     SignInNotice,
 } from "@/components/market/Primitives";
 import { useAuth } from "@/lib/auth";
-import { api } from "@/lib/api";
 import { ui } from "@/constants/market-theme";
-import { toast } from "@/lib/toast";
+import { useReportSubmission } from "@/hooks/use-report-submission";
 
 export default function ReportScreen() {
     const { productId, orderId } = useLocalSearchParams<{
@@ -18,33 +16,8 @@ export default function ReportScreen() {
         orderId?: string;
     }>();
     const { session } = useAuth();
-    const [message, setMessage] = useState(""),
-        [busy, setBusy] = useState(false),
-        [reference, setReference] = useState(""),
-        [error, setError] = useState("");
-    const locked = useRef(false);
-    async function submit() {
-        if (locked.current) return;
-        locked.current = true;
-        setBusy(true);
-        setError("");
-        try {
-            const report = await api<{ id: string }>("/reports", {
-                method: "POST",
-                body: JSON.stringify({
-                    ...(orderId ? { orderId } : { productId }),
-                    message,
-                }),
-            });
-            setReference(report.id);
-        } catch (cause) {
-            setError((cause as Error).message);
-            toast.error((cause as Error).message);
-        } finally {
-            locked.current = false;
-            setBusy(false);
-        }
-    }
+    const { message, setMessage, busy, reference, error, submit } =
+        useReportSubmission(productId, orderId);
     return (
         <Page
             title={orderId ? "Tell us what happened." : "Report a listing"}

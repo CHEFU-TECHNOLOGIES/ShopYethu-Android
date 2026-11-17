@@ -1,8 +1,6 @@
-import { useState } from "react";
 import {
     FlatList,
     Text,
-    useWindowDimensions,
     View,
 } from "react-native";
 import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
@@ -14,42 +12,26 @@ import { ExpandableDescription } from "@/components/market/ExpandableDescription
 import { Page, ResourceState } from "@/components/market/Primitives";
 import { productDetailStyles as styles } from "@/constants/product-detail-styles";
 import { money, palette, ui } from "@/constants/market-theme";
-import { useResource } from "@/hooks/use-resource";
-import { useCart } from "@/lib/cart";
-import { toast } from "@/lib/toast";
-import type { Product, Storefront } from "@/types/marketplace";
 import { OperatingAreaLabel } from "@/components/market/OperatingAreaLabel";
 import { ProductDetailsSkeleton } from "@/components/market/ProductDetailsSkeleton";
+import { useProductDetailScreen } from "@/hooks/use-product-detail-screen";
 
 export default function ProductScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
-    const resource = useResource<{ product: Product; store: Storefront }>(
-        `/products/${id}`,
-    );
-    const { add, items, quantity: updateQuantity } = useCart();
-    const { width: windowWidth } = useWindowDimensions();
-    const [activePhoto, setActivePhoto] = useState(0);
-    const product = resource.data?.product;
-    const store = resource.data?.store;
-    const productQuantity =
-        items.find((item) => item.product.id === product?.id)?.quantity ?? 0;
-    const basketCount = items.reduce((total, item) => total + item.quantity, 0);
-    const galleryWidth = Math.max(1, Math.min(windowWidth - 40, 560));
-    const galleryHeight = galleryWidth * 1.04;
-    const stockText = !product?.stock
-        ? "Sold out"
-        : product.stock <= 5
-          ? `Only ${product.stock} left`
-          : "In stock";
-
-    function addToBasket() {
-        if (!product) return;
-        try {
-            add(product);
-        } catch (error) {
-            toast.error((error as Error).message);
-        }
-    }
+    const {
+        resource,
+        product,
+        store,
+        productQuantity,
+        basketCount,
+        galleryWidth,
+        galleryHeight,
+        stockText,
+        activePhoto,
+        setActivePhoto,
+        updateQuantity,
+        addToBasket,
+    } = useProductDetailScreen(id);
 
     return (
         <Page

@@ -39,29 +39,36 @@ function setup(step, form = completeForm(), previous = null) {
     const draft = { form, step, ready: true, save: async () => true, discard: async () => {},
         goTo: index => { draft.step = index; }, update() {} };
     let respond = async () => ({ id: "application", status: "pending" });
-    const { ApplicationWizard } = load("components/application/ApplicationWizard.tsx", {
-        react: {
-            useCallback: callback => callback,
-            useRef: value => cells[cursor++] ??= { current: value },
-            useState(value) {
-                const index = cursor++;
-                if (!(index in cells)) cells[index] = value;
-                return [cells[index], next => { cells[index] = next; }];
-            },
+    const react = {
+        useCallback: callback => callback,
+        useRef: value => cells[cursor++] ??= { current: value },
+        useState(value) {
+            const index = cursor++;
+            if (!(index in cells)) cells[index] = value;
+            return [cells[index], next => { cells[index] = next; }];
         },
-        "react/jsx-runtime": jsx,
-        "react-native": { ActivityIndicator: "ActivityIndicator", BackHandler: {}, Pressable: "Pressable", Text: "Text", View: "View" },
+    };
+    const applicationWizard = load("hooks/use-application-wizard.ts", {
+        react,
+        "react-native": { BackHandler: {} },
         "expo-document-picker": { getDocumentAsync: async () => ({ canceled: true, assets: null }) },
         "expo-file-system": { File: class {} },
         "expo-router": { router: { replace: path => destinations.push(path) }, useFocusEffect() {} },
-        "@/components/market/Primitives": { Button: "Button", Page: "Page" },
-        "@/components/ui/DebouncedPressable": { DebouncedPressable: "Pressable" },
-        "@/constants/application-styles": { applicationStyles: {} },
-        "@/constants/market-theme": { palette: {}, ui: {} },
         "@/hooks/use-application-draft": { useApplicationDraft: () => draft },
         "@/lib/application-form": validation,
         "@/lib/api": { api: async (...args) => { requests.push(args); return respond(...args); } },
         "@/lib/session": { currentSession: () => ({ user: { uid: "applicant" } }) },
+    });
+    const { ApplicationWizard } = load("components/application/ApplicationWizard.tsx", {
+        react,
+        "react/jsx-runtime": jsx,
+        "react-native": { ActivityIndicator: "ActivityIndicator", Text: "Text", View: "View" },
+        "@/components/market/Primitives": { Button: "Button", Page: "Page" },
+        "@/components/ui/DebouncedPressable": { DebouncedPressable: "Pressable" },
+        "@/constants/application-styles": { applicationStyles: {} },
+        "@/constants/market-theme": { palette: {}, ui: {} },
+        "@/hooks/use-application-wizard": applicationWizard,
+        "@/lib/application-form": validation,
         "./ApplicationFields": { BusinessFields: "BusinessFields", ContactFields: "ContactFields", ProductFields: "ProductFields" },
         "./ApplicationReview": { ApplicationReview: "ApplicationReview" },
     });

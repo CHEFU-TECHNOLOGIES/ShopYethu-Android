@@ -1,6 +1,8 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import type { Href } from "expo-router";
 import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
+import { ExternalLink } from "@/components/external-link";
 import Feather from '@expo/vector-icons/Feather';
 import { account } from '@/constants/account-styles';
 import { palette } from '@/constants/market-theme';
@@ -17,46 +19,59 @@ export function AccountSection({ title, children }: { title: string; children: R
 }
 
 export function AccountRow({
-  icon, title, description, onPress, disabled = false, titleAccessory,
-  accessibilityLabel, danger = false, divider = false, trailingIcon = 'chevron-right',
+  title, description, onPress, href, disabled = false, titleAccessory,
+  accessibilityLabel, accessibilityRole, danger = false, divider = false,
+  trailingIcon = 'chevron-right', descriptionLines = 1,
 }: {
-  icon: IconName;
   title: string;
   description?: string;
-  onPress: () => void;
+  descriptionLines?: number;
+  onPress?: () => void;
+  href?: Href & string;
   disabled?: boolean;
   titleAccessory?: ReactNode;
   accessibilityLabel?: string;
+  accessibilityRole?: 'button' | 'link';
   danger?: boolean;
   divider?: boolean;
   trailingIcon?: IconName | null;
 }) {
+  const row = (
+    <Pressable
+      accessibilityRole={accessibilityRole ?? (href ? 'link' : 'button')}
+      accessibilityLabel={accessibilityLabel ?? (description ? `${title}, ${description}` : title)}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={
+        href
+          ? StyleSheet.flatten([account.row, disabled && account.disabled])
+          : ({ pressed }) => [
+              account.row,
+              pressed && account.pressed,
+              disabled && account.disabled,
+            ]
+      }
+      pressedStyle={href ? account.pressed : undefined}
+    >
+      <View style={account.rowText}>
+        {titleAccessory ? (
+          <View style={account.rowTitleLine}>
+            <Text style={[account.rowTitle, account.rowTitleWithAccessory, danger && account.dangerText]}>{title}</Text>
+            {titleAccessory}
+          </View>
+        ) : (
+          <Text style={[account.rowTitle, danger && account.dangerText]}>{title}</Text>
+        )}
+        {!!description && <Text style={account.rowDescription} numberOfLines={descriptionLines} ellipsizeMode="tail">{description}</Text>}
+      </View>
+      {trailingIcon && <Feather name={trailingIcon} size={17} color={palette.muted} accessible={false} />}
+    </Pressable>
+  );
+
   return (
     <>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel ?? (description ? `${title}, ${description}` : title)}
-        accessibilityState={{ disabled }}
-        disabled={disabled}
-        onPress={onPress}
-        style={({ pressed }) => [account.row, pressed && account.pressed, disabled && account.disabled]}
-      >
-        <View style={[account.rowIcon, danger && account.dangerIcon]}>
-          <Feather name={icon} size={18} color={danger ? palette.danger : palette.brand} accessible={false} />
-        </View>
-        <View style={account.rowText}>
-          {titleAccessory ? (
-            <View style={account.rowTitleLine}>
-              <Text style={[account.rowTitle, account.rowTitleWithAccessory, danger && account.dangerText]}>{title}</Text>
-              {titleAccessory}
-            </View>
-          ) : (
-            <Text style={[account.rowTitle, danger && account.dangerText]}>{title}</Text>
-          )}
-          {!!description && <Text style={account.rowDescription} numberOfLines={1} ellipsizeMode="tail">{description}</Text>}
-        </View>
-        {trailingIcon && <Feather name={trailingIcon} size={17} color={palette.muted} accessible={false} />}
-      </Pressable>
+      {href ? <ExternalLink href={href} asChild>{row}</ExternalLink> : row}
       {divider && <View style={account.separator} />}
     </>
   );

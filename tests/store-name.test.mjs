@@ -14,21 +14,28 @@ function setup(nameEditable) {
   let resourceData = { store };
   let form = { name: 'Old unsaved rename', description: 'An updated shop description.', area: 'Cape Town' };
   const requests = []; let respond = async () => store;
-  const { default: StoreEditor } = loadTs('src/app/selling/store.tsx', {
-    react: { useState: initial => [initial, () => {}], useRef: initial => ({ current: initial }) },
-    'react/jsx-runtime': jsx, 'react-native': { Text: 'Text' },
-    '@/hooks/use-draft': { useDraft: () => [form, next => { form = typeof next === 'function' ? next(form) : next; }] },
-    '@/components/market/Primitives': { Page: 'Page', Field: 'Field', Button: 'Button', ResourceState: 'ResourceState', SignInNotice: 'SignInNotice' },
-    '@/components/market/OperatingAreaField': { OperatingAreaField: 'Area' },
-    '@/lib/auth': { useAuth: () => ({ session: { user: { uid: 'seller' } } }) },
-    '@/lib/store-form': loadTs('src/lib/store-form.ts'),
+  const react = { useState: initial => [initial, () => {}], useRef: initial => ({ current: initial }) };
+  const storeEditorHook = loadTs('src/hooks/use-store-editor.ts', {
+    react,
+    '@/hooks/use-draft': { useDraft: (_key, initial) => [form || initial, next => { form = typeof next === 'function' ? next(form) : next; }] },
     '@/hooks/use-seller-inventory': { useSellerInventory: () => ({
       data: resourceData, loading: false, error: '', refresh() {},
       mutate: update => { resourceData = update(resourceData); },
     }) },
-    '@/lib/seller-events': { publishSellerChange() {} },
-    '@/constants/market-theme': { ui: {} }, '@/lib/toast': { toast: { error() {} } },
     '@/lib/api': { api: async (_path, init) => { requests.push(JSON.parse(init.body)); return respond(); } },
+    '@/lib/auth': { useAuth: () => ({ session: { user: { uid: 'seller' } } }) },
+    '@/lib/seller-events': { publishSellerChange() {} },
+    '@/lib/store-form': loadTs('src/lib/store-form.ts'),
+    '@/lib/toast': { toast: { error() {} } },
+  });
+  const { default: StoreEditor } = loadTs('src/app/selling/store.tsx', {
+    react,
+    'react/jsx-runtime': jsx, 'react-native': { Text: 'Text' },
+    '@/components/market/Primitives': { Page: 'Page', Field: 'Field', Button: 'Button', ResourceState: 'ResourceState', SignInNotice: 'SignInNotice' },
+    '@/components/market/OperatingAreaField': { OperatingAreaField: 'Area' },
+    '@/components/selling/StoreEditorSkeleton': { StoreEditorSkeleton: 'StoreEditorSkeleton' },
+    '@/constants/market-theme': { ui: {} },
+    '@/hooks/use-store-editor': storeEditorHook,
   });
   const render = () => elements(StoreEditor());
   return { requests, field: () => render().find(node => node.type === 'Field' && node.props.label === 'Store name'),

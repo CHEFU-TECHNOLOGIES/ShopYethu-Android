@@ -1,12 +1,11 @@
-import { useState } from "react";
 import { Text, View } from "react-native";
 import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
-import { router } from "expo-router";
 import type { Order, OrderStatus } from "@/types/marketplace";
 import { money, statusLabel, ui } from "@/constants/market-theme";
 import { Button } from "./Primitives";
 import { ReportLink } from "./ReportLink";
 import { OrderStatusBadge } from "./OrderStatusBadge";
+import { useOrderCard } from "@/hooks/use-order-card";
 
 export function OrderCard({
     order,
@@ -23,30 +22,14 @@ export function OrderCard({
     update?: (status: OrderStatus) => void;
     confirmPayment?: () => void;
 }) {
-    const next: OrderStatus | null = (
-        {
-            placed: "accepted",
-            accepted: "preparing",
-            preparing:
-                order.fulfilment === "collection" ? "ready" : "dispatched",
-            ready: null,
-            dispatched: "completed",
-            completed: null,
-            collected: null,
-            cancelled: null,
-        } as Record<OrderStatus, OrderStatus | null>
-    )[order.status];
-    const nextAction: Partial<Record<OrderStatus, string>> = {
-        placed: "Accept order",
-        accepted: "Start preparing",
-        preparing:
-            order.fulfilment === "collection"
-                ? "Ready for collection"
-                : "Mark as dispatched",
-        dispatched: "Complete order",
-    };
-    const canCancel = selling && ["placed", "accepted"].includes(order.status);
-    const [historyExpanded, setHistoryExpanded] = useState(true);
+    const {
+        next,
+        nextAction,
+        canCancel,
+        historyExpanded,
+        setHistoryExpanded,
+        reportOrder,
+    } = useOrderCard(order, selling);
     return (
         <View style={ui.card}>
             <View style={ui.between}>
@@ -172,12 +155,7 @@ export function OrderCard({
                             title="Report order issue"
                             inline={canCancel}
                             disabled={busy}
-                            onPress={() =>
-                                router.navigate({
-                                    pathname: "/report",
-                                    params: { orderId: order.id },
-                                })
-                            }
+                            onPress={reportOrder}
                         />
                     </View>
                 </View>
@@ -185,12 +163,7 @@ export function OrderCard({
             {!selling && (
                 <ReportLink
                     title="Raise an order issue"
-                    onPress={() =>
-                        router.navigate({
-                            pathname: "/report",
-                            params: { orderId: order.id },
-                        })
-                    }
+                    onPress={reportOrder}
                 />
             )}
         </View>

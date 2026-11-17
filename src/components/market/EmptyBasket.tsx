@@ -91,9 +91,7 @@ export function EmptyBasket({ onBrowse }: { onBrowse: () => void }) {
                 onPress={onBrowse}
                
             />
-            <Text style={styles.footer}>
-                Your basket is saved while you explore.
-            </Text>
+           
         </View>
     );
 }

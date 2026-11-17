@@ -37,6 +37,10 @@ function AppNavigator() {
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="notification-settings"
+          options={{ animation: "slide_from_right" }}
+        />
         <Stack.Screen name="welcome" options={{ animation: 'fade' }} />
       </Stack>
       <MarketplaceSync />

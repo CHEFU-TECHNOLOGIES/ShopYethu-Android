@@ -1,16 +1,14 @@
-import { useCallback, useState } from "react";
 import {
     ActivityIndicator,
-    Alert,
-    BackHandler,
     Text,
     View,
 } from "react-native";
-import { router, useFocusEffect } from "expo-router";
 import { Button, Page } from "@/components/market/Primitives";
+import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 import { applicationStyles as steps } from "@/constants/application-styles";
 import { palette, ui } from "@/constants/market-theme";
 import { useProductEditor } from "@/hooks/use-product-editor";
+import { useProductEditorNavigation } from "@/hooks/use-product-editor-navigation";
 import { productSteps } from "@/lib/product-form";
 import type { Product } from "@/types/marketplace";
 import { ProductDetails, ProductPricing } from "./ProductDetails";
@@ -27,67 +25,49 @@ export function ProductEditor({
     reload: () => void;
 }) {
     const editor = useProductEditor(uid, product);
-    const { step, busy, pending, goTo } = editor;
-    const [reviewEdit, setReviewEdit] = useState(false);
-    useFocusEffect(
-        useCallback(() => {
-            const listener = BackHandler.addEventListener(
-                "hardwareBackPress",
-                () => {
-                    if (step > 0 && !busy && !pending) {
-                        goTo(reviewEdit ? 3 : step - 1);
-                        setReviewEdit(false);
-                        return true;
-                    }
-                    return false;
-                },
-            );
-            return () => listener.remove();
-        }, [step, busy, pending, reviewEdit, goTo]),
-    );
+    const { step, busy, pending } = editor;
+    const {
+        reviewEdit,
+        setReviewEdit,
+        reloadConfirmationOpen,
+        setReloadConfirmationOpen,
+        requestReload,
+        confirmReload,
+        continueEditing,
+        saveAndReturn,
+    } = useProductEditorNavigation(editor, reload);
     const fields = {
         form: editor.form,
         update: editor.update,
         disabled: busy || !!pending,
     };
     const continueDisabled = busy || !editor.canContinue;
-    function reloadProduct() {
-        Alert.alert(
-            "Reload product?",
-            "Unsaved changes will be replaced with the latest store details.",
-            [
-                { text: "Keep editing", style: "cancel" },
-                { text: "Reload", onPress: reload },
-            ],
-        );
-    }
-    function saveAndReturn(published: boolean) {
-        void editor.save(published).then((saved) => {
-            if (saved) router.replace("/selling");
-        });
-    }
     return (
-        <Page
-            key={step}
-            title="Product"
-            back
-            backAccessory={
-                <Text style={ui.badge}>
-                    {editor.current ? "EDIT PRODUCT" : "NEW PRODUCT"}
-                </Text>
-            }
-            header={
-                <View style={{ gap: 8 }}>
-                    <Text style={ui.title}>{productSteps[step]}</Text>
-                    <Text accessibilityLiveRegion="polite" style={ui.subtitle}>
-                        Step {step + 1} of 4
+        <>
+            <Page
+                key={step}
+                title="Product"
+                back
+                backAccessory={
+                    <Text style={ui.badge}>
+                        {editor.current ? "EDIT PRODUCT" : "NEW PRODUCT"}
                     </Text>
-                    <View
-                        accessible
-                        accessibilityLabel={`Step ${step + 1} of 4`}
-                        style={steps.progress}
-                    >
-                        {productSteps.map((title, index) => (
+                }
+                header={
+                    <View style={{ gap: 8 }}>
+                        <Text style={ui.title}>{productSteps[step]}</Text>
+                        <Text
+                            accessibilityLiveRegion="polite"
+                            style={ui.subtitle}
+                        >
+                            Step {step + 1} of 4
+                        </Text>
+                        <View
+                            accessible
+                            accessibilityLabel={`Step ${step + 1} of 4`}
+                            style={steps.progress}
+                        >
+                            {productSteps.map((title, index) => (
                             <View
                                 key={title}
                                 style={[
@@ -95,11 +75,11 @@ export function ProductEditor({
                                     index <= step && steps.complete,
                                 ]}
                             />
-                        ))}
+                            ))}
+                        </View>
                     </View>
-                </View>
-            }
-        >
+                }
+            >
             {!editor.ready ? (
                 editor.loadError ? (
                     <View style={ui.card}>
@@ -156,7 +136,7 @@ export function ProductEditor({
                             title="Reload latest product"
                             secondary
                             disabled={busy}
-                            onPress={reloadProduct}
+                            onPress={requestReload}
                         />
                     )}
                     {pending ? (
@@ -187,14 +167,7 @@ export function ProductEditor({
                                               : "Continue"
                                     }
                                     disabled={continueDisabled}
-                                    onPress={() => {
-                                        if (
-                                            editor.next(
-                                                reviewEdit ? 3 : undefined,
-                                            )
-                                        )
-                                            setReviewEdit(false);
-                                    }}
+                                    onPress={continueEditing}
                                 />
                             </View>
                         </View>
@@ -234,6 +207,30 @@ export function ProductEditor({
                     )}
                 </>
             )}
-        </Page>
+            </Page>
+            <ConfirmationDialog
+                visible={reloadConfirmationOpen}
+                title="Reload product?"
+                message="Unsaved changes will be replaced with the latest store details."
+                cancelLabel="Keep editing"
+                confirmLabel="Reload"
+                onCancel={() => setReloadConfirmationOpen(false)}
+                onConfirm={confirmReload}
+            />
+            <ConfirmationDialog
+                visible={editor.leaveConfirmationOpen}
+                title={pending ? "Save not confirmed" : "Leave without saving?"}
+                message={
+                    pending
+                        ? "The save may have reached your store. Your save attempt is kept on this device so you can retry safely when you return."
+                        : "Changes you haven’t saved will be lost."
+                }
+                cancelLabel="Keep editing"
+                confirmLabel="Leave"
+                destructive
+                onCancel={editor.cancelLeave}
+                onConfirm={editor.confirmLeave}
+            />
+        </>
     );
 }

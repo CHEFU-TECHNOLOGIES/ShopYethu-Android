@@ -1,17 +1,20 @@
-import { ActivityIndicator, Text, View } from "react-native";
-import { palette, ui } from "@/constants/market-theme";
+import { Text, View } from "react-native";
+import { ui } from "@/constants/market-theme";
 import { styles } from "./cart-styles";
+import { CartLoadingSkeleton } from "./CartLoadingSkeleton";
 
-export function CartLoadingState({ message }: { message?: string }) {
+export function CartLoadingState({ error }: { error?: string }) {
+    if (!error) return <CartLoadingSkeleton />;
+
     return (
         <View style={styles.loadingCard}>
-            <ActivityIndicator size="small" color={palette.brand} />
-            <View style={styles.loadingCopy}>
-                <Text style={styles.loadingTitle}>Loading your basket</Text>
-                <Text style={ui.small}>
-                    {message || "Syncing your saved items."}
-                </Text>
-            </View>
+            <Text
+                accessibilityRole="alert"
+                accessibilityLiveRegion="polite"
+                style={[ui.error, { flex: 1 }]}
+            >
+                {error}
+            </Text>
         </View>
     );
 }

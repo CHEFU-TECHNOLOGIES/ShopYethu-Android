@@ -9,9 +9,15 @@ import {
 import {
     Pressable as NativePressable,
     type PressableProps,
+    type PressableStateCallbackType,
+    type StyleProp,
+    type ViewStyle,
 } from "react-native";
 
-type Props = PressableProps & { debounceMs?: number };
+type Props = PressableProps & {
+    debounceMs?: number;
+    pressedStyle?: StyleProp<ViewStyle>;
+};
 
 export const DebouncedPressable = forwardRef<ComponentRef<typeof NativePressable>, Props>(
     function DebouncedPressable(
@@ -20,6 +26,8 @@ export const DebouncedPressable = forwardRef<ComponentRef<typeof NativePressable
             debounceMs = 500,
             disabled = false,
             onPress,
+            pressedStyle,
+            style,
             ...props
         },
         ref,
@@ -51,11 +59,20 @@ export const DebouncedPressable = forwardRef<ComponentRef<typeof NativePressable
             [debounceMs, disabled, onPress],
         );
 
+        const composedStyle = useCallback(
+            (state: PressableStateCallbackType) => [
+                typeof style === "function" ? style(state) : style,
+                state.pressed ? pressedStyle : undefined,
+            ],
+            [pressedStyle, style],
+        );
+
         const isDisabled = disabled || debouncing;
         return (
             <NativePressable
                 {...props}
                 ref={ref}
+                style={pressedStyle ? composedStyle : style}
                 disabled={isDisabled}
                 accessibilityState={{
                     ...accessibilityState,

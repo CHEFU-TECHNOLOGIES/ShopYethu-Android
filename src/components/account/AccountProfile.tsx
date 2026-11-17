@@ -78,10 +78,8 @@ export function AccountIdentity({ user }: { user: Session["user"] }) {
                 accessibilityRole="link"
                 accessibilityLabel="Manage your account and personal information"
                 accessibilityHint="Opens My Account."
-                style={({ pressed }) => [
-                    profile.identityCard,
-                    pressed && profile.identityCardPressed,
-                ]}
+                style={profile.identityCard}
+                pressedStyle={profile.identityCardPressed}
             >
                 <View style={profile.identityHeader}>
                     <View style={profile.avatarFrame}>

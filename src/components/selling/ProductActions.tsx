@@ -1,12 +1,10 @@
-import { useRef, useState } from "react";
 import { Modal, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { Button } from "@/components/market/Button";
 import { palette, ui } from "@/constants/market-theme";
-import { api } from "@/lib/api";
+import { useProductActions } from "@/hooks/use-product-actions";
 import type { Product } from "@/types/marketplace";
 
 export function ProductActions({
@@ -21,38 +19,15 @@ export function ProductActions({
     onSettled: (productId: string) => void;
 }) {
     const insets = useSafeAreaInsets();
-    const [confirmDelete, setConfirmDelete] = useState(false);
-    const [busy, setBusy] = useState<"draft" | "delete" | null>(null);
-    const [error, setError] = useState("");
-    const locked = useRef(false);
-
-    function close() {
-        if (!locked.current) onClose();
-    }
-
-    async function submit(action: "draft" | "delete") {
-        if (locked.current || (action === "delete" && !confirmDelete)) return;
-        locked.current = true;
-        setBusy(action);
-        setError("");
-        onOptimistic(action, product);
-        try {
-            const path = `/seller/products/${encodeURIComponent(product.id)}`;
-            await api(action === "draft" ? `${path}/draft` : path, {
-                method: action === "draft" ? "PUT" : "DELETE",
-                ...(action === "draft" ? { body: JSON.stringify({}) } : {}),
-            });
-            onClose();
-        } catch (cause) {
-            setError(cause instanceof Error
-                ? `${cause.message} Your product was restored.`
-                : "Could not update this product. Your product was restored.");
-        } finally {
-            onSettled(product.id);
-            locked.current = false;
-            setBusy(null);
-        }
-    }
+    const {
+        confirmDelete,
+        busy,
+        error,
+        close,
+        editProduct,
+        requestDeleteConfirmation,
+        submit,
+    } = useProductActions(product, onClose, onOptimistic, onSettled);
 
     return (
         <Modal
@@ -135,14 +110,7 @@ export function ProductActions({
                                     accessibilityRole="button"
                                     style={styles.action}
                                     disabled={!!busy}
-                                    onPress={() => {
-                                        if (locked.current) return;
-                                        onClose();
-                                        router.navigate({
-                                            pathname: "/selling/product",
-                                            params: { id: product.id },
-                                        });
-                                    }}
+                                    onPress={editProduct}
                                 >
                                     <Ionicons
                                         name="create-outline"
@@ -182,11 +150,7 @@ export function ProductActions({
                                     accessibilityRole="button"
                                     style={styles.action}
                                     disabled={!!busy}
-                                    onPress={() => {
-                                        if (!locked.current) {
-                                            setConfirmDelete(true);
-                                        }
-                                    }}
+                                    onPress={requestDeleteConfirmation}
                                 >
                                     <Ionicons
                                         name="trash-outline"

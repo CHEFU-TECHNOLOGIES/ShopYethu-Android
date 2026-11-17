@@ -11,23 +11,29 @@ function nodes(node) {
 }
 function setup(published = true) {
   const cells = [], calls = [], optimistic = [], settled = []; let cursor = 0, closed = 0, respond = async () => ({});
-  const { ProductActions } = loadTs('src/components/selling/ProductActions.tsx', {
-    react: {
-      useState(initial) {
-        const index = cursor++;
-        if (!(index in cells)) cells[index] = initial;
-        return [cells[index], value => { cells[index] = typeof value === 'function' ? value(cells[index]) : value; }];
-      },
-      useRef(initial) { const index = cursor++; return cells[index] ||= { current: initial }; },
+  const react = {
+    useState(initial) {
+      const index = cursor++;
+      if (!(index in cells)) cells[index] = initial;
+      return [cells[index], value => { cells[index] = typeof value === 'function' ? value(cells[index]) : value; }];
     },
+    useRef(initial) { const index = cursor++; return cells[index] ||= { current: initial }; },
+  };
+  const productActionsHook = loadTs('src/hooks/use-product-actions.ts', {
+    react,
+    'expo-router': { router: { navigate() {} } },
+    '@/lib/api': { api: async (path, options) => { calls.push({ path, ...options }); return respond(); } },
+  });
+  const { ProductActions } = loadTs('src/components/selling/ProductActions.tsx', {
+    react,
     'react/jsx-runtime': jsx,
     'react-native': { Modal: 'Modal', ScrollView: 'ScrollView', View: 'View', Text: 'Text', StyleSheet: { create: value => value } },
     'react-native-safe-area-context': { useSafeAreaInsets: () => ({ bottom: 0 }) },
-    '@expo/vector-icons': { Ionicons: 'Icon' }, 'expo-router': { router: { navigate() {} } },
+    '@expo/vector-icons': { Ionicons: 'Icon' },
     '@/components/ui/DebouncedPressable': { DebouncedPressable: 'Pressable' },
     '@/components/market/Button': { Button: 'Button' },
     '@/constants/market-theme': { palette: {}, ui: {} },
-    '@/lib/api': { api: async (path, options) => { calls.push({ path, ...options }); return respond(); } },
+    '@/hooks/use-product-actions': productActionsHook,
   });
   const render = () => { cursor = 0; return ProductActions({
     product: { ...product, published },

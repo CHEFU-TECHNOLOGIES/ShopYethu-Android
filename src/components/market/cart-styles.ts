@@ -194,9 +194,4 @@ export const styles = StyleSheet.create({
         backgroundColor: palette.paper,
     },
     loadingCopy: { flex: 1, gap: 3 },
-    loadingTitle: {
-        color: palette.ink,
-        fontSize: 14,
-        fontWeight: "700",
-    },
 });

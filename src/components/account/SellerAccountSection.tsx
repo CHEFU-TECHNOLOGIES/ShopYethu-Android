@@ -59,7 +59,6 @@ export function SellerAccountSection({
                         {error}
                     </Text>
                     <AccountRow
-                        icon="refresh-cw"
                         title="Try again"
                         onPress={onRetry}
                         trailingIcon={null}
@@ -68,7 +67,6 @@ export function SellerAccountSection({
             ) : store ? (
                 <>
                     <AccountRow
-                        icon="briefcase"
                         title="My Store"
                         description={store.name}
                         accessibilityLabel={`My Store, ${store.name}, ${
@@ -100,11 +98,6 @@ export function SellerAccountSection({
             ) : application ? (
                 <>
                     <AccountRow
-                        icon={
-                            application.status === "more-info"
-                                ? "edit-3"
-                                : "file-text"
-                        }
                         title={
                             application.status === "more-info"
                                 ? "Update application"
@@ -135,7 +128,6 @@ export function SellerAccountSection({
                 </>
             ) : data ? (
                 <AccountRow
-                    icon="briefcase"
                     title="Start selling"
                     description="Apply to open your store"
                     onPress={() => router.navigate("/application")}

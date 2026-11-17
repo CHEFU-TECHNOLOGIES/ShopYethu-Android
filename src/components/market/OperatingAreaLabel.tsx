@@ -1,5 +1,6 @@
 import { Text, type StyleProp, type TextStyle } from "react-native";
 import { useResource } from "@/hooks/use-resource";
+import { OperatingAreaLabelSkeleton } from "./OperatingAreaLabelSkeleton";
 
 export function OperatingAreaLabel({
     area,
@@ -29,9 +30,12 @@ export function OperatingAreaLabel({
             </>
         );
     }
+    if (resource.loading) {
+        return <OperatingAreaLabelSkeleton prefix={prefix} style={style} />;
+    }
     return (
         <Text style={style} numberOfLines={numberOfLines}>
-            {prefix}{resource.data?.label || (resource.error ? "Location unavailable" : "Loading location…")}
+            {prefix}{resource.data?.label || "Location unavailable"}
         </Text>
     );
 }

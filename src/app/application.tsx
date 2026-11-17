@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Text } from "react-native";
 import {
     Button,
@@ -10,16 +9,19 @@ import { ApplicationStatus } from "@/components/application/ApplicationStatus";
 import { ApplicationWizard } from "@/components/application/ApplicationWizard";
 import { useAuth } from "@/lib/auth";
 import type { Session } from "@/lib/session";
-import { useSellerAccount } from "@/hooks/use-seller-account";
-import { recordSellerApplication } from "@/lib/seller-account";
+import { useApplicationScreen } from "@/hooks/use-application-screen";
 import { ui } from "@/constants/market-theme";
 import { ApplicationSkeleton } from "@/components/application/ApplicationSkeleton";
 
 function SignedInApplication({ session }: { session: Session }) {
-    const resource = useSellerAccount();
-    const [warning, setWarning] = useState("");
-    const [editing, setEditing] = useState(false);
-    const application = resource.data?.application;
+    const {
+        resource,
+        warning,
+        editing,
+        setEditing,
+        application,
+        onSubmitted,
+    } = useApplicationScreen(session);
     if (
         resource.data &&
         (!application || (application.status === "more-info" && editing))
@@ -30,11 +32,7 @@ function SignedInApplication({ session }: { session: Session }) {
                 session={session}
                 previous={application || null}
                 onCheckStatus={resource.refresh}
-                onSubmitted={(result, message) => {
-                    recordSellerApplication(session.user.uid, result);
-                    setWarning(message);
-                    setEditing(false);
-                }}
+                onSubmitted={onSubmitted}
             />
         );
     }

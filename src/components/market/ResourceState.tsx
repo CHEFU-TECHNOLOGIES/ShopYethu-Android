@@ -1,7 +1,8 @@
-import { ActivityIndicator, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import type { ReactNode } from "react";
-import { palette, ui } from "@/constants/market-theme";
+import { ui } from "@/constants/market-theme";
 import { Button } from "./Button";
+import { ResourceStateSkeleton } from "./ResourceStateSkeleton";
 
 export function ResourceState({
     loading,
@@ -37,47 +38,7 @@ export function ResourceState({
         return empty ? <Text style={ui.subtitle}>{empty}</Text> : null;
     }
     if (loading && loadingFallback) return loadingFallback;
-    if (loading)
-        return (
-            <View
-                accessibilityRole="progressbar"
-                accessibilityLabel="Loading content"
-                accessibilityLiveRegion="polite"
-                style={[
-                    ui.card,
-                    {
-                        flexDirection: "row",
-                        alignItems: "center",
-                        paddingVertical: 16,
-                    },
-                ]}
-            >
-                <View
-                    style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 20,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        backgroundColor: palette.soft,
-                    }}
-                >
-                    <ActivityIndicator
-                        size="small"
-                        color={palette.brand}
-                        accessible={false}
-                    />
-                </View>
-                <View style={{ flex: 1, gap: 3 }}>
-                    <Text style={[ui.body, { fontWeight: "700" }]}>
-                        Loading content
-                    </Text>
-                    <Text style={ui.small}>
-                        Please wait while we get things ready.
-                    </Text>
-                </View>
-            </View>
-        );
+    if (loading) return <ResourceStateSkeleton />;
     if (error)
         return (
             <View style={ui.card}>
