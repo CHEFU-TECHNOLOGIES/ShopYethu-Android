@@ -1,7 +1,8 @@
 import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
+import * as Clipboard from "expo-clipboard";
 import { palette } from "@/constants/market-theme";
 import { toast } from "@/lib/toast";
-import { shareProduct } from "@/lib/product-sharing";
+import { productShareUrl, shareProduct } from "@/lib/product-sharing";
 import type { Product, Storefront } from "@/types/marketplace";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -30,6 +31,7 @@ export function ProductGalleryActionsMenu({
     } | null>(null);
     const trigger = useRef<ComponentRef<typeof Pressable>>(null);
     const sharing = useRef(false);
+    const copying = useRef(false);
     const { width: windowWidth } = useWindowDimensions();
 
     function toggleMenu() {
@@ -66,6 +68,24 @@ export function ProductGalleryActionsMenu({
             pathname: "/report",
             params: { productId: product.id },
         });
+    }
+
+    async function copyLink() {
+        setOpen(false);
+        if (copying.current) return;
+        copying.current = true;
+        try {
+            await Clipboard.setStringAsync(productShareUrl(product.id));
+            toast.success("Product link copied.");
+        } catch (cause) {
+            toast.error(
+                cause instanceof Error
+                    ? cause.message
+                    : "Could not copy this product link. Please try again.",
+            );
+        } finally {
+            copying.current = false;
+        }
     }
 
     return (
@@ -114,8 +134,14 @@ export function ProductGalleryActionsMenu({
                                 onPress={share}
                             />
                             <ActionItem
+                                icon="link-outline"
+                                label="Copy link"
+                                onPress={() => void copyLink()}
+                            />
+                            <ActionItem
                                 icon="flag-outline"
                                 label="Report"
+                                color={palette.danger}
                                 onPress={report}
                             />
                         </View>
@@ -129,10 +155,12 @@ export function ProductGalleryActionsMenu({
 function ActionItem({
     icon,
     label,
+    color = palette.brand,
     onPress,
 }: {
-    icon: "share-outline" | "flag-outline";
+    icon: "share-outline" | "link-outline" | "flag-outline";
     label: string;
+    color?: string;
     onPress: () => void;
 }) {
     return (
@@ -142,8 +170,8 @@ function ActionItem({
             style={styles.item}
             onPress={onPress}
         >
-            <Ionicons name={icon} size={19} color={palette.brand} />
-            <Text style={styles.label}>{label}</Text>
+            <Ionicons name={icon} size={19} color={color} />
+            <Text style={[styles.label, { color }]}>{label}</Text>
         </Pressable>
     );
 }

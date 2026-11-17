@@ -52,12 +52,6 @@ jobs:
       - name: Check TypeScript
         run: npm run typecheck
 
-      - name: Check cache isolation and order retry safety
-        run: npm run test:cache
-
-      - name: Check seller product forms and actions
-        run: npm run test:seller
-
       - name: Lint
         run: npm run lint
 

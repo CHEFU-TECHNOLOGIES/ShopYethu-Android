@@ -30,7 +30,7 @@ export function validateProductStep(
   if (step === 2) {
     if (!/^\d+(?:[.,]\d{1,2})?$/.test(form.price.trim())) return 'Enter a price in rand, with up to two decimal places.';
     const cents = Math.round(Number(form.price.trim().replace(',', '.')) * 100);
-    if (!Number.isSafeInteger(cents) || cents < 100 || cents > 100000000) return 'Set a price between R 1.00 and R 1,000,000.00.';
+    if (!Number.isSafeInteger(cents) || cents < 100 || cents > 100000000) return 'Set a price between R1.00 and R1,000,000.00.';
     if (!/^\d+$/.test(form.stock.trim()) || Number(form.stock) > 100000) return 'Enter stock as a whole number from 0 to 100,000.';
     if (!form.fulfilment.length || form.fulfilment.some(value => !['collection', 'local-delivery'].includes(value))) return 'Choose a supported fulfilment option.';
   }
