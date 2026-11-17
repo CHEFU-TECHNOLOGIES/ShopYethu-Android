@@ -22,6 +22,7 @@ export const productDetailStyles = StyleSheet.create({
     },
     galleryCounterText: { color: "#FFFFFF", fontSize: 12, fontWeight: "700" },
     galleryPlaceholder: {
+        position: "relative",
         alignItems: "center",
         justifyContent: "center",
         alignSelf: "center",

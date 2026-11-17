@@ -8,7 +8,8 @@ import {
 import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { MarketImage } from "@/components/market/MarketImage";
+import { ProductGalleryPhoto } from "@/components/market/ProductGalleryPhoto";
+import { ProductGalleryActionsMenu } from "@/components/market/ProductGalleryActionsMenu";
 import { ExpandableDescription } from "@/components/market/ExpandableDescription";
 import { Page, ResourceState } from "@/components/market/Primitives";
 import { productDetailStyles as styles } from "@/constants/product-detail-styles";
@@ -18,7 +19,6 @@ import { useCart } from "@/lib/cart";
 import { toast } from "@/lib/toast";
 import type { Product, Storefront } from "@/types/marketplace";
 import { OperatingAreaLabel } from "@/components/market/OperatingAreaLabel";
-import { ReportLink } from "@/components/market/ReportLink";
 import { ProductDetailsSkeleton } from "@/components/market/ProductDetailsSkeleton";
 
 export default function ProductScreen() {
@@ -113,14 +113,11 @@ export default function ProductScreen() {
                                     index,
                                 })}
                                 renderItem={({ item: photo }) => (
-                                    <MarketImage
-                                        accessibilityLabel={`${product.name} photo`}
+                                    <ProductGalleryPhoto
                                         uri={photo}
-                                        width={960}
-                                        style={[
-                                            styles.galleryImage,
-                                            { width: galleryWidth },
-                                        ]}
+                                        label={`${product.name} photo`}
+                                        width={galleryWidth}
+                                        height={galleryHeight}
                                     />
                                 )}
                                 onMomentumScrollEnd={({ nativeEvent }) =>
@@ -140,6 +137,10 @@ export default function ProductScreen() {
                                     </Text>
                                 </View>
                             )}
+                            <ProductGalleryActionsMenu
+                                product={product}
+                                store={store}
+                            />
                         </View>
                     ) : (
                         <View
@@ -156,6 +157,10 @@ export default function ProductScreen() {
                                 name="image-outline"
                                 size={38}
                                 color={palette.muted}
+                            />
+                            <ProductGalleryActionsMenu
+                                product={product}
+                                store={store}
                             />
                         </View>
                     )}
@@ -373,16 +378,6 @@ export default function ProductScreen() {
                             </View>
                         )}
                     </View>
-
-                    <ReportLink
-                        title="Report this listing"
-                        onPress={() =>
-                            router.navigate({
-                                pathname: "/report",
-                                params: { productId: product.id },
-                            })
-                        }
-                    />
                 </>
             )}
         </Page>

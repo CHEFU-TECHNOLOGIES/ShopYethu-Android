@@ -1,4 +1,5 @@
 import { OperatingAreaLabel } from "@/components/market/OperatingAreaLabel";
+import { MaterialIcons } from "@expo/vector-icons";
 import { palette, ui } from "@/constants/market-theme";
 import type { Storefront } from "@/types/marketplace";
 import { StyleSheet, Text, View } from "react-native";
@@ -15,9 +16,26 @@ export function StorefrontHeader({
     return (
         <>
             <View style={styles.hero}>
-                <Text accessibilityRole="header" style={styles.storeName}>
-                    {store.name}
-                </Text>
+                <View style={styles.storeTitleRow}>
+                    <Text
+                        accessibilityRole="header"
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                        style={styles.storeName}
+                    >
+                        {store.name}
+                    </Text>
+                    {store.verified === true && (
+                        <MaterialIcons
+                            name="verified"
+                            size={18}
+                            color="#A9D7B3"
+                            accessible
+                            accessibilityRole="image"
+                            accessibilityLabel="Verified seller"
+                        />
+                    )}
+                </View>
                 <View style={styles.location}>
                     <Text style={styles.locationLabel}>OPERATING AREA</Text>
                     <OperatingAreaLabel
@@ -54,6 +72,11 @@ const styles = StyleSheet.create({
         borderRadius: 22,
         backgroundColor: palette.brand,
     },
+    storeTitleRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+    },
     location: { gap: 3 },
     locationLabel: {
         color: "#C7D6CB",
@@ -68,6 +91,7 @@ const styles = StyleSheet.create({
         fontSize: 23,
         fontWeight: "700",
         lineHeight: 29,
+        flexShrink: 1,
     },
     description: { color: "#E4ECE6", fontSize: 13, lineHeight: 19 },
     productsHeading: {

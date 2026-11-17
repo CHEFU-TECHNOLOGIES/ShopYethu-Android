@@ -4,6 +4,16 @@ import { loadTs } from "./load-ts.mjs";
 
 const store = { id: "seller/one", name: "Mama's Pantry" };
 
+test("the copied store link is the encoded HTTPS storefront URL", async () => {
+    const { storeShareUrl } = loadTs("src/lib/store-sharing.ts", {
+        "react-native": { Share: { share: async () => ({}) } },
+    });
+    assert.equal(
+        storeShareUrl(store.id),
+        "https://api.chefu.co.za/shopyethu/store/seller%2Fone",
+    );
+});
+
 test("the share message contains the seller name and an encoded HTTPS storefront link", async () => {
     const { storeShareMessage } = loadTs(
         "src/lib/store-sharing.ts",

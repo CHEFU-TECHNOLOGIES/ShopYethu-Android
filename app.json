@@ -29,6 +29,11 @@
               "scheme": "https",
               "host": "api.chefu.co.za",
               "pathPrefix": "/shopyethu/store/"
+            },
+            {
+              "scheme": "https",
+              "host": "api.chefu.co.za",
+              "pathPrefix": "/shopyethu/product/"
             }
           ],
           "category": [

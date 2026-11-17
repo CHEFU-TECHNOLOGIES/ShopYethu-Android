@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { router } from "expo-router";
@@ -12,22 +12,59 @@ import { account } from "@/constants/account-styles";
 import { palette } from "@/constants/market-theme";
 import { useAuth } from "@/lib/auth";
 import { useSellerAccount } from "@/hooks/use-seller-account";
+import { createRefreshCooldown } from "@/lib/refresh-cooldown";
+import { toast } from "@/lib/toast";
 import Constants from "expo-constants";
+
+const ACCOUNT_REFRESH_COOLDOWN_MS = 30_000;
 
 export default function AccountScreen() {
     const { session, ready, busy, error, signIn, signOut } = useAuth();
     const resource = useSellerAccount();
     const signOutLock = useRef(false);
+    const lastRefreshCooldownToast = useRef(0);
+    const [refreshCooldown] = useState(() =>
+        createRefreshCooldown(ACCOUNT_REFRESH_COOLDOWN_MS),
+    );
     const [signingOut, setSigningOut] = useState(false);
     const [confirmingSignOut, setConfirmingSignOut] = useState(false);
     const [actionError, setActionError] = useState("");
+    const [refreshCooldownSeconds, setRefreshCooldownSeconds] = useState(0);
     const authBusy = busy || signingOut;
     const version = Constants.expoConfig?.version ?? "";
     const versionCode = Constants.expoConfig?.android?.versionCode ?? "";
 
+    useEffect(() => {
+        if (refreshCooldownSeconds <= 0) return;
+        const timer = setTimeout(
+            () =>
+                setRefreshCooldownSeconds(
+                    Math.ceil(refreshCooldown.remainingMs() / 1000),
+                ),
+            1000,
+        );
+        return () => clearTimeout(timer);
+    }, [refreshCooldown, refreshCooldownSeconds]);
+
     function handleSignIn() {
         setActionError("");
         void signIn();
+    }
+
+    function refreshAccount() {
+        if (resource.loading || resource.refreshing) return;
+        if (!refreshCooldown.tryStart()) {
+            const now = Date.now();
+            if (now - lastRefreshCooldownToast.current >= 2000) {
+                toast.info("Please wait before refreshing account status again.");
+                lastRefreshCooldownToast.current = now;
+            }
+            return;
+        }
+        setRefreshCooldownSeconds(
+            Math.ceil(refreshCooldown.remainingMs() / 1000),
+        );
+        resource.refresh();
     }
 
     async function handleSignOut() {
@@ -63,20 +100,25 @@ export default function AccountScreen() {
                                 accessibilityLabel={
                                     resource.refreshing
                                         ? "Refreshing account and seller status"
+                                        : refreshCooldownSeconds > 0
+                                          ? `Refresh account and seller status available in ${refreshCooldownSeconds} seconds`
                                         : "Refresh account and seller status"
                                 }
                                 accessibilityState={{
                                     disabled:
-                                        resource.loading || resource.refreshing,
+                                        resource.loading ||
+                                        resource.refreshing,
                                     busy: resource.refreshing,
                                 }}
                                 disabled={
-                                    resource.loading || resource.refreshing
+                                    resource.loading ||
+                                    resource.refreshing
                                 }
-                                onPress={resource.refresh}
+                                onPress={refreshAccount}
                                 style={({ pressed }) => [
                                     account.refresh,
-                                    pressed && account.pressed,
+                                    (pressed || refreshCooldownSeconds > 0) &&
+                                        account.pressed,
                                 ]}
                             >
                                 {resource.refreshing ? (
@@ -155,7 +197,7 @@ export default function AccountScreen() {
                             <>
                                 <SellerAccountSection
                                     {...resource}
-                                    onRetry={resource.refresh}
+                                    onRetry={refreshAccount}
                                 />
                                 <AccountSection title="Account options">
                                     <AccountRow

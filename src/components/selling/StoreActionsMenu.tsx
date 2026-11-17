@@ -1,12 +1,12 @@
-import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
-import { palette } from "@/constants/market-theme";
+import * as Clipboard from "expo-clipboard";
+import { api } from "@/lib/api";
 import { toast } from "@/lib/toast";
-import { shareStore } from "@/lib/store-sharing";
+import { shareStore, storeShareUrl } from "@/lib/store-sharing";
 import type { Storefront } from "@/types/marketplace";
-import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useRef } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useRef, useState } from "react";
+import { StoreActionsDropdown } from "./StoreActionsDropdown";
+import { StorePauseConfirmation } from "./StorePauseConfirmation";
 
 export function StoreActionsMenu({
     store,
@@ -18,6 +18,14 @@ export function StoreActionsMenu({
     onOpenChange: (open: boolean) => void;
 }) {
     const sharing = useRef(false);
+    const copying = useRef(false);
+    const changingPauseState = useRef(false);
+    const [pauseConfirmationOpen, setPauseConfirmationOpen] = useState(false);
+
+    function editStore() {
+        onOpenChange(false);
+        router.navigate("/selling/store");
+    }
 
     function share() {
         onOpenChange(false);
@@ -36,105 +44,65 @@ export function StoreActionsMenu({
             });
     }
 
+    async function copyLink() {
+        onOpenChange(false);
+        if (copying.current) return;
+        copying.current = true;
+        try {
+            await Clipboard.setStringAsync(storeShareUrl(store.id));
+            toast.success("Store link copied.");
+        } catch (cause) {
+            toast.error(
+                cause instanceof Error
+                    ? cause.message
+                    : "Could not copy your store link. Please try again.",
+            );
+        } finally {
+            copying.current = false;
+        }
+    }
+
+    async function updatePauseState() {
+        onOpenChange(false);
+        setPauseConfirmationOpen(false);
+        if (changingPauseState.current) return;
+        changingPauseState.current = true;
+        try {
+            await api<Storefront>("/seller/store/status", {
+                method: "PUT",
+                body: JSON.stringify({ paused: !store.sellerPaused }),
+            });
+        } catch (cause) {
+            toast.error(
+                cause instanceof Error
+                    ? cause.message
+                    : "Could not update your store status. Please try again.",
+            );
+        } finally {
+            changingPauseState.current = false;
+        }
+    }
+
     return (
         <>
-            <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="More storefront actions"
-                accessibilityHint="Shows edit and share options"
-                accessibilityState={{ expanded: open }}
-                onPress={() => onOpenChange(!open)}
-                style={styles.trigger}
-                hitSlop={6}
-            >
-                <Ionicons
-                    name="ellipsis-horizontal"
-                    size={18}
-                    color="#FFFFFF"
-                />
-            </Pressable>
-            {open && (
-                <>
-                    <Pressable
-                        style={styles.dismiss}
-                        onPress={() => onOpenChange(false)}
-                        accessible={false}
-                    />
-                    <View style={styles.dropdown}>
-                        <Pressable
-                            accessibilityRole="button"
-                            accessibilityLabel="Edit storefront"
-                            style={styles.item}
-                            onPress={() => {
-                                onOpenChange(false);
-                                router.navigate("/selling/store");
-                            }}
-                        >
-                            <Ionicons
-                                name="create-outline"
-                                size={19}
-                                color={palette.ink}
-                            />
-                            <Text style={styles.label}>Edit</Text>
-                        </Pressable>
-                        <Pressable
-                            accessibilityRole="button"
-                            accessibilityLabel="Share storefront"
-                            style={styles.item}
-                            onPress={share}
-                        >
-                            <Ionicons
-                                name="share-outline"
-                                size={19}
-                                color={palette.brand}
-                            />
-                            <Text style={styles.label}>Share</Text>
-                        </Pressable>
-                    </View>
-                </>
-            )}
+            <StoreActionsDropdown
+                open={open}
+                onOpenChange={onOpenChange}
+                paused={!!store.sellerPaused}
+                onEdit={editStore}
+                onShare={share}
+                onCopy={() => void copyLink()}
+                onPause={() => {
+                    onOpenChange(false);
+                    setPauseConfirmationOpen(true);
+                }}
+            />
+            <StorePauseConfirmation
+                paused={!!store.sellerPaused}
+                visible={pauseConfirmationOpen}
+                onDismiss={() => setPauseConfirmationOpen(false)}
+                onConfirm={() => void updatePauseState()}
+            />
         </>
     );
 }
-
-const styles = StyleSheet.create({
-    trigger: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#365F4D",
-    },
-    dismiss: {
-        ...StyleSheet.absoluteFill,
-        zIndex: 1,
-    },
-    dropdown: {
-        position: "absolute",
-        top: 62,
-        right: 16,
-        zIndex: 2,
-        elevation: 8,
-        width: 150,
-        paddingVertical: 5,
-        borderRadius: 12,
-        backgroundColor: palette.paper,
-        shadowColor: "#000000",
-        shadowOpacity: 0.16,
-        shadowRadius: 12,
-        shadowOffset: { width: 0, height: 5 },
-    },
-    item: {
-        minHeight: 46,
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 9,
-        paddingHorizontal: 12,
-    },
-    label: {
-        color: palette.ink,
-        fontSize: 14,
-        fontWeight: "600",
-    },
-});

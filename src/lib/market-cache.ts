@@ -60,6 +60,14 @@ onApiMutation(({ path, data }) => {
     marketCache.patch<SellerInventory>((inventoryPath, scope) => scope === uid && isSellerInventoryPath(inventoryPath),
       current => ({ ...current, store }));
     cacheSavedStore(marketCache, store);
+  } else if (path === '/seller/store/status') {
+    const store = data as Storefront;
+    toast.success(store.sellerPaused ? 'Your store is paused.' : 'Your store is live again.');
+    marketCache.set<SellerAccount>('/me', uid, current => ({ ...current, store }), false);
+    marketCache.patch<SellerInventory>((inventoryPath, scope) => scope === uid && isSellerInventoryPath(inventoryPath),
+      current => ({ ...current, store }));
+    marketCache.invalidate((queryPath, scope) => scope === 'public' &&
+      (queryPath.split('?')[0] === '/products' || queryPath.startsWith('/products/') || queryPath.startsWith('/stores/')), true);
   } else if (/^\/seller\/products(?:\/|$)/.test(path)) {
     if ((data as DeletedProduct).deleted === true) {
       cacheDeletedProduct(marketCache, uid, data as DeletedProduct);

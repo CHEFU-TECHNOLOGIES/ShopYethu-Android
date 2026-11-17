@@ -1,8 +1,12 @@
 import { Share } from "react-native";
 import type { Storefront } from "@/types/marketplace";
 
+export function storeShareUrl(storeId: string) {
+    return `https://api.chefu.co.za/shopyethu/store/${encodeURIComponent(storeId)}`;
+}
+
 export function storeShareMessage(store: Pick<Storefront, "id" | "name">) {
-    const url = `https://api.chefu.co.za/shopyethu/store/${encodeURIComponent(store.id)}`;
+    const url = storeShareUrl(store.id);
     return `Hola! Check out my store ${store.name} on ShopYethu 🛍️\nFind something lekker and support a kasi business:\n${url}\n\nHave a look around and find your next favourite.`;
 }
 
