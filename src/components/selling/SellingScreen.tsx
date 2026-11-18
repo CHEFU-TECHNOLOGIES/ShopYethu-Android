@@ -41,7 +41,6 @@ export default function SellingScreen() {
     return (
         <ListPage<Product>
             title="My Store"
-            back
             data={session && resource.data ? visible : []}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (

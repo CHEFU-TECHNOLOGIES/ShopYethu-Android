@@ -1,7 +1,8 @@
-import { Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import QRCode from "react-native-qrcode-svg";
 import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import type { Order, OrderStatus } from "@/types/marketplace";
-import { money, statusLabel, ui } from "@/constants/market-theme";
+import { money, palette, statusLabel, ui } from "@/constants/market-theme";
 import { Button } from "./Primitives";
 import { ReportLink } from "./ReportLink";
 import { OrderStatusBadge } from "./OrderStatusBadge";
@@ -25,15 +26,44 @@ export function OrderCard({
     const {
         next,
         nextAction,
+        canReturnToPreparing,
         canCancel,
         historyExpanded,
         setHistoryExpanded,
         reportOrder,
     } = useOrderCard(order, selling);
     return (
-        <View style={ui.card}>
-            <View style={ui.between}>
-                <Text style={ui.heading}>{order.reference}</Text>
+        <View style={styles.receipt}>
+            <View style={styles.tearEdge} pointerEvents="none">
+                {Array.from({ length: 22 }, (_, index) => (
+                    <View key={index} style={styles.tearTooth} />
+                ))}
+            </View>
+            <View style={styles.headerRow}>
+                <View style={styles.header}>
+                    <Text style={styles.brand}>SHOPYETHU</Text>
+                    <Text style={styles.receiptTitle}>ORDER RECEIPT</Text>
+                    <Text style={styles.receiptNumber}>{order.reference}</Text>
+                    <Text style={styles.date}>
+                        {new Date(order.createdAt).toLocaleString("en-ZA")}
+                    </Text>
+                </View>
+                <View
+                    style={styles.qrContainer}
+                    accessibilityRole="image"
+                    accessibilityLabel={`QR code for order ${order.reference}`}
+                >
+                    <QRCode
+                        value={order.reference}
+                        size={76}
+                        color={palette.ink}
+                        backgroundColor="#FFFEFA"
+                    />
+                </View>
+            </View>
+            <View style={styles.dashedDivider} />
+            <View style={styles.statusRow}>
+                <Text style={styles.sectionLabel}>ORDER STATUS</Text>
                 <OrderStatusBadge status={order.status} />
             </View>
             {selling && loadingAction && (
@@ -44,39 +74,67 @@ export function OrderCard({
                 </Text>
             )}
             {order.fulfilment === 'collection' && !['cancelled', 'collected', 'completed'].includes(order.status) && (
-                <Text style={ui.small}>
-                    {selling ? 'Match this order code with the customer at collection.' : 'Show this order code to your seller when collecting. Wait until your order is ready.'}
-                </Text>
+                <View style={styles.collectionCode}>
+                    <Text style={styles.sectionLabel}>COLLECTION CODE</Text>
+                    <Text style={styles.collectionReference}>{order.reference}</Text>
+                    <Text style={styles.collectionHint}>
+                        {selling
+                            ? "Match this code with the customer at collection."
+                            : "Show this code to your seller when collecting. Wait until your order is ready."}
+                    </Text>
+                </View>
             )}
-            <Text style={ui.small}>
-                {new Date(order.createdAt).toLocaleString("en-ZA")}
-            </Text>
+            <View style={styles.dashedDivider} />
+            <View style={styles.itemsHeader}>
+                <Text style={styles.sectionLabel}>ITEM</Text>
+                <Text style={styles.sectionLabel}>AMOUNT</Text>
+            </View>
             {order.items.map((item) => (
-                <View key={item.productId} style={ui.between}>
-                    <Text style={[ui.body, { flex: 1 }]}>
+                <View key={item.productId} style={styles.itemRow}>
+                    <Text style={[ui.body, styles.itemName]}>
                         {item.quantity} × {item.name}
                     </Text>
-                    <Text style={ui.body}>
+                    <Text style={styles.itemAmount}>
                         {money(item.priceCents * item.quantity)}
                     </Text>
                 </View>
             ))}
-            <Text style={ui.heading}>{money(order.totalCents)}</Text>
-            <Text style={ui.subtitle}>
+            <View style={styles.dashedDivider} />
+            <View style={styles.amountRow}>
+                <Text style={ui.small}>Items subtotal</Text>
+                <Text style={styles.amountValue}>{money(order.subtotalCents)}</Text>
+            </View>
+            <View style={styles.amountRow}>
+                <Text style={ui.small}>
+                    {order.fulfilment === "collection" ? "Collection fee" : "Delivery"}
+                </Text>
+                <Text style={styles.amountValue}>
+                    {order.deliveryCents ? money(order.deliveryCents) : "Free"}
+                </Text>
+            </View>
+            <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>TOTAL</Text>
+                <Text style={styles.totalAmount}>{money(order.totalCents)}</Text>
+            </View>
+            <View style={styles.dashedDivider} />
+            <Text style={styles.sectionLabel}>FULFILMENT</Text>
+            <Text style={ui.body}>
                 {order.fulfilment === "collection"
                     ? "Collection from the seller"
                     : "Local delivery"}
-                {order.address ? ` · ${order.address}` : ""}
             </Text>
-            <View style={ui.between}>
-                <Text style={ui.small}>Payment</Text>
-                <Text style={ui.small}>
+            {order.address ? <Text style={ui.small}>{order.address}</Text> : null}
+            <View style={styles.amountRow}>
+                <Text style={styles.sectionLabel}>PAYMENT</Text>
+                <Text style={styles.paymentValue}>
                     {order.paymentStatus === "paid-on-collection"
                         ? "Confirmed by seller"
                         : "Due at collection"}
                 </Text>
             </View>
-            <Text style={ui.small}>{order.paymentNote}</Text>
+            {order.paymentNote ? (
+                <Text style={ui.small}>{order.paymentNote}</Text>
+            ) : null}
             {order.paymentReceivedAt && (
                 <Text style={ui.small}>
                     Payment confirmed{" "}
@@ -84,29 +142,34 @@ export function OrderCard({
                 </Text>
             )}
             {selling && (
-                <Text style={ui.body}>Customer contact: {order.contact}</Text>
+                <View style={styles.contact}>
+                    <Text style={styles.sectionLabel}>CUSTOMER</Text>
+                    <Text style={ui.body}>{order.contact}</Text>
+                </View>
             )}
-            <View style={ui.divider} />
+            <View style={styles.dashedDivider} />
             <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`${historyExpanded ? "Collapse" : "Expand"} order updates`}
                 accessibilityState={{ expanded: historyExpanded }}
                 onPress={() => setHistoryExpanded((expanded) => !expanded)}
-                style={ui.between}
+                style={styles.historyToggle}
             >
-                <Text style={[ui.body, { fontWeight: "700" }]}>
+                <Text style={styles.historyTitle}>
                     Order updates ({order.history.length})
                 </Text>
-                <Text style={ui.badge}>
+                <Text style={styles.historyAction}>
                     {historyExpanded ? "Hide" : "Show"}
                 </Text>
             </Pressable>
             {historyExpanded &&
                 order.history.map((event, index) => (
-                    <Text key={`${event.at}-${index}`} style={ui.small}>
-                        • {statusLabel(event.status)} ·{" "}
-                        {new Date(event.at).toLocaleString("en-ZA")}
-                    </Text>
+                    <View key={`${event.at}-${index}`} style={styles.historyRow}>
+                        <Text style={ui.small}>{statusLabel(event.status)}</Text>
+                        <Text style={styles.historyDate}>
+                            {new Date(event.at).toLocaleString("en-ZA")}
+                        </Text>
+                    </View>
                 ))}
             {selling && (
                 <View style={{ gap: 10, marginTop: 4 }}>
@@ -117,6 +180,16 @@ export function OrderCard({
                             compact
                             loading={loadingAction === "status"}
                             onPress={() => update?.(next)}
+                        />
+                    )}
+                    {canReturnToPreparing && (
+                        <Button
+                            title="Back to preparing"
+                            tone="secondary"
+                            disabled={busy}
+                            compact
+                            loading={loadingAction === "status"}
+                            onPress={() => update?.("preparing")}
                         />
                     )}
                     {order.status === "ready" &&
@@ -169,3 +242,186 @@ export function OrderCard({
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    tearEdge: {
+        alignItems: "flex-start",
+        flexDirection: "row",
+        height: 8,
+        justifyContent: "space-between",
+        paddingHorizontal: 6,
+        position: "absolute",
+        left: 0,
+        right: 0,
+        top: 0,
+    },
+    tearTooth: {
+        borderTopColor: palette.canvas,
+        borderTopWidth: 8,
+        borderLeftColor: "transparent",
+        borderLeftWidth: 6,
+        borderRightColor: "transparent",
+        borderRightWidth: 6,
+        height: 8,
+        width: 12,
+    },
+    receipt: {
+        backgroundColor: "#FFFEFA",
+        borderBottomColor: palette.line,
+        borderBottomLeftRadius: 8,
+        borderBottomRightRadius: 8,
+        borderBottomWidth: 1,
+        borderLeftColor: palette.line,
+        borderLeftWidth: 1,
+        borderRightColor: palette.line,
+        borderRightWidth: 1,
+        padding: 18,
+        paddingTop: 26,
+        gap: 12,
+    },
+    headerRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+    },
+    header: { alignItems: "flex-start", flex: 1, gap: 4 },
+    qrContainer: {
+        alignItems: "center",
+        backgroundColor: "#FFFEFA",
+        borderColor: palette.line,
+        borderRadius: 4,
+        borderWidth: 1,
+        justifyContent: "center",
+        padding: 4,
+    },
+    brand: {
+        color: palette.brand,
+        fontSize: 11,
+        fontWeight: "800",
+        letterSpacing: 2,
+    },
+    receiptTitle: {
+        color: palette.ink,
+        fontSize: 17,
+        fontWeight: "700",
+        letterSpacing: 1,
+    },
+    receiptNumber: {
+        color: palette.ink,
+        fontFamily: "monospace",
+        fontSize: 18,
+        fontWeight: "700",
+        letterSpacing: 1,
+        marginTop: 4,
+    },
+    date: { color: palette.muted, fontSize: 12, textAlign: "center" },
+    dashedDivider: {
+        borderBottomColor: palette.line,
+        borderBottomWidth: 1,
+        borderStyle: "dashed",
+        marginVertical: 2,
+    },
+    statusRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+    },
+    sectionLabel: {
+        color: palette.muted,
+        fontSize: 10,
+        fontWeight: "700",
+        letterSpacing: 1,
+    },
+    collectionCode: {
+        alignItems: "center",
+        backgroundColor: palette.soft,
+        borderRadius: 6,
+        gap: 5,
+        padding: 12,
+    },
+    collectionReference: {
+        color: palette.ink,
+        fontFamily: "monospace",
+        fontSize: 20,
+        fontWeight: "700",
+        letterSpacing: 2,
+    },
+    collectionHint: {
+        color: palette.muted,
+        fontSize: 12,
+        lineHeight: 18,
+        textAlign: "center",
+    },
+    itemsHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        paddingBottom: 2,
+    },
+    itemRow: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        gap: 12,
+    },
+    itemName: { flex: 1 },
+    itemAmount: {
+        color: palette.ink,
+        fontSize: 14,
+        fontWeight: "600",
+        textAlign: "right",
+    },
+    amountRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+    },
+    amountValue: { color: palette.ink, fontSize: 13, fontWeight: "600" },
+    totalRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        borderTopColor: palette.ink,
+        borderTopWidth: 1,
+        paddingTop: 10,
+    },
+    totalLabel: {
+        color: palette.ink,
+        fontSize: 13,
+        fontWeight: "800",
+        letterSpacing: 1,
+    },
+    totalAmount: { color: palette.ink, fontSize: 20, fontWeight: "800" },
+    paymentValue: {
+        color: palette.brand,
+        fontSize: 12,
+        fontWeight: "700",
+        textAlign: "right",
+    },
+    contact: { gap: 4 },
+    historyToggle: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+    },
+    historyTitle: { color: palette.ink, fontSize: 14, fontWeight: "700" },
+    historyAction: {
+        color: palette.brand,
+        fontSize: 11,
+        fontWeight: "700",
+        letterSpacing: 1,
+        textTransform: "uppercase",
+    },
+    historyRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        gap: 12,
+    },
+    historyDate: {
+        color: palette.muted,
+        flexShrink: 1,
+        fontSize: 11,
+        textAlign: "right",
+    },
+});

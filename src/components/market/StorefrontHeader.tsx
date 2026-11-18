@@ -28,6 +28,19 @@ export function StorefrontHeader({
         }
     }
 
+    async function openPhone() {
+        const number = store.phone?.trim().replace(/[^\d+]/g, "");
+        if (!number) {
+            toast.error("This seller's phone number is unavailable.");
+            return;
+        }
+        try {
+            await Linking.openURL(`tel:${number}`);
+        } catch {
+            toast.error("Could not open the phone app. Please try again.");
+        }
+    }
+
     return (
         <>
             <View style={styles.hero}>
@@ -72,7 +85,7 @@ export function StorefrontHeader({
                                 {store.phone}
                             </Text>
                         </View>
-                        {store.whatsappAvailable === true && (
+                        {store.whatsappAvailable === true ? (
                             <Pressable
                                 style={styles.whatsappBadge}
                                 accessibilityRole="button"
@@ -88,6 +101,21 @@ export function StorefrontHeader({
                                 <Text style={styles.whatsappLabel}>
                                     WhatsApp
                                 </Text>
+                            </Pressable>
+                        ) : (
+                            <Pressable
+                                style={styles.phoneBadge}
+                                accessibilityRole="button"
+                                accessibilityLabel="Call seller by phone"
+                                accessibilityHint="Opens the phone app with this seller's number ready"
+                                onPress={() => void openPhone()}
+                            >
+                                <FontAwesome
+                                    name="phone"
+                                    size={15}
+                                    color={palette.paper}
+                                />
+                                <Text style={styles.phoneLabel}>Phone</Text>
                             </Pressable>
                         )}
                     </View>
@@ -160,8 +188,22 @@ const styles = StyleSheet.create({
         borderRadius: 999,
         backgroundColor: "rgba(37,211,102,0.14)",
     },
+    phoneBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 7,
+        borderRadius: 999,
+        backgroundColor: "rgba(255,255,255,0.14)",
+    },
     whatsappLabel: {
         color: "#B9F2CB",
+        fontSize: 11,
+        fontWeight: "700",
+    },
+    phoneLabel: {
+        color: palette.paper,
         fontSize: 11,
         fontWeight: "700",
     },

@@ -26,8 +26,14 @@ export function useSellerOrderDetails(id: string | undefined) {
         setLoadingAction(action);
         setError("");
         const previous = order;
+        const updatedAt = new Date().toISOString();
         const optimistic = targetStatus
-            ? { ...previous, status: targetStatus }
+            ? {
+                  ...previous,
+                  status: targetStatus,
+                  updatedAt,
+                  history: [...previous.history, { status: targetStatus, at: updatedAt }],
+              }
             : null;
         if (optimistic) {
             resource.mutate((current) => ({

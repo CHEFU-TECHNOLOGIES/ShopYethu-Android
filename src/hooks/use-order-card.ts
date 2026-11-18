@@ -26,6 +26,10 @@ export function useOrderCard(order: Order, selling: boolean) {
                 : "Mark as dispatched",
         dispatched: "Complete order",
     };
+    const canReturnToPreparing =
+        selling &&
+        order.status === "ready" &&
+        order.paymentStatus !== "paid-on-collection";
     const canCancel = selling && ["placed", "accepted"].includes(order.status);
 
     function reportOrder() {
@@ -38,6 +42,7 @@ export function useOrderCard(order: Order, selling: boolean) {
     return {
         next,
         nextAction,
+        canReturnToPreparing,
         canCancel,
         historyExpanded,
         setHistoryExpanded,
