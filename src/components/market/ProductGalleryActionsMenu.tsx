@@ -12,9 +12,11 @@ import { StyleSheet } from "react-native";
 export function ProductGalleryActionsMenu({
     product,
     store,
+    showReport = true,
 }: {
     product: Product;
     store: Storefront;
+    showReport?: boolean;
 }) {
     const [open, setOpen] = useState(false);
     const [anchor, setAnchor] = useState<ProductGalleryActionsAnchor | null>(
@@ -58,6 +60,7 @@ export function ProductGalleryActionsMenu({
                 onShare={share}
                 onCopyLink={() => void copyLink()}
                 onReport={report}
+                showReport={showReport}
             />
         </>
     );

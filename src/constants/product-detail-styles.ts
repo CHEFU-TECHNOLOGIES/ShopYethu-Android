@@ -106,16 +106,9 @@ export const productDetailStyles = StyleSheet.create({
         borderRadius: 18,
         backgroundColor: palette.paper,
     },
-    storeIcon: {
-        width: 42,
-        height: 42,
-        alignItems: "center",
-        justifyContent: "center",
-        borderRadius: 14,
-        backgroundColor: palette.soft,
-    },
     storeInfo: { flex: 1, gap: 2 },
-    storeName: { color: palette.ink, fontSize: 15, fontWeight: "700" },
+    storeNameRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+    storeName: { flexShrink: 1, color: palette.ink, fontSize: 15, fontWeight: "700" },
     storeVisit: { flexDirection: "row", alignItems: "center", gap: 2 },
     storeVisitText: { color: palette.brand, fontSize: 13, fontWeight: "700" },
     purchaseCard: {

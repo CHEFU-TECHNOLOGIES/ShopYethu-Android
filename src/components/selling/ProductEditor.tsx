@@ -36,10 +36,14 @@ export function ProductEditor({
         continueEditing,
         saveAndReturn,
     } = useProductEditorNavigation(editor, reload);
+    const identityLocked =
+        editor.current?.identityLocked === true ||
+        (editor.current?.reviewCount ?? 0) > 0;
     const fields = {
         form: editor.form,
         update: editor.update,
         disabled: busy || !!pending,
+        identityLocked,
     };
     const continueDisabled = busy || !editor.canContinue;
     return (
@@ -99,6 +103,19 @@ export function ProductEditor({
                 </View>
             ) : (
                 <>
+                    {identityLocked && (
+                        <View style={ui.card}>
+                            <Text style={ui.heading}>
+                                Listing identity is locked
+                            </Text>
+                            <Text style={ui.subtitle}>
+                                After an order or review, the name, description,
+                                category, and photos cannot be changed. Create a
+                                new listing for a different product. Price and
+                                stock can still be updated.
+                            </Text>
+                        </View>
+                    )}
                     {step === 0 && <ProductDetails {...fields} />}
                     {step === 1 && (
                         <ProductPhotos

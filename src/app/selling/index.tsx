@@ -9,6 +9,7 @@ import { InventoryRow } from "@/components/selling/InventoryRow";
 import { StoreOverview } from "@/components/selling/StoreOverview";
 import { StoreSkeleton } from "@/components/selling/StoreSkeleton";
 import { ProductActions } from "@/components/selling/ProductActions";
+import { CatalogSortSelector } from "@/components/market/CatalogSortSelector";
 import type { Product } from "@/types/marketplace";
 import { palette, ui } from "@/constants/market-theme";
 import { sellerStyles as styles } from "@/constants/seller-styles";
@@ -26,6 +27,8 @@ export default function SellingScreen() {
         setFilter,
         search,
         setSearch,
+        sort,
+        setSort,
         selectedProduct,
         setSelectedProduct,
         products,
@@ -42,10 +45,7 @@ export default function SellingScreen() {
             data={session && resource.data ? visible : []}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-                <InventoryRow
-                    product={item}
-                    onActions={setSelectedProduct}
-                />
+                <InventoryRow product={item} onActions={setSelectedProduct} />
             )}
             ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
             onRefresh={session ? resource.refresh : undefined}
@@ -169,19 +169,10 @@ export default function SellingScreen() {
                                 <View style={styles.inventorySection}>
                                     <View style={styles.inventoryHeader}>
                                         <Text style={ui.heading}>Products</Text>
-                                        <View style={styles.inventoryCount}>
-                                            <Text
-                                                style={
-                                                    styles.inventoryCountText
-                                                }
-                                            >
-                                                {products.length}
-                                                {" "}loaded
-                                                {inventory.nextCursor
-                                                    ? " · more available"
-                                                    : ""}
-                                            </Text>
-                                        </View>
+                                        <CatalogSortSelector
+                                            value={sort}
+                                            onChange={setSort}
+                                        />
                                     </View>
                                     <View style={styles.inventoryControls}>
                                         <Field
@@ -192,47 +183,48 @@ export default function SellingScreen() {
                                             autoCorrect={false}
                                         />
                                         <Text style={ui.small}>
-                                            Search and filters cover loaded products.
-                                            Load more to search further.
+                                            {inventory.nextCursor
+                                                ? "Search, filters, and sorting apply to loaded products. Load more to include more."
+                                                : "Search, filters, and sorting apply to all your products."}
                                         </Text>
                                         <View
                                             accessibilityRole="tablist"
                                             style={styles.inventoryFilters}
                                         >
-                                            {[
-                                                "All",
-                                                "Published",
-                                                "Drafts",
-                                            ].map((value) => (
-                                                <Pressable
-                                                    key={value}
-                                                    accessibilityRole="tab"
-                                                    accessibilityLabel={`${value} products`}
-                                                    accessibilityState={{
-                                                        selected:
-                                                            filter === value,
-                                                    }}
-                                                    hitSlop={2}
-                                                    onPress={() =>
-                                                        setFilter(value)
-                                                    }
-                                                    style={[
-                                                        styles.inventoryFilter,
-                                                        filter === value &&
-                                                            styles.inventoryFilterActive,
-                                                    ]}
-                                                >
-                                                    <Text
+                                            {["All", "Published", "Drafts"].map(
+                                                (value) => (
+                                                    <Pressable
+                                                        key={value}
+                                                        accessibilityRole="tab"
+                                                        accessibilityLabel={`${value} products`}
+                                                        accessibilityState={{
+                                                            selected:
+                                                                filter ===
+                                                                value,
+                                                        }}
+                                                        hitSlop={2}
+                                                        onPress={() =>
+                                                            setFilter(value)
+                                                        }
                                                         style={[
-                                                            styles.inventoryFilterText,
+                                                            styles.inventoryFilter,
                                                             filter === value &&
-                                                                styles.inventoryFilterActiveText,
+                                                                styles.inventoryFilterActive,
                                                         ]}
                                                     >
-                                                        {value}
-                                                    </Text>
-                                                </Pressable>
-                                            ))}
+                                                        <Text
+                                                            style={[
+                                                                styles.inventoryFilterText,
+                                                                filter ===
+                                                                    value &&
+                                                                    styles.inventoryFilterActiveText,
+                                                            ]}
+                                                        >
+                                                            {value}
+                                                        </Text>
+                                                    </Pressable>
+                                                ),
+                                            )}
                                         </View>
                                     </View>
                                 </View>
@@ -243,10 +235,13 @@ export default function SellingScreen() {
             }
         >
             {session && selectedProduct?.ownerUid === session.user.uid && (
-                <ProductActions key={`${session.user.uid}:${selectedProduct.id}`} product={selectedProduct}
+                <ProductActions
+                    key={`${session.user.uid}:${selectedProduct.id}`}
+                    product={selectedProduct}
                     onClose={() => setSelectedProduct(null)}
                     onOptimistic={onOptimistic}
-                    onSettled={onSettled} />
+                    onSettled={onSettled}
+                />
             )}
         </ListPage>
     );

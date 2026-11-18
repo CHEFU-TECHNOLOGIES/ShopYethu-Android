@@ -9,6 +9,7 @@ import {
 import { OperatingAreaField } from "@/components/market/OperatingAreaField";
 import { ui } from "@/constants/market-theme";
 import { StoreEditorSkeleton } from "@/components/selling/StoreEditorSkeleton";
+import { PhoneVerificationModal } from "@/components/selling/PhoneVerificationModal";
 import { useStoreEditor } from "@/hooks/use-store-editor";
 
 export default function StoreEditor() {
@@ -19,10 +20,17 @@ export default function StoreEditor() {
         nameEditable,
         form,
         setForm,
+        updatePhone,
         busy,
         notice,
         error,
         hasChanges,
+        phoneChanged,
+        accountPhone,
+        phoneVerificationOpen,
+        cancelPhoneVerification,
+        handlePhoneVerified,
+        refresh,
         save,
     } = useStoreEditor();
     return (
@@ -30,7 +38,7 @@ export default function StoreEditor() {
             title="Your storefront"
             subtitle="Give customers a little insight into your business."
             back
-            onRefresh={session && !busy ? resource.refresh : undefined}
+            onRefresh={session && !busy ? refresh : undefined}
             refreshing={resource.refreshing}
         >
             {!session ? (
@@ -42,10 +50,11 @@ export default function StoreEditor() {
                         retry={resource.refresh}
                         loadingFallback={<StoreEditorSkeleton />}
                     />
-                    {resource.data && (
+                    {resource.data && accountPhone && (
                         <>
                             <Field
                                 label="Store name"
+                                placeholder="e.g. Cape Town Crafts"
                                 value={nameEditable ? form.name : initial?.name || ""}
                                 onChangeText={(name) =>
                                     nameEditable && setForm((value) => ({ ...value, name }))
@@ -58,6 +67,7 @@ export default function StoreEditor() {
                             )}
                             <Field
                                 label="About your store"
+                                placeholder="Tell customers what makes your store special"
                                 value={form.description}
                                 multiline
                                 onChangeText={(description) =>
@@ -68,6 +78,25 @@ export default function StoreEditor() {
                                 }
                                 editable={!busy}
                             />
+                            <Field
+                                label="Business contact number"
+                                placeholder="e.g. 082 123 4567"
+                                value={form.phone}
+                                onChangeText={updatePhone}
+                                keyboardType="phone-pad"
+                                maxLength={30}
+                                editable={!busy}
+                            />
+                            <Text style={ui.small}>
+                                Shared with your CheFu account for SSO and other
+                                apps. It is not shown on your public storefront.
+                            </Text>
+                            {phoneChanged && (
+                                <Text style={ui.small}>
+                                    A changed number must be verified by SMS
+                                    before it is saved.
+                                </Text>
+                            )}
                             <OperatingAreaField
                                 value={form.area}
                                 placeId={form.areaPlaceId}
@@ -97,12 +126,25 @@ export default function StoreEditor() {
                             {notice && <Text style={ui.body}>{notice}</Text>}
                             <Button
                                 title={busy ? "Saving…" : "Save storefront"}
-                                disabled={busy || !hasChanges}
+                                disabled={
+                                    busy ||
+                                    !hasChanges
+                                }
                                 onPress={() => void save()}
                             />
                         </>
                     )}
                 </>
+            )}
+            {session && (
+                <PhoneVerificationModal
+                    key={`${phoneVerificationOpen ? "open" : "closed"}:${form.phone}`}
+                    visible={phoneVerificationOpen}
+                    phone={form.phone}
+                    required={accountPhone?.phoneVerificationRequired}
+                    onVerified={handlePhoneVerified}
+                    onCancel={cancelPhoneVerification}
+                />
             )}
         </Page>
     );

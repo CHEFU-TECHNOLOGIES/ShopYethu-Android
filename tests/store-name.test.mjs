@@ -12,7 +12,7 @@ function setup(nameEditable) {
   const store = { id: 'seller', ownerUid: 'seller', name: 'Approved business name', nameEditable,
     description: 'Original shop description.', area: '', areaPlaceId: 'cape-town' };
   let resourceData = { store };
-  let form = { name: 'Old unsaved rename', description: 'An updated shop description.', area: 'Cape Town' };
+  let form = { name: 'Old unsaved rename', description: 'An updated shop description.', area: 'Cape Town', phone: '' };
   const requests = []; let respond = async () => store;
   const react = { useState: initial => [initial, () => {}], useRef: initial => ({ current: initial }) };
   const storeEditorHook = loadTs('src/hooks/use-store-editor.ts', {
@@ -25,6 +25,10 @@ function setup(nameEditable) {
     '@/lib/api': { api: async (_path, init) => { requests.push(JSON.parse(init.body)); return respond(); } },
     '@/lib/auth': { useAuth: () => ({ session: { user: { uid: 'seller' } } }) },
     '@/lib/seller-events': { publishSellerChange() {} },
+    '@/lib/session': {
+      currentSession: () => ({ user: { uid: 'seller' } }),
+      saveSession: async () => {},
+    },
     '@/lib/store-form': loadTs('src/lib/store-form.ts'),
     '@/lib/toast': { toast: { error() {} } },
   });
@@ -34,6 +38,7 @@ function setup(nameEditable) {
     '@/components/market/Primitives': { Page: 'Page', Field: 'Field', Button: 'Button', ResourceState: 'ResourceState', SignInNotice: 'SignInNotice' },
     '@/components/market/OperatingAreaField': { OperatingAreaField: 'Area' },
     '@/components/selling/StoreEditorSkeleton': { StoreEditorSkeleton: 'StoreEditorSkeleton' },
+    '@/components/selling/PhoneVerificationModal': { PhoneVerificationModal: 'PhoneVerificationModal' },
     '@/constants/market-theme': { ui: {} },
     '@/hooks/use-store-editor': storeEditorHook,
   });

@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { router } from "expo-router";
+import { MaterialIcons } from "@expo/vector-icons";
 import { OperatingAreaLabel } from "@/components/market/OperatingAreaLabel";
 import { ResourceState } from "@/components/market/Primitives";
 import { palette, ui } from "@/constants/market-theme";
@@ -37,19 +38,42 @@ export function OrderSellerLink({ storeId }: { storeId: string }) {
                 }
                 style={({ pressed }) => ({
                     alignSelf: "flex-start",
+                    maxWidth: "100%",
                     opacity: pressed ? 0.65 : 1,
                 })}
             >
-                <Text
+                <View
                     style={{
-                        color: palette.brand,
-                        fontSize: 16,
-                        fontWeight: "700",
-                        textDecorationLine: "underline",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 5,
+                        maxWidth: "100%",
                     }}
                 >
-                    {store.name}
-                </Text>
+                    <Text
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                        style={{
+                            color: palette.brand,
+                            fontSize: 16,
+                            fontWeight: "700",
+                            textDecorationLine: "underline",
+                            flexShrink: 1,
+                        }}
+                    >
+                        {store.name}
+                    </Text>
+                    {store.verified === true && (
+                        <MaterialIcons
+                            name="verified"
+                            size={16}
+                            color={palette.brand}
+                            accessible
+                            accessibilityRole="image"
+                            accessibilityLabel="Verified seller"
+                        />
+                    )}
+                </View>
             </Pressable>
             <OperatingAreaLabel
                 area={store.area}

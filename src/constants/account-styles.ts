@@ -5,6 +5,8 @@ import { palette } from './market-theme';
 const tint = {
     danger: '#F8EFEC',
     dangerLine: '#EBD3CC',
+    success: '#DCFCE7',
+    successText: '#166534',
     review: '#FFF3CD',
     reviewText: '#805B15',
     attention: '#FCE5D4',
@@ -79,6 +81,8 @@ export const account = StyleSheet.create({
     statusText: { color: palette.muted, fontSize: 12, lineHeight: 16, fontWeight: '700', letterSpacing: 0.1 },
     statusSuccess: { backgroundColor: palette.soft },
     statusSuccessText: { color: palette.brand },
+    statusActive: { backgroundColor: tint.success },
+    statusActiveText: { color: tint.successText },
     statusReview: { backgroundColor: tint.review },
     statusReviewText: { color: tint.reviewText },
     statusAttention: { backgroundColor: tint.attention },

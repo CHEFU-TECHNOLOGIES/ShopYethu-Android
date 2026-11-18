@@ -12,6 +12,7 @@ import { AccountIdentity, AccountSignIn } from "./AccountProfile";
 import { AccountLoadingSkeleton } from "./AccountLoadingSkeleton";
 import { SignOutConfirmation } from "./SignOutConfirmation";
 import { SellerAccountSection } from "./SellerAccountSection";
+import { ShopScrollSettings } from "./ShopScrollSettings";
 import { account } from "@/constants/account-styles";
 import { palette, ui } from "@/constants/market-theme";
 import { useAccountScreen } from "@/hooks/use-account-screen";
@@ -142,23 +143,6 @@ export default function AccountScreen() {
                             }
                         />
                     </AccountSection>
-                    <AccountSection title="Legal">
-                        <AccountRow
-                            title="Privacy Policy"
-                            description="How ShopYethu handles your information."
-                            descriptionLines={1}
-                            href="https://www.chefu.co.za/privacy/shopyethu"
-                            trailingIcon="external-link"
-                            divider
-                        />
-                        <AccountRow
-                            title="Terms of Service"
-                            description="Terms for using ShopYethu."
-                            descriptionLines={1}
-                            href="https://www.chefu.co.za/terms/shopyethu"
-                            trailingIcon="external-link"
-                        />
-                    </AccountSection>
                     {ready && (
                         <>
                             {session && (
@@ -197,6 +181,24 @@ export default function AccountScreen() {
                             )}
                         </>
                     )}
+                    <ShopScrollSettings />
+                    <AccountSection title="Legal">
+                        <AccountRow
+                            title="Privacy Policy"
+                            description="How ShopYethu handles your information."
+                            descriptionLines={1}
+                            href="https://www.chefu.co.za/privacy/shopyethu"
+                            trailingIcon="external-link"
+                            divider
+                        />
+                        <AccountRow
+                            title="Terms of Service"
+                            description="Terms for using ShopYethu."
+                            descriptionLines={1}
+                            href="https://www.chefu.co.za/terms/shopyethu"
+                            trailingIcon="external-link"
+                        />
+                    </AccountSection>
                     <Text style={account.footer}>
                         Version {version} - ({versionCode})
                     </Text>

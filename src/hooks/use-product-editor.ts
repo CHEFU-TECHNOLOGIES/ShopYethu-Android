@@ -72,6 +72,10 @@ export function useProductEditor(uid: string, initial?: Product) {
 
     function update<K extends keyof ProductForm>(field: K, value: ProductForm[K]) {
         if (locked.current || pending || blocked) return;
+        if (
+            (current?.identityLocked === true || (current?.reviewCount ?? 0) > 0) &&
+            (field === 'name' || field === 'description' || field === 'category' || field === 'photos')
+        ) return;
         if (field === 'photos' && Array.isArray(value)) {
             const retained = new Set(value.filter((photo): photo is string => typeof photo === 'string'));
             setStagedPhotos(previous => new Map(
@@ -175,7 +179,9 @@ export function useProductEditor(uid: string, initial?: Product) {
     }
 
     async function uploadPhotos() {
-        if (locked.current || pending || blocked || form.photos.length >= 5) return;
+        if (locked.current || pending || blocked ||
+            current?.identityLocked === true || (current?.reviewCount ?? 0) > 0 ||
+            form.photos.length >= 5) return;
         locked.current = true; setBusy(true); setError('');
         try {
             const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, selectionLimit: 5 - form.photos.length, base64: true, quality: 0.7 });

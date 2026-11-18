@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { Text, Vibration, View } from "react-native";
 import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { MarketImage } from '@/components/market/MarketImage';
 import { Ionicons } from "@expo/vector-icons";
@@ -23,6 +23,11 @@ export function ProductThumbnail({ url }: { url?: string }) {
     );
 }
 export function InventoryRow({ product, onActions }: { product: Product; onActions: (product: Product) => void }) {
+    function openActionsWithHaptic() {
+        Vibration.vibrate(10);
+        onActions(product);
+    }
+
     return (
         <View style={styles.productCard}>
         <Pressable
@@ -30,7 +35,7 @@ export function InventoryRow({ product, onActions }: { product: Product; onActio
             accessibilityLabel={`Edit ${product.name}, ${product.published ? "published" : "draft"}, ${product.stock} in stock`}
             accessibilityHint="Tap to edit. Touch and hold to manage this product."
             style={[styles.productRow, styles.productMain]}
-            onLongPress={() => onActions(product)}
+            onLongPress={openActionsWithHaptic}
             onPress={() =>
                 router.navigate({
                     pathname: "/selling/product",
@@ -66,7 +71,7 @@ export function InventoryRow({ product, onActions }: { product: Product; onActio
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel={`Manage ${product.name}`}
             accessibilityHint="Edit, move to draft or delete this product"
-            onLongPress={() => onActions(product)}
+            onLongPress={openActionsWithHaptic}
             onPress={() => onActions(product)} style={styles.productMenu}>
             <Ionicons name="ellipsis-vertical" size={21} color={palette.muted} />
         </Pressable>

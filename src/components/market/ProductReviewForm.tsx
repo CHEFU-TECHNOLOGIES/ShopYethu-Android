@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { Text, TextInput, View } from "react-native";
+import { Text, View } from "react-native";
 import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { Button } from "@/components/market/Button";
+import { ClearableTextInput } from "@/components/market/ClearableTextInput";
 import { palette, ui } from "@/constants/market-theme";
 import { api } from "@/lib/api";
 
@@ -79,8 +80,9 @@ export function ProductReviewForm({
                     </Pressable>
                 ))}
             </View>
-            <TextInput
+            <ClearableTextInput
                 accessibilityLabel={`Review for ${productName}`}
+                clearLabel={`review for ${productName}`}
                 placeholder="Share a few details (optional)"
                 placeholderTextColor={palette.muted}
                 value={comment}

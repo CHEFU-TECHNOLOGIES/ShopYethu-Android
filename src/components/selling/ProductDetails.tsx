@@ -9,12 +9,19 @@ import { sellerStyles as styles } from "@/constants/seller-styles";
 export type ProductFieldsProps = {
     form: ProductForm;
     disabled: boolean;
+    identityLocked?: boolean;
     update: <K extends keyof ProductForm>(
         field: K,
         value: ProductForm[K],
     ) => void;
 };
-export function ProductDetails({ form, disabled, update }: ProductFieldsProps) {
+export function ProductDetails({
+    form,
+    disabled,
+    identityLocked = false,
+    update,
+}: ProductFieldsProps) {
+    const identityDisabled = disabled || identityLocked;
     const choices = [
         ...new Set([
             ...categories.filter((category) => category !== "All"),
@@ -32,10 +39,14 @@ export function ProductDetails({ form, disabled, update }: ProductFieldsProps) {
                 value={form.name}
                 onChangeText={(value) => update("name", value)}
                 maxLength={120}
-                editable={!disabled}
+                editable={!identityDisabled}
+                locked={identityLocked}
                 autoCapitalize="sentences"
             />
-            <Text style={ui.small}>Category</Text>
+            <View style={ui.between}>
+                <Text style={ui.small}>Category</Text>
+                {identityLocked && <Text style={ui.small}>Read only</Text>}
+            </View>
             <View style={styles.tabs}>
                 {choices.map((category) => (
                     <Pressable
@@ -44,13 +55,14 @@ export function ProductDetails({ form, disabled, update }: ProductFieldsProps) {
                         accessibilityLabel={category}
                         accessibilityState={{
                             checked: form.category === category,
-                            disabled,
+                            disabled: identityDisabled,
                         }}
                         hitSlop={{ top: 6, bottom: 6, left: 2, right: 2 }}
-                        disabled={disabled}
+                        disabled={identityDisabled}
                         style={[
                             styles.categoryTab,
                             form.category === category && styles.tabActive,
+                            identityDisabled && { opacity: 0.6 },
                         ]}
                         onPress={() => update("category", category)}
                     >
@@ -73,7 +85,8 @@ export function ProductDetails({ form, disabled, update }: ProductFieldsProps) {
                 onChangeText={(value) => update("description", value)}
                 maxLength={4000}
                 multiline
-                editable={!disabled}
+                editable={!identityDisabled}
+                locked={identityLocked}
             />
         </>
     );

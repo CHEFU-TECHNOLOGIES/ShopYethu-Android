@@ -35,6 +35,7 @@ export default function CartScreen() {
         error,
         subtotal,
         validFulfilment,
+        containsOwnProducts,
         placeOrder,
         refreshBasketPrices,
     } = useCartScreen();
@@ -119,6 +120,13 @@ export default function CartScreen() {
                                 title="Pay on collection"
                                 message="No online payment is collected by this app."
                             />
+                            {containsOwnProducts && !pending && (
+                                <CartNotice
+                                    title="Your own product"
+                                    message="Remove products from your own store before placing this order."
+                                    tone="error"
+                                />
+                            )}
                             {error && (
                                 <CartNotice
                                     title="Could not place your order"
@@ -145,7 +153,9 @@ export default function CartScreen() {
                                 }
                                 disabled={
                                     busy ||
-                                    (!pending && !validFulfilment)
+                                    (!pending &&
+                                        (!validFulfilment ||
+                                            containsOwnProducts))
                                 }
                                 onPress={() => void placeOrder()}
                                 trailingIcon={

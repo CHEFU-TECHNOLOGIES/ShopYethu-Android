@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useSellerInventory } from "@/hooks/use-seller-inventory";
 import { useAuth } from "@/lib/auth";
-import type { Product } from "@/types/marketplace";
+import type { CatalogSort, Product } from "@/types/marketplace";
 
 export function useSellingInventoryScreen() {
     const { session } = useAuth();
     const resource = useSellerInventory();
     const [filter, setFilter] = useState("All");
     const [search, setSearch] = useState("");
+    const [sort, setSort] = useState<CatalogSort>("newest");
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [optimisticProducts, setOptimisticProducts] = useState<
         Record<string, Product | null>
@@ -29,7 +30,15 @@ export function useSellingInventoryScreen() {
             `${product.name} ${product.category}`
                 .toLowerCase()
                 .includes(search.trim().toLowerCase()),
-    );
+    ).sort((left, right) => {
+        if (sort === "price-low") {
+            return left.priceCents - right.priceCents;
+        }
+        if (sort === "price-high") {
+            return right.priceCents - left.priceCents;
+        }
+        return right.updatedAt.localeCompare(left.updatedAt);
+    });
 
     function onOptimistic(
         action: "draft" | "delete",
@@ -62,6 +71,8 @@ export function useSellingInventoryScreen() {
         setFilter,
         search,
         setSearch,
+        sort,
+        setSort,
         selectedProduct,
         setSelectedProduct,
         products,

@@ -21,12 +21,6 @@ export const home = StyleSheet.create({
     color: palette.ink,
     fontSize: 15,
   },
-  clearSearch: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   categories: { gap: 22 },
   category: {
     minHeight: 44,

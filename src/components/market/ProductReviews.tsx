@@ -78,7 +78,7 @@ export function ProductReviews({ productId }: { productId: string }) {
     return (
         <View style={ui.card}>
             <View style={ui.between}>
-                <Text style={ui.heading}>Buyer reviews</Text>
+                <Text style={ui.heading}>Reviews</Text>
                 <Text style={ui.small}>
                     {resource.data.averageRating === null
                         ? "No ratings yet"

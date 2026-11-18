@@ -23,6 +23,7 @@ export function ProductGalleryActionsDropdown({
     onShare,
     onCopyLink,
     onReport,
+    showReport = true,
 }: {
     visible: boolean;
     anchor: ProductGalleryActionsAnchor | null;
@@ -30,6 +31,7 @@ export function ProductGalleryActionsDropdown({
     onShare: () => void;
     onCopyLink: () => void;
     onReport: () => void;
+    showReport?: boolean;
 }) {
     const { width: windowWidth } = useWindowDimensions();
 
@@ -71,12 +73,14 @@ export function ProductGalleryActionsDropdown({
                             label="Copy link"
                             onPress={onCopyLink}
                         />
-                        <ActionItem
-                            icon="flag-outline"
-                            label="Report"
-                            color={palette.danger}
-                            onPress={onReport}
-                        />
+                        {showReport && (
+                            <ActionItem
+                                icon="flag-outline"
+                                label="Report"
+                                color={palette.danger}
+                                onPress={onReport}
+                            />
+                        )}
                     </View>
                 )}
             </View>

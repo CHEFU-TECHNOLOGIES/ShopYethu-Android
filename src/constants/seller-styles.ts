@@ -23,8 +23,6 @@ export const sellerStyles = StyleSheet.create({
   categoryTabText: { color: palette.muted, fontSize: 13, lineHeight: 18, fontWeight: '600' },
   inventorySection: { gap: 14 },
   inventoryHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  inventoryCount: { paddingVertical: 5, paddingHorizontal: 10, borderRadius: 14, backgroundColor: palette.soft },
-  inventoryCountText: { color: palette.brand, fontSize: 11, fontWeight: '700' },
   inventoryControls: { gap: 10 },
   inventoryFilters: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 16, backgroundColor: palette.soft },
   inventoryFilter: { flex: 1, minHeight: 40, paddingHorizontal: 8, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },

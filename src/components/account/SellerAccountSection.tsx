@@ -5,7 +5,7 @@ import { SellerAccountSkeleton } from "./SellerAccountSkeleton";
 import { account } from "@/constants/account-styles";
 import { palette, statusLabel } from "@/constants/market-theme";
 import type { SellerAccount } from "@/types/marketplace";
-type Tone = "neutral" | "review" | "success" | "attention" | "danger";
+type Tone = "neutral" | "review" | "success" | "active" | "attention" | "danger";
 
 function StatusPill({ label, tone }: { label: string; tone: Tone }) {
     return (
@@ -14,6 +14,7 @@ function StatusPill({ label, tone }: { label: string; tone: Tone }) {
                 account.status,
                 tone === "review" && account.statusReview,
                 tone === "success" && account.statusSuccess,
+                tone === "active" && account.statusActive,
                 tone === "attention" && account.statusAttention,
                 tone === "danger" && account.statusDanger,
             ]}
@@ -23,6 +24,7 @@ function StatusPill({ label, tone }: { label: string; tone: Tone }) {
                     account.statusText,
                     tone === "review" && account.statusReviewText,
                     tone === "success" && account.statusSuccessText,
+                    tone === "active" && account.statusActiveText,
                     tone === "attention" && account.statusAttentionText,
                     tone === "danger" && account.dangerText,
                 ]}
@@ -83,7 +85,7 @@ export function SellerAccountSection({
                                 }
                                 tone={
                                     store.status === "active"
-                                        ? "success"
+                                        ? "active"
                                         : "danger"
                                 }
                             />

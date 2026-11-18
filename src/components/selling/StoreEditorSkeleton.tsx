@@ -19,6 +19,8 @@ export function StoreEditorSkeleton() {
                 <View style={[styles.block, styles.input]} />
                 <View style={[styles.block, styles.label, styles.aboutLabel]} />
                 <View style={[styles.block, styles.multiline]} />
+                <View style={[styles.block, styles.label, styles.phoneLabel]} />
+                <View style={[styles.block, styles.input]} />
                 <View style={[styles.block, styles.label, styles.areaLabel]} />
                 <View style={[styles.block, styles.input]} />
                 <View style={[styles.block, styles.button]} />
@@ -33,6 +35,7 @@ const styles = StyleSheet.create({
     block: { backgroundColor: palette.soft, borderRadius: 8 },
     label: { height: 12, marginBottom: -5 },
     nameLabel: { width: 82 },
+    phoneLabel: { width: 160 },
     aboutLabel: { width: 112 },
     areaLabel: { width: 104 },
     input: { height: 50, borderRadius: 12 },

@@ -29,9 +29,11 @@ export function ProductPhotos({
     form,
     update,
     disabled,
+    identityLocked = false,
     upload,
     uploading,
 }: ProductFieldsProps & { upload: () => void; uploading: boolean }) {
+    const controlsDisabled = disabled || identityLocked;
     const [showLink, setShowLink] = useState(false),
         [link, setLink] = useState(""),
         [error, setError] = useState("");
@@ -69,8 +71,8 @@ export function ProductPhotos({
                             <Pressable
                                 accessibilityRole="button"
                                 accessibilityLabel={`Remove photo ${index + 1}`}
-                                accessibilityState={{ disabled }}
-                                disabled={disabled}
+                                accessibilityState={{ disabled: controlsDisabled }}
+                                disabled={controlsDisabled}
                                 onPress={() =>
                                     update(
                                         "photos",
@@ -98,8 +100,8 @@ export function ProductPhotos({
                                 <Pressable
                                     accessibilityRole="button"
                                     accessibilityLabel={`Use photo ${index + 1} as cover`}
-                                    accessibilityState={{ disabled }}
-                                    disabled={disabled}
+                                    accessibilityState={{ disabled: controlsDisabled }}
+                                    disabled={controlsDisabled}
                                     onPress={() =>
                                         update("photos", [
                                             url,
@@ -125,8 +127,8 @@ export function ProductPhotos({
                     <Pressable
                         accessibilityRole="button"
                         accessibilityLabel="Choose product photos"
-                        accessibilityState={{ disabled }}
-                        disabled={disabled}
+                        accessibilityState={{ disabled: controlsDisabled }}
+                        disabled={controlsDisabled}
                         onPress={upload}
                         style={styles.photoAdd}
                     >
@@ -156,7 +158,7 @@ export function ProductPhotos({
             {/* {form.photos.length < 5 && (
                 <Pressable
                     accessibilityRole="button"
-                    disabled={disabled}
+                    disabled={controlsDisabled}
                     onPress={() => setShowLink((value) => !value)}
                     style={styles.link}
                 >
@@ -178,7 +180,7 @@ export function ProductPhotos({
                         autoCorrect={false}
                         keyboardType="url"
                         maxLength={2048}
-                        editable={!disabled}
+                        editable={!controlsDisabled}
                     />
                     {!!error && (
                         <Text accessibilityRole="alert" style={ui.error}>
@@ -188,7 +190,7 @@ export function ProductPhotos({
                     <Button
                         title="Add image link"
                         secondary
-                        disabled={disabled}
+                        disabled={controlsDisabled}
                         onPress={addLink}
                     />
                 </View>

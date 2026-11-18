@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, TextInput, View, type TextInputProps } from "react-native";
+import { StyleSheet, Text, View, type TextInputProps } from "react-native";
+import { ClearableTextInput } from "@/components/market/ClearableTextInput";
 import { palette, ui } from "@/constants/market-theme";
 
 export function Field({
@@ -19,8 +20,9 @@ export function Field({
                     </View>
                 )}
             </View>
-            <TextInput
+            <ClearableTextInput
                 accessibilityLabel={label}
+                clearLabel={label}
                 placeholderTextColor={palette.muted}
                 {...props}
                 editable={locked ? false : props.editable}

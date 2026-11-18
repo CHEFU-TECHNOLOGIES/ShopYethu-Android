@@ -5,7 +5,7 @@ import {
 } from "react-native";
 import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { router, useLocalSearchParams } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { ProductGalleryPhoto } from "@/components/market/ProductGalleryPhoto";
 import { ProductGalleryActionsMenu } from "@/components/market/ProductGalleryActionsMenu";
 import { ExpandableDescription } from "@/components/market/ExpandableDescription";
@@ -23,6 +23,7 @@ export default function ProductScreen() {
         resource,
         product,
         store,
+        ownProduct,
         productQuantity,
         basketCount,
         galleryWidth,
@@ -123,6 +124,7 @@ export default function ProductScreen() {
                             <ProductGalleryActionsMenu
                                 product={product}
                                 store={store}
+                                showReport={!ownProduct}
                             />
                         </View>
                     ) : (
@@ -144,6 +146,7 @@ export default function ProductScreen() {
                             <ProductGalleryActionsMenu
                                 product={product}
                                 store={store}
+                                showReport={!ownProduct}
                             />
                         </View>
                     )}
@@ -230,16 +233,27 @@ export default function ProductScreen() {
                         }
                         style={[styles.storeCard, styles.contentBlock]}
                     >
-                        <View style={styles.storeIcon}>
-                            <Ionicons
-                                name="storefront-outline"
-                                size={20}
-                                color={palette.brand}
-                            />
-                        </View>
                         <View style={styles.storeInfo}>
                             <Text style={ui.small}>Sold by</Text>
-                            <Text style={styles.storeName}>{store.name}</Text>
+                            <View style={styles.storeNameRow}>
+                                <Text
+                                    style={styles.storeName}
+                                    numberOfLines={1}
+                                    ellipsizeMode="tail"
+                                >
+                                    {store.name}
+                                </Text>
+                                {store.verified === true && (
+                                    <MaterialIcons
+                                        name="verified"
+                                        size={16}
+                                        color={palette.brand}
+                                        accessible
+                                        accessibilityRole="image"
+                                        accessibilityLabel="Verified seller"
+                                    />
+                                )}
+                            </View>
                             <OperatingAreaLabel
                                 area={store.area}
                                 placeId={store.areaPlaceId}
@@ -256,113 +270,122 @@ export default function ProductScreen() {
                         </View>
                     </Pressable>
 
-                    <View
-                        style={[
-                            styles.purchaseCard,
-                            styles.contentBlock,
-                        ]}
-                    >
-                        <View style={styles.purchaseInfo}>
-                            <Text style={ui.small}>Price</Text>
-                            <Text style={styles.purchasePrice}>
-                                {money(product.priceCents)}
-                            </Text>
-                            <Text style={styles.stockNote}>{stockText}</Text>
-                        </View>
-                        {product.stock === 0 ? (
-                            <View
-                                accessibilityLabel="Sold out"
-                                style={styles.soldOutControl}
-                            >
-                                <Text style={styles.soldOutControlText}>
-                                    Sold out
+                    {!ownProduct && (
+                        <View
+                            style={[
+                                styles.purchaseCard,
+                                styles.contentBlock,
+                            ]}
+                        >
+                            <View style={styles.purchaseInfo}>
+                                <Text style={ui.small}>Price</Text>
+                                <Text style={styles.purchasePrice}>
+                                    {money(product.priceCents)}
+                                </Text>
+                                <Text style={styles.stockNote}>
+                                    {stockText}
                                 </Text>
                             </View>
-                        ) : (
-                            <View style={styles.quantityControl}>
-                                <Pressable
-                                    accessibilityRole="button"
-                                    accessibilityLabel={`Remove one ${product.name} from basket`}
-                                    accessibilityState={{
-                                        disabled: productQuantity === 0,
-                                    }}
-                                    testID="remove-from-cart"
-                                    disabled={productQuantity === 0}
-                                    onPress={() =>
-                                        updateQuantity(
-                                            product.id,
-                                            productQuantity - 1,
-                                        )
-                                    }
-                                    style={({ pressed }) => [
-                                        styles.quantityStep,
-                                        productQuantity === 0 &&
-                                            styles.quantityStepDisabled,
-                                        pressed &&
-                                            productQuantity > 0 &&
-                                            styles.quantityStepPressed,
-                                    ]}
+                            {product.stock === 0 ? (
+                                <View
+                                    accessibilityLabel="Sold out"
+                                    style={styles.soldOutControl}
                                 >
-                                    <Ionicons
-                                        name="remove"
-                                        size={20}
-                                        color={
-                                            productQuantity === 0
-                                                ? palette.muted
-                                                : "#FFFFFF"
+                                    <Text style={styles.soldOutControlText}>
+                                        Sold out
+                                    </Text>
+                                </View>
+                            ) : (
+                                <View style={styles.quantityControl}>
+                                    <Pressable
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`Remove one ${product.name} from basket`}
+                                        accessibilityState={{
+                                            disabled: productQuantity === 0,
+                                        }}
+                                        testID="remove-from-cart"
+                                        disabled={productQuantity === 0}
+                                        onPress={() =>
+                                            updateQuantity(
+                                                product.id,
+                                                productQuantity - 1,
+                                            )
                                         }
-                                        accessible={false}
-                                    />
-                                </Pressable>
-                                <Text
-                                    accessibilityLabel={`${productQuantity} ${
-                                        productQuantity === 1 ? "item" : "items"
-                                    } in basket`}
-                                    accessibilityLiveRegion="polite"
-                                    style={styles.quantityCount}
-                                >
-                                    {productQuantity}
-                                </Text>
-                                <Pressable
-                                    accessibilityRole="button"
-                                    accessibilityLabel={`Add one ${product.name} to basket`}
-                                    accessibilityState={{
-                                        disabled:
-                                            productQuantity >=
-                                            Math.min(product.stock, 99),
-                                    }}
-                                    testID="add-to-cart"
-                                    disabled={
-                                        productQuantity >=
-                                        Math.min(product.stock, 99)
-                                    }
-                                    onPress={addToBasket}
-                                    style={({ pressed }) => [
-                                        styles.quantityStep,
-                                        productQuantity >=
-                                            Math.min(product.stock, 99) &&
-                                            styles.quantityStepDisabled,
-                                        pressed &&
-                                            productQuantity <
-                                                Math.min(product.stock, 99) &&
-                                            styles.quantityStepPressed,
-                                    ]}
-                                >
-                                    <Ionicons
-                                        name="add"
-                                        size={20}
-                                        color={
+                                        style={({ pressed }) => [
+                                            styles.quantityStep,
+                                            productQuantity === 0 &&
+                                                styles.quantityStepDisabled,
+                                            pressed &&
+                                                productQuantity > 0 &&
+                                                styles.quantityStepPressed,
+                                        ]}
+                                    >
+                                        <Ionicons
+                                            name="remove"
+                                            size={20}
+                                            color={
+                                                productQuantity === 0
+                                                    ? palette.muted
+                                                    : "#FFFFFF"
+                                            }
+                                            accessible={false}
+                                        />
+                                    </Pressable>
+                                    <Text
+                                        accessibilityLabel={`${productQuantity} ${
+                                            productQuantity === 1
+                                                ? "item"
+                                                : "items"
+                                        } in basket`}
+                                        accessibilityLiveRegion="polite"
+                                        style={styles.quantityCount}
+                                    >
+                                        {productQuantity}
+                                    </Text>
+                                    <Pressable
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`Add one ${product.name} to basket`}
+                                        accessibilityState={{
+                                            disabled:
+                                                productQuantity >=
+                                                Math.min(product.stock, 99),
+                                        }}
+                                        testID="add-to-cart"
+                                        disabled={
                                             productQuantity >=
                                             Math.min(product.stock, 99)
-                                                ? palette.muted
-                                                : "#FFFFFF"
                                         }
-                                        accessible={false}
-                                    />
-                                </Pressable>
-                            </View>
-                        )}
-                    </View>
+                                        onPress={addToBasket}
+                                        style={({ pressed }) => [
+                                            styles.quantityStep,
+                                            productQuantity >=
+                                                Math.min(product.stock, 99) &&
+                                                styles.quantityStepDisabled,
+                                            pressed &&
+                                                productQuantity <
+                                                    Math.min(
+                                                        product.stock,
+                                                        99,
+                                                    ) &&
+                                                styles.quantityStepPressed,
+                                        ]}
+                                    >
+                                        <Ionicons
+                                            name="add"
+                                            size={20}
+                                            color={
+                                                productQuantity >=
+                                                Math.min(product.stock, 99)
+                                                    ? palette.muted
+                                                    : "#FFFFFF"
+                                            }
+                                            accessible={false}
+                                        />
+                                    </Pressable>
+                                </View>
+                            )}
+                        </View>
+                    )}
                 </>
             )}
         </Page>

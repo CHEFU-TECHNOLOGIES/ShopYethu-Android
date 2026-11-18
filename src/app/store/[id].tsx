@@ -6,12 +6,14 @@ import { ProductCard } from "@/components/market/ProductCard";
 import { StorefrontHeader } from "@/components/market/StorefrontHeader";
 import { StorefrontSkeleton } from "@/components/market/StorefrontSkeleton";
 import { useProductFeed } from "@/hooks/use-product-feed";
+import { useAuth } from "@/lib/auth";
 import { useCart } from "@/lib/cart";
 import { toast } from "@/lib/toast";
 import type { CatalogSort, Product, Storefront } from "@/types/marketplace";
 
 export default function StoreScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
+    const { session } = useAuth();
     const { add } = useCart();
     const [sort, setSort] = useState<CatalogSort>("newest");
     const resource = useProductFeed<{
@@ -46,7 +48,11 @@ export default function StoreScreen() {
             renderItem={({ item }) => (
                 <ProductCard
                     product={item}
-                    onAddToBasket={addToBasket}
+                    onAddToBasket={
+                        session?.user.uid === item.ownerUid
+                            ? undefined
+                            : addToBasket
+                    }
                     hideSellerName
                 />
             )}

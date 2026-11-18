@@ -31,6 +31,10 @@ export function useCartScreen() {
     const validFulfilment = items.every((item) =>
         item.product.fulfilment.includes(fulfilment),
     );
+    const containsOwnProducts = Boolean(
+        session &&
+            items.some((item) => item.product.ownerUid === session.user.uid),
+    );
 
     async function placeOrder() {
         if (busy) return;
@@ -106,6 +110,7 @@ export function useCartScreen() {
         error,
         subtotal,
         validFulfilment,
+        containsOwnProducts,
         placeOrder,
         refreshBasketPrices,
     };

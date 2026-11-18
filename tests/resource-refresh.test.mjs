@@ -128,7 +128,17 @@ test('the application screen exposes Check status and applies backend approval o
     '@/components/market/Primitives': { Page: 'Page', Button: 'Button', ResourceState: 'State', SignInNotice: 'Notice' },
     '@/components/application/ApplicationStatus': { ApplicationStatus: 'ApplicationStatus' },
     '@/components/application/ApplicationWizard': { ApplicationWizard: 'Wizard' },
+    '@/components/application/ApplicationSkeleton': { ApplicationSkeleton: 'Skeleton' },
     '@/lib/auth': { useAuth: () => ({ session: { user: { uid: 'alice' } } }) },
+    '@/hooks/use-application-screen': {
+      useApplicationScreen: () => {
+        const resource = h.render();
+        return {
+          resource, warning: '', editing: false, setEditing() {},
+          application: resource.data?.application, onSubmitted() {},
+        };
+      },
+    },
     '@/hooks/use-seller-account': { useSellerAccount: () => h.render() },
     '@/lib/seller-account': { recordSellerApplication() {} }, '@/constants/market-theme': { ui: {} },
   });

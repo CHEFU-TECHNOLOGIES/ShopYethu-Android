@@ -16,14 +16,20 @@ export type Storefront = {
     nameEditable?: boolean; verified?: boolean; sellerPaused?: boolean;
     status: 'active' | 'suspended'; reason: string; updatedAt: string;
 };
-export type SellerInventory = { store: Storefront; products: Product[]; nextCursor: string | null };
+export type SellerInventory = {
+    store: Storefront;
+    products: Product[];
+    nextCursor: string | null;
+    phone?: string;
+    phoneVerificationRequired?: boolean;
+};
 export type SellerAccount = { application: SellerApplication | null; store: Storefront | null };
 export type Fulfilment = 'collection' | 'local-delivery';
 export type CatalogSort = 'newest' | 'price-low' | 'price-high';
 export type Product = {
     id: string; storeId: string; ownerUid: string; name: string; description: string;
     category: string; priceCents: number; stock: number; photos: string[]; published: boolean;
-    fulfilment: Fulfilment[]; reviewCount?: number; ratingTotal?: number; updatedAt: string;
+    fulfilment: Fulfilment[]; identityLocked?: boolean; reviewCount?: number; ratingTotal?: number; updatedAt: string;
 };
 export type ProductReview = {
     id: string;
