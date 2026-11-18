@@ -24,7 +24,7 @@ export function ProductThumbnail({ url }: { url?: string }) {
 }
 export function InventoryRow({ product, onActions }: { product: Product; onActions: (product: Product) => void }) {
     function openActionsWithHaptic() {
-        Vibration.vibrate(10);
+        Vibration.vibrate(70);
         onActions(product);
     }
 

@@ -61,6 +61,7 @@ export default function ReportScreen() {
                     )}
                     <Button
                         title={busy ? "Submitting…" : "Send report"}
+                        tone="danger"
                         disabled={busy || message.trim().length < 10}
                         onPress={() => void submit()}
                     />

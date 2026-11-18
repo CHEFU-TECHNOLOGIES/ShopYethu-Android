@@ -1,6 +1,7 @@
 import { useLocalSearchParams } from "expo-router";
 import { Text } from "react-native";
 import { OrderCard } from "@/components/market/OrderCard";
+import { OrderHeaderOptions } from "@/components/market/OrderHeaderOptions";
 import { OrderDetailsSkeleton } from "@/components/market/OrderDetailsSkeleton";
 import { Page } from "@/components/market/Page";
 import { ResourceState, SignInNotice } from "@/components/market/Primitives";
@@ -18,12 +19,23 @@ export default function SellerOrderDetails() {
         error,
         update,
         confirmPayment,
+        regenerateQr,
     } = useSellerOrderDetails(id);
 
     return (
         <Page
             title="Order details"
             subtitle={order?.reference}
+            headerRight={
+                order ? (
+                    <OrderHeaderOptions
+                        order={order}
+                        selling
+                        disabled={loadingAction !== null}
+                        onRegenerateQr={regenerateQr}
+                    />
+                ) : undefined
+            }
             back
             onRefresh={session ? resource.refresh : undefined}
             refreshing={resource.refreshing}

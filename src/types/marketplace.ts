@@ -53,6 +53,7 @@ export type Order = {
     items: OrderItem[]; subtotalCents: number; deliveryCents: number; totalCents: number;
     fulfilment: Fulfilment; address: string; contact: string; status: OrderStatus;
     paymentStatus: 'not-collected' | 'paid-on-collection'; paymentNote: string;
+    qrToken?: string;
     paymentReceivedAt?: string; paymentReceivedBy?: string;
     createdAt: string; updatedAt: string;
     history: { status: OrderStatus; at: string }[];

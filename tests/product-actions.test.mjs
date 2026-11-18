@@ -127,7 +127,7 @@ test('inventory card opens product details while long press keeps the management
   assert.equal(routes[0].pathname, '/product/[id]');
   assert.equal(routes[0].params.id, item.id);
   card.props.onLongPress();
-  assert.deepEqual(vibrations, [10]);
+  assert.deepEqual(vibrations, [70]);
   assert.deepEqual(actions, [item]);
 });
 

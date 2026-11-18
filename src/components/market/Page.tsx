@@ -12,6 +12,7 @@ export function Page({
     back = false,
     backAccessory,
     header,
+    headerRight,
     onRefresh,
     refreshing = false,
     children,
@@ -21,6 +22,7 @@ export function Page({
     back?: boolean;
     backAccessory?: ReactNode;
     header?: ReactNode;
+    headerRight?: ReactNode;
     onRefresh?: () => void;
     refreshing?: boolean;
     children: ReactNode;
@@ -71,7 +73,22 @@ export function Page({
                     ))}
                 {header ?? (
                     <View style={{ gap: 5 }}>
-                        <Text style={ui.title}>{title}</Text>
+                        {headerRight ? (
+                            <View
+                                style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                }}
+                            >
+                                <Text style={[ui.title, { flexShrink: 1 }]}>
+                                    {title}
+                                </Text>
+                                {headerRight}
+                            </View>
+                        ) : (
+                            <Text style={ui.title}>{title}</Text>
+                        )}
                         {subtitle && (
                             <Text style={ui.subtitle}>{subtitle}</Text>
                         )}

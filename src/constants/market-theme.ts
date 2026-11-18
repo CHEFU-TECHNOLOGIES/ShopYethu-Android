@@ -90,7 +90,7 @@ export const statusLabel = (value: string) =>
         placed: "Order placed",
         accepted: "Accepted",
         preparing: "Preparing",
-        ready: "Awaiting payment / collection",
+        ready: "Awaiting collection",
         dispatched: "Dispatched",
         completed: "Completed",
         collected: "Collected",

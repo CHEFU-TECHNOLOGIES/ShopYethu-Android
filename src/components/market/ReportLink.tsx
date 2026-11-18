@@ -31,7 +31,7 @@ export function ReportLink({
             <Ionicons
                 name="flag-outline"
                 size={15}
-                color={palette.muted}
+                color={palette.danger}
                 accessible={false}
             />
             <Text style={styles.text}>{title}</Text>
@@ -55,5 +55,5 @@ const styles = StyleSheet.create({
     inlineButton: { flex: 1 },
     disabled: { opacity: 0.5 },
     pressed: { opacity: 0.65 },
-    text: { color: palette.muted, fontSize: 12, fontWeight: "600" },
+    text: { color: palette.danger, fontSize: 12, fontWeight: "600" },
 });

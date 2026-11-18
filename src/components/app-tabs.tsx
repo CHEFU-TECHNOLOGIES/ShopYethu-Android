@@ -1,4 +1,5 @@
 import { NativeTabs } from "expo-router/native-tabs";
+import { Ionicons } from "@expo/vector-icons";
 import { palette } from "@/constants/market-theme";
 import { useCart } from "@/lib/cart";
 import { useSellerAccount } from "@/hooks/use-seller-account";
@@ -32,7 +33,15 @@ export default function AppTabs() {
             </NativeTabs.Trigger>
             <NativeTabs.Trigger name="selling" hidden={!hasActiveStore}>
                 <NativeTabs.Trigger.Label>My Store</NativeTabs.Trigger.Label>
-                <NativeTabs.Trigger.Icon md="inventory_2" sf="archivebox" />
+                <NativeTabs.Trigger.Icon
+                    src={
+                        <NativeTabs.Trigger.VectorIcon
+                            family={Ionicons}
+                            name="storefront-outline"
+                        />
+                    }
+                    selectedColor="black"
+                />
             </NativeTabs.Trigger>
             <NativeTabs.Trigger name="orders">
                 <NativeTabs.Trigger.Label>Orders</NativeTabs.Trigger.Label>

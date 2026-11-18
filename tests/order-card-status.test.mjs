@@ -44,16 +44,35 @@ test("only unpaid seller orders in ready status can return to preparing", () => 
     assert.equal(useOrderCard(order, false).canReturnToPreparing, false);
 });
 
-test("the receipt button requests a return to preparing", () => {
+test("the receipt button requests a return to preparing", async () => {
     let updatedStatus;
+    let savedImage;
+    let sharedQr;
     const { OrderCard } = loadTs("src/components/market/OrderCard.tsx", {
+        react: {
+            useRef: initial => ({ current: initial }),
+            useState: initial => [initial, () => {}],
+        },
         "react/jsx-runtime": jsx,
         "react-native": {
+            Pressable: "Pressable",
             StyleSheet: { create: styles => styles },
             Text: "Text",
             View: "View",
         },
         "react-native-qrcode-svg": "QRCode",
+        "@/lib/order-sharing": {
+            orderReceiptUrl: (id, token) =>
+                `https://api.chefu.co.za/shopyethu/order/${encodeURIComponent(id)}/${encodeURIComponent(token)}`,
+            saveOrderQrImage: async (image, reference) => {
+                savedImage = { image, reference };
+                return true;
+            },
+            shareOrderQr: async (id, token, reference) => {
+                sharedQr = { id, token, reference };
+            },
+        },
+        "@/lib/toast": { toast: { success() {}, error() {} } },
         "@/components/ui/DebouncedPressable": { DebouncedPressable: "Pressable" },
         "@/constants/market-theme": {
             money: value => String(value),
@@ -69,7 +88,9 @@ test("the receipt button requests a return to preparing", () => {
             ui: { badge: {}, body: {}, small: {} },
         },
         "./Primitives": { Button: "Button" },
-        "./ReportLink": { ReportLink: "ReportLink" },
+        "./OrderMoreOptionsDropdown": {
+            OrderMoreOptionsDropdown: "OrderMoreOptionsDropdown",
+        },
         "./OrderStatusBadge": { OrderStatusBadge: "OrderStatusBadge" },
         "@/hooks/use-order-card": {
             useOrderCard: () => ({
@@ -99,7 +120,84 @@ test("the receipt button requests a return to preparing", () => {
     button.props.onPress();
     assert.equal(updatedStatus, "preparing");
     const qrCode = nodes(tree).find(node => node.type === "QRCode");
-    assert.equal(qrCode.props.value, order.reference);
+    assert.equal(
+        qrCode.props.value,
+        `https://api.chefu.co.za/shopyethu/order/${encodeURIComponent(order.id)}/${encodeURIComponent(order.reference)}`,
+    );
+    qrCode.props.getRef({
+        toDataURL(callback, options) {
+            assert.equal(JSON.stringify(options), JSON.stringify({ width: 512, height: 512 }));
+            callback("encoded-png");
+        },
+    });
+    const qrPressable = nodes(tree).find(
+        node => node.type === "Pressable" &&
+            node.props.accessibilityLabel === `QR code for order ${order.reference}`,
+    );
+    await qrPressable.props.onLongPress();
+    assert.deepEqual(savedImage, {
+        image: "encoded-png",
+        reference: order.reference,
+    });
+});
+
+test("order options are attached to the order-details header and seller-only actions stay private", async () => {
+    let reported = false;
+    let sharedQr;
+    let regenerated = false;
+    const { OrderHeaderOptions } = loadTs(
+        "src/components/market/OrderHeaderOptions.tsx",
+        {
+            "react/jsx-runtime": jsx,
+            "./OrderMoreOptionsDropdown": {
+                OrderMoreOptionsDropdown: "OrderMoreOptionsDropdown",
+            },
+            "@/lib/order-sharing": {
+                shareOrderQr: async (id, token, reference) => {
+                    sharedQr = { id, token, reference };
+                },
+            },
+            "@/lib/toast": { toast: { success() {}, error() {} } },
+            "@/hooks/use-order-card": {
+                useOrderCard: () => ({
+                    reportOrder() {
+                        reported = true;
+                    },
+                }),
+            },
+        },
+    );
+    const tree = OrderHeaderOptions({
+        order,
+        selling: true,
+        disabled: false,
+        onRegenerateQr: () => (regenerated = true),
+    });
+    const menu = nodes(tree).find(
+        node => node.type === "OrderMoreOptionsDropdown",
+    );
+    assert.ok(menu);
+    assert.equal(menu.props.disabled, false);
+    assert.equal(typeof menu.props.onShareQr, "function");
+    menu.props.onShareQr();
+    await new Promise(setImmediate);
+    assert.deepEqual(sharedQr, {
+        id: order.id,
+        token: order.reference,
+        reference: order.reference,
+    });
+    assert.equal(typeof menu.props.onRegenerateQr, "function");
+    menu.props.onReport();
+    assert.equal(reported, true);
+    menu.props.onRegenerateQr();
+    assert.equal(regenerated, true);
+
+    const buyerTree = OrderHeaderOptions({ order, selling: false });
+    const buyerMenu = nodes(buyerTree).find(
+        node => node.type === "OrderMoreOptionsDropdown",
+    );
+    assert.equal(buyerMenu.props.onRegenerateQr, undefined);
+    assert.equal(buyerMenu.props.onShareQr, undefined);
 });
 
 test("seller status changes optimistically add history and roll back on failure", async () => {
@@ -168,6 +266,71 @@ test("seller status changes optimistically add history and roll back on failure"
     assert.equal(data.orders[0].status, "ready");
     assert.equal(data.orders[0].history.length, 1);
     assert.equal(render().error, "Order update rejected.");
+});
+
+test("QR regeneration updates the receipt after success and preserves it on failure", async () => {
+    const cells = [];
+    let cursor = 0;
+    let rejectNext = false;
+    let request;
+    let data = { orders: [order] };
+    const { useSellerOrderDetails } = loadTs(
+        "src/hooks/use-seller-order-details.ts",
+        {
+            react: {
+                useRef(initial) {
+                    return (cells[cursor++] ||= { current: initial });
+                },
+                useState(initial) {
+                    const index = cursor++;
+                    if (!(index in cells)) cells[index] = initial;
+                    return [
+                        cells[index],
+                        value => {
+                            cells[index] =
+                                typeof value === "function"
+                                    ? value(cells[index])
+                                    : value;
+                        },
+                    ];
+                },
+            },
+            "@/hooks/use-resource": {
+                useResource: () => ({
+                    data,
+                    mutate(update) {
+                        data = update(data);
+                    },
+                }),
+            },
+            "@/lib/api": {
+                api: async (path, options) => {
+                    request = { path, options };
+                    if (rejectNext) throw new Error("QR rotation failed.");
+                    return { ...data.orders[0], qrToken: "replacement-token" };
+                },
+            },
+            "@/lib/auth": { useAuth: () => ({ session: { user: { uid: "seller" } } }) },
+            "@/lib/toast": { toast: { success() {}, error() {} } },
+        },
+    );
+    function OrderDetailsHarness() {
+        return useSellerOrderDetails(order.id);
+    }
+    const render = () => {
+        cursor = 0;
+        return OrderDetailsHarness();
+    };
+
+    await render().regenerateQr();
+    assert.equal(request.path, `/seller/orders/${order.id}/qr`);
+    assert.equal(request.options.method, "POST");
+    assert.equal(data.orders[0].qrToken, "replacement-token");
+
+    rejectNext = true;
+    await render().regenerateQr();
+    assert.equal(data.orders[0].qrToken, "replacement-token");
+    assert.equal(render().error, "QR rotation failed.");
 });
 
 function nodes(node) {

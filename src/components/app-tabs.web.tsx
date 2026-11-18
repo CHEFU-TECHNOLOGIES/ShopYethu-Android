@@ -1,4 +1,5 @@
 import { Tabs } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { palette } from "@/constants/market-theme";
 import { useSellerAccount } from "@/hooks/use-seller-account";
 export default function AppTabs() {
@@ -20,6 +21,13 @@ export default function AppTabs() {
                 options={{
                     title: "My Store",
                     href: hasActiveStore ? undefined : null,
+                    tabBarIcon: () => (
+                        <Ionicons
+                            name="storefront-outline"
+                            size={24}
+                            color="black"
+                        />
+                    ),
                 }}
             />
             <Tabs.Screen name="account" options={{ title: "Account" }} />

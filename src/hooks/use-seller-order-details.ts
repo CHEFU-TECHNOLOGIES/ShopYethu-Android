@@ -10,7 +10,7 @@ export function useSellerOrderDetails(id: string | undefined) {
     const resource = useResource<{ orders: Order[] }>("/seller/orders", !!session);
     const order = resource.data?.orders.find((item) => item.id === id);
     const [loadingAction, setLoadingAction] = useState<
-        "status" | "cancel" | "payment" | "collect" | null
+        "status" | "cancel" | "payment" | "collect" | "qr" | null
     >(null);
     const [error, setError] = useState("");
     const locked = useRef(false);
@@ -93,6 +93,38 @@ export function useSellerOrderDetails(id: string | undefined) {
         void mutate(`/seller/orders/${order.id}/payment`, "{}", "payment");
     }
 
+    async function regenerateQr() {
+        if (!id || !order || locked.current) return;
+        locked.current = true;
+        setLoadingAction("qr");
+        setError("");
+        try {
+            const updated = await api<Order>(
+                `/seller/orders/${encodeURIComponent(id)}/qr`,
+                { method: "POST", body: "{}" },
+            );
+            resource.mutate((current) => ({
+                ...current,
+                orders: current.orders.map((item) =>
+                    item.id === id ? updated : item,
+                ),
+            }));
+            toast.success(
+                "QR code replaced. The previous code is no longer valid.",
+            );
+        } catch (cause) {
+            const message =
+                cause instanceof Error
+                    ? cause.message
+                    : "Unable to regenerate the order QR code.";
+            setError(message);
+            toast.error(message);
+        } finally {
+            locked.current = false;
+            setLoadingAction(null);
+        }
+    }
+
     return {
         session,
         resource,
@@ -101,5 +133,6 @@ export function useSellerOrderDetails(id: string | undefined) {
         error,
         update,
         confirmPayment,
+        regenerateQr,
     };
 }
