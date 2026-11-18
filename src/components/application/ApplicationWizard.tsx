@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { Button, Page } from "@/components/market/Primitives";
@@ -13,6 +14,7 @@ import {
     ProductFields,
 } from "./ApplicationFields";
 import { ApplicationReview } from "./ApplicationReview";
+import { WhatsAppAvailabilityModal } from "@/components/selling/WhatsAppAvailabilityModal";
 
 export function ApplicationWizard({
     session,
@@ -25,6 +27,7 @@ export function ApplicationWizard({
     onSubmitted: (application: SellerApplication, warning: string) => void;
     onCheckStatus: () => void;
 }) {
+    const [whatsappModalOpen, setWhatsAppModalOpen] = useState(false);
     const {
         draft,
         step,
@@ -42,6 +45,15 @@ export function ApplicationWizard({
         next,
         submit,
     } = useApplicationWizard(session, previous, onSubmitted);
+
+    function requestSubmit() {
+        if (requiredIssue) {
+            void submit(false);
+            return;
+        }
+        setWhatsAppModalOpen(true);
+    }
+
     return (
         <Page
             key={step}
@@ -212,13 +224,26 @@ export function ApplicationWizard({
                                 }
                                 disabled={busy || uploadingProof || !ready || Boolean(requiredIssue)}
                                 onPress={() =>
-                                    step === 3 ? void submit() : next()
+                                    step === 3 ? requestSubmit() : next()
                                 }
                             />
                         </View>
                     </View>
                 </>
             )}
+            <WhatsAppAvailabilityModal
+                key={`${whatsappModalOpen ? "open" : "closed"}:${fields.form.phone}:${previous?.whatsappAvailable}`}
+                visible={whatsappModalOpen}
+                whatsappAvailable={
+                    previous?.phone === fields.form.phone &&
+                    previous?.whatsappAvailable === true
+                }
+                onConfirm={(available) => {
+                    setWhatsAppModalOpen(false);
+                    void submit(available);
+                }}
+                onCancel={() => setWhatsAppModalOpen(false)}
+            />
         </Page>
     );
 }

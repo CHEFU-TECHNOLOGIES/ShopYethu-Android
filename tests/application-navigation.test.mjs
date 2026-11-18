@@ -28,7 +28,7 @@ const completeForm = () => ({
     businessType: "individual", cipcCertificateId: "", cipcCertificateFormat: "", cipcCertificateName: "",
     businessName: "Test trading business", area: "Cape Town", areaPlaceId: "ChIJtest", areaSessionToken: "",
     categories: ["Clothing"], plans: "Clothing made locally for customers.",
-    contactName: "Test Applicant", phone: "0821234567", phoneConfirmed: true,
+    contactName: "Test Applicant", phone: "0821234567",
     collectionOffered: false, collectionArea: "", pickupHours: "", response: "",
 });
 
@@ -71,9 +71,13 @@ function setup(step, form = completeForm(), previous = null) {
         "@/lib/application-form": validation,
         "./ApplicationFields": { BusinessFields: "BusinessFields", ContactFields: "ContactFields", ProductFields: "ProductFields" },
         "./ApplicationReview": { ApplicationReview: "ApplicationReview" },
+        "@/components/selling/WhatsAppAvailabilityModal": { WhatsAppAvailabilityModal: "WhatsAppAvailabilityModal" },
     });
     return { draft, requests, destinations, submitted,
         respond: callback => { respond = callback; },
+        whatsappModal() {
+            return elements(this.render()).find(node => node.type === "WhatsAppAvailabilityModal");
+        },
         render() {
             cursor = 0;
             return ApplicationWizard({ session: { user: { uid: "applicant", name: "Test Applicant", email: "applicant@example.test" } },
@@ -144,10 +148,10 @@ test("registered-business applicants can continue from Products when categories 
     assert.equal(state.forward().props.disabled, false);
 });
 
-test("Contact Continue requires confirmation and a collection choice, with pickup fields required only for collection", () => {
-    const state = setup(2, { ...completeForm(), contactName: "", phone: "", phoneConfirmed: false, collectionOffered: null });
+test("Contact Continue requires contact details and a collection choice, with pickup fields required only for collection", () => {
+    const state = setup(2, { ...completeForm(), contactName: "", phone: "", collectionOffered: null });
     assert.equal(state.forward().props.disabled, true);
-    Object.assign(state.draft.form, { contactName: "Test Applicant", phone: "0821234567", phoneConfirmed: true });
+    Object.assign(state.draft.form, { contactName: "Test Applicant", phone: "0821234567" });
     assert.equal(state.forward().props.disabled, true);
     state.draft.form.collectionOffered = false;
     assert.equal(state.forward().props.disabled, false);
@@ -157,7 +161,7 @@ test("Contact Continue requires confirmation and a collection choice, with picku
     assert.equal(state.forward().props.disabled, true);
     state.draft.form.pickupHours = "Weekdays 09:00–17:00";
     assert.equal(state.forward().props.disabled, false);
-    state.draft.form.phoneConfirmed = false;
+    state.draft.form.phone = "";
     assert.equal(state.forward().props.disabled, true);
 });
 
@@ -199,7 +203,12 @@ test("valid submissions retain duplicate-tap protection and missing fields do no
     const forward = state.forward();
     assert.equal(forward.props.disabled, false);
     forward.props.onPress(); forward.props.onPress();
+    assert.equal(state.requests.length, 0, "submission waits for WhatsApp availability confirmation");
+    const modal = state.whatsappModal();
+    assert.equal(modal.props.visible, true);
+    modal.props.onConfirm(true); modal.props.onConfirm(true);
     assert.equal(state.requests.length, 1);
+    assert.equal(JSON.parse(state.requests[0][1].body).whatsappAvailable, true);
     assert.ok(elements(state.render()).some(node => node.type === "Text" && node.props.children === "Sending your application"));
     finish({ id: "application", status: "pending" });
     await new Promise(setImmediate);
@@ -214,6 +223,7 @@ test("a rejected application submission returns to the editable form", async () 
     const state = setup(3);
     state.respond(async () => { throw new Error("Application was rejected."); });
     state.forward().props.onPress();
+    state.whatsappModal().props.onConfirm(false);
     await new Promise(setImmediate);
     const rendered = elements(state.render());
     assert.ok(rendered.some(node => node.type === "Button" && node.props.title === "Submit application"));

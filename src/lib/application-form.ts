@@ -9,13 +9,13 @@ export type ApplicationForm = {
     cipcCertificateId: string; cipcCertificateFormat: '' | 'pdf' | 'jpg' | 'png' | 'webp'; cipcCertificateName: string;
     businessName: string; area: string; areaPlaceId: string; areaSessionToken: string;
     categories: string[]; plans: string;
-    contactName: string; phone: string; phoneConfirmed: boolean;
+    contactName: string; phone: string;
     collectionOffered: boolean | null; collectionArea: string; pickupHours: string; response: string;
 };
 export type ApplicationDraft = { version: 1; baseUpdatedAt: string; form: ApplicationForm; step: number; savedAt: string };
 export type ApplicationFieldKey =
   | 'businessType' | 'cipcCertificateId' | 'businessName' | 'area'
-  | 'categories' | 'plans' | 'contactName' | 'phone' | 'phoneConfirmed'
+  | 'categories' | 'plans' | 'contactName' | 'phone'
   | 'collectionOffered' | 'collectionArea' | 'pickupHours' | 'response';
 export type ApplicationIssue = { field: ApplicationFieldKey; message: string };
 
@@ -27,7 +27,7 @@ export function initialApplication(previous: SellerApplication | null, name: str
         cipcCertificateName: previous?.cipcCertificateId ? 'CIPC certificate already attached' : '',
         area: previous?.area || '', areaPlaceId: previous?.areaPlaceId || '',
         areaSessionToken: '', categories: previous?.categories || [], plans: previous?.plans || '',
-        contactName: previous?.contactName || name, phone: previous?.phone || '', phoneConfirmed: false,
+        contactName: previous?.contactName || name, phone: previous?.phone || '',
         collectionOffered: previous?.collectionOffered ?? null, collectionArea: previous?.collectionArea || '',
         pickupHours: previous?.pickupHours || '', response: '',
     };
@@ -48,7 +48,6 @@ export function applicationIssue(form: ApplicationForm, step: number, responding
     if (step === 2) {
         if (!length(form.contactName, 2, 100)) return { field: 'contactName', message: 'Enter a contact name (2–100 characters).' };
         if (!normalizeApplicationPhone(form.phone)) return { field: 'phone', message: 'Enter a valid South African number, e.g. 082 123 4567 or +27 82 123 4567.' };
-        if (!form.phoneConfirmed) return { field: 'phoneConfirmed', message: 'Confirm that this is your business contact number.' };
         if (form.collectionOffered === null) return { field: 'collectionOffered', message: 'Choose whether you offer collection.' };
         if (form.collectionOffered && !length(form.collectionArea, 2, 120)) return { field: 'collectionArea', message: 'Enter a pickup area (2–120 characters).' };
         if (form.collectionOffered && !length(form.pickupHours, 3, 300)) return { field: 'pickupHours', message: 'Enter your pickup hours (3–300 characters).' };
@@ -78,6 +77,6 @@ export function isApplicationDraft(value: unknown): value is ApplicationDraft {
       (form.areaPlaceId === undefined || typeof form.areaPlaceId === 'string' && form.areaPlaceId.length <= 256) &&
         ['', 'individual', 'registered-business'].includes(form.businessType) &&
         Array.isArray(form.categories) && form.categories.length <= applicationCategories.length && new Set(form.categories).size === form.categories.length && form.categories.every(item => typeof item === 'string' && applicationCategories.includes(item)) &&
-        typeof form.phoneConfirmed === 'boolean' && [true, false, null].includes(form.collectionOffered) &&
+        [true, false, null].includes(form.collectionOffered) &&
         typeof draft.savedAt === 'string' && Number.isFinite(Date.parse(draft.savedAt));
 }

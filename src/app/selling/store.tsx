@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import { Text } from "react-native";
 import {
     Button,
@@ -9,10 +10,11 @@ import {
 import { OperatingAreaField } from "@/components/market/OperatingAreaField";
 import { ui } from "@/constants/market-theme";
 import { StoreEditorSkeleton } from "@/components/selling/StoreEditorSkeleton";
-import { PhoneVerificationModal } from "@/components/selling/PhoneVerificationModal";
+import { WhatsAppAvailabilityModal } from "@/components/selling/WhatsAppAvailabilityModal";
 import { useStoreEditor } from "@/hooks/use-store-editor";
 
 export default function StoreEditor() {
+    const router = useRouter();
     const {
         session,
         resource,
@@ -25,14 +27,29 @@ export default function StoreEditor() {
         notice,
         error,
         hasChanges,
-        phoneChanged,
         accountPhone,
-        phoneVerificationOpen,
-        cancelPhoneVerification,
-        handlePhoneVerified,
+        whatsappModalOpen,
+        cancelWhatsAppModal,
+        handleWhatsAppConfirm,
         refresh,
         save,
     } = useStoreEditor();
+    function goBack() {
+        if (router.canGoBack()) {
+            router.back();
+        } else {
+            router.replace("/");
+        }
+    }
+
+    async function saveAndGoBack() {
+        if (await save()) goBack();
+    }
+
+    async function confirmAndGoBack(available: boolean) {
+        if (await handleWhatsAppConfirm(available)) goBack();
+    }
+
     return (
         <Page
             title="Your storefront"
@@ -87,16 +104,6 @@ export default function StoreEditor() {
                                 maxLength={30}
                                 editable={!busy}
                             />
-                            <Text style={ui.small}>
-                                Shared with your CheFu account for SSO and other
-                                apps. It is not shown on your public storefront.
-                            </Text>
-                            {phoneChanged && (
-                                <Text style={ui.small}>
-                                    A changed number must be verified by SMS
-                                    before it is saved.
-                                </Text>
-                            )}
                             <OperatingAreaField
                                 value={form.area}
                                 placeId={form.areaPlaceId}
@@ -130,20 +137,19 @@ export default function StoreEditor() {
                                     busy ||
                                     !hasChanges
                                 }
-                                onPress={() => void save()}
+                                onPress={() => void saveAndGoBack()}
                             />
                         </>
                     )}
                 </>
             )}
             {session && (
-                <PhoneVerificationModal
-                    key={`${phoneVerificationOpen ? "open" : "closed"}:${form.phone}`}
-                    visible={phoneVerificationOpen}
-                    phone={form.phone}
-                    required={accountPhone?.phoneVerificationRequired}
-                    onVerified={handlePhoneVerified}
-                    onCancel={cancelPhoneVerification}
+                <WhatsAppAvailabilityModal
+                    key={`${whatsappModalOpen ? "open" : "closed"}:${form.phone}:${form.whatsappAvailable}`}
+                    visible={whatsappModalOpen}
+                    whatsappAvailable={form.whatsappAvailable}
+                    onConfirm={(available) => void confirmAndGoBack(available)}
+                    onCancel={cancelWhatsAppModal}
                 />
             )}
         </Page>

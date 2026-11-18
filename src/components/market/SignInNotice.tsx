@@ -1,6 +1,7 @@
 import { Text, View } from "react-native";
-import { router } from "expo-router";
-import { ui } from "@/constants/market-theme";
+import Feather from "@expo/vector-icons/Feather";
+import { palette, ui } from "@/constants/market-theme";
+import { useAuth } from "@/lib/auth";
 import { Button } from "./Button";
 
 export function SignInNotice({
@@ -10,13 +11,25 @@ export function SignInNotice({
     title?: string;
     subtitle?: string;
 }) {
+    const { signIn, busy } = useAuth();
+
     return (
         <View style={ui.card}>
             <Text style={ui.heading}>{title}</Text>
             <Text style={ui.subtitle}>{subtitle}</Text>
             <Button
-                title="Go to account"
-                onPress={() => router.navigate("/account")}
+                title={busy ? "Signing in…" : "Sign in"}
+                onPress={() => void signIn()}
+                disabled={busy}
+                loading={busy}
+                trailingIcon={!busy && (
+                    <Feather
+                        name="external-link"
+                        size={16}
+                        color={palette.paper}
+                        accessible={false}
+                    />
+                )}
             />
         </View>
     );

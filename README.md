@@ -79,10 +79,12 @@ to change it. Individual sellers retain renaming, and other storefront details
 remain editable. The existing store response carries this rule; no separate client
 permission request or data migration is needed. Deploy the backend with the app.
 The storefront editor displays the shared CheFu account phone and lets sellers
-change it. A changed number must pass the shared SMS verification flow before it
-is saved to `users/{email}.phone`; successful storefront saves synchronize that
-verified number to the private seller application. The phone is not exposed on
-public storefronts.
+change it. Saving a contact number also records `whatsappAvailable` on the shared
+user profile and synchronizes the number to the private seller application. A
+changed number is saved as unverified, so the existing SSO gate can require SMS
+verification before protected services use it. The valid shared phone and
+WhatsApp availability are shown on the public store page; WhatsApp is displayed
+only when the seller marks that number as available there.
 
 After an order or review, a product's name, description, category, and photos are
 locked; sellers can still update price and stock. The backend enforces this even

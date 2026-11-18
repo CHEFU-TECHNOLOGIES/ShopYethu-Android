@@ -41,13 +41,15 @@ export function useSellingInventoryScreen() {
     });
 
     function onOptimistic(
-        action: "draft" | "delete",
+        action: "draft" | "publish" | "delete",
         product: Product,
     ) {
         setOptimisticProducts((current) => ({
             ...current,
             [product.id]:
-                action === "delete" ? null : { ...product, published: false },
+                action === "delete"
+                    ? null
+                    : { ...product, published: action === "publish" },
         }));
     }
 

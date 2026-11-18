@@ -7,12 +7,13 @@ export type SellerApplication = {
     reason: string; updatedAt: string;
     businessType?: 'individual' | 'registered-business'; categories?: string[];
     cipcCertificateId?: string; cipcCertificateFormat?: 'pdf' | 'jpg' | 'png' | 'webp';
-    phoneConfirmed?: boolean; contactConfirmedAt?: string;
+    whatsappAvailable?: boolean;
     collectionOffered?: boolean; collectionArea?: string; pickupHours?: string;
     createdAt?: string; history?: ApplicationEvent[];
 };
 export type Storefront = {
     id: string; ownerUid: string; name: string; description: string; area: string; areaPlaceId?: string;
+    phone?: string; whatsappAvailable?: boolean;
     nameEditable?: boolean; verified?: boolean; sellerPaused?: boolean;
     status: 'active' | 'suspended'; reason: string; updatedAt: string;
 };
@@ -21,7 +22,7 @@ export type SellerInventory = {
     products: Product[];
     nextCursor: string | null;
     phone?: string;
-    phoneVerificationRequired?: boolean;
+    whatsappAvailable?: boolean;
 };
 export type SellerAccount = { application: SellerApplication | null; store: Storefront | null };
 export type Fulfilment = 'collection' | 'local-delivery';

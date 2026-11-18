@@ -18,7 +18,11 @@ test('seller section keeps My Store visible during refresh and an offline error'
     'react/jsx-runtime': jsx, 'react-native': { ActivityIndicator: 'Spinner', Text: 'Text', View: 'View' }, 'expo-router': { router: {} },
     './AccountMenu': { AccountSection: 'Section', AccountRow: 'Row' },
     './SellerAccountSkeleton': { SellerAccountSkeleton: 'SellerAccountSkeleton' },
-    '@/constants/account-styles': { account: {} }, '@/constants/market-theme': { palette: {}, statusLabel: value => value },
+    '@/constants/account-styles': { account: {} },
+    '@/constants/market-theme': {
+      palette: {},
+      statusLabel: value => value === 'pending' ? 'Pending review' : value,
+    },
   });
   function nodes(node) {
     if (!node || typeof node !== 'object') return [];
@@ -33,4 +37,10 @@ test('seller section keeps My Store visible during refresh and an offline error'
   }
   const manual = SellerAccountSection({ data: { application, store }, loading: true, refreshing: true, error: '', onRetry() {} });
   assert.ok(nodes(manual).some(node => node.type === 'Spinner'), 'explicit refresh still shows progress');
+  const active = SellerAccountSection({ data: { application: null, store }, loading: false, error: '', onRetry() {} });
+  const pending = SellerAccountSection({ data: { application, store: null }, loading: false, error: '', onRetry() {} });
+  const activeRow = nodes(active).find(node => node.type === 'Row' && node.props.title === 'My Store');
+  const pendingRow = nodes(pending).find(node => node.type === 'Row' && node.props.title === 'Seller application');
+  assert.equal(activeRow.props.titleAccessory.props.label, 'Active');
+  assert.equal(pendingRow.props.titleAccessory.props.label, 'Pending review');
 });

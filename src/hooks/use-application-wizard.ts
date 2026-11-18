@@ -86,7 +86,7 @@ export function useApplicationWizard(
         changeStep(step + 1);
     }
 
-    async function submit() {
+    async function submit(whatsappAvailable: boolean) {
         if (lock.current || !ready || uploadingProof) return;
         for (let index = 0; index < 4; index++) {
             const issue = applicationIssue(form, index, responding);
@@ -105,6 +105,7 @@ export function useApplicationWizard(
                 method: "POST",
                 body: JSON.stringify({
                     ...form,
+                    whatsappAvailable,
                     area: "",
                     email: session.user.email,
                 }),

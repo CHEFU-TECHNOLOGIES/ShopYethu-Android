@@ -7,6 +7,7 @@ type StoreForm = {
   area: string;
   areaPlaceId?: string;
   phone: string;
+  whatsappAvailable: boolean;
 };
 
 export function storePhoneChanged(phone: string, previousPhone: string) {
@@ -14,7 +15,12 @@ export function storePhoneChanged(phone: string, previousPhone: string) {
   return normalize(phone) !== normalize(previousPhone);
 }
 
-export function storeHasChanges(store: Storefront | undefined, form: StoreForm, previousPhone: string) {
+export function storeHasChanges(
+  store: Storefront | undefined,
+  form: StoreForm,
+  previousPhone: string,
+  previousWhatsappAvailable = false,
+) {
   if (!store) return false;
   // A resolved place label and autocomplete token are display/session data.
   // Only a different place ID changes the saved operating area.
@@ -22,5 +28,6 @@ export function storeHasChanges(store: Storefront | undefined, form: StoreForm, 
     !form.areaPlaceId && form.area.trim() !== (store.area || '').trim();
   return store.nameEditable === true && form.name.trim() !== store.name ||
     form.description.trim() !== (store.description || '').trim() || areaChanged ||
-    storePhoneChanged(form.phone, previousPhone);
+    storePhoneChanged(form.phone, previousPhone) ||
+    form.whatsappAvailable !== previousWhatsappAvailable;
 }

@@ -146,38 +146,10 @@ export default function AccountScreen() {
                     {ready && (
                         <>
                             {session && (
-                                <>
-                                    <SellerAccountSection
-                                        {...resource}
-                                        onRetry={refreshAccount}
-                                    />
-                                    <AccountSection title="Account options">
-                                        <AccountRow
-                                            title={
-                                                busy
-                                                    ? "Switching account…"
-                                                    : "Switch account"
-                                            }
-                                            onPress={handleSignIn}
-                                            disabled={authBusy}
-                                            trailingIcon="external-link"
-                                            divider
-                                        />
-                                        <AccountRow
-                                            title={
-                                                signingOut
-                                                    ? "Signing out…"
-                                                    : "Sign out"
-                                            }
-                                            onPress={() =>
-                                                setConfirmingSignOut(true)
-                                            }
-                                            disabled={authBusy}
-                                            danger
-                                            trailingIcon={null}
-                                        />
-                                    </AccountSection>
-                                </>
+                                <SellerAccountSection
+                                    {...resource}
+                                    onRetry={refreshAccount}
+                                />
                             )}
                         </>
                     )}
@@ -199,6 +171,32 @@ export default function AccountScreen() {
                             trailingIcon="external-link"
                         />
                     </AccountSection>
+                    {ready && session && (
+                        <AccountSection title="Account options">
+                            <AccountRow
+                                title={
+                                    busy
+                                        ? "Switching account…"
+                                        : "Switch account"
+                                }
+                                onPress={handleSignIn}
+                                disabled={authBusy}
+                                trailingIcon="external-link"
+                                divider
+                            />
+                            <AccountRow
+                                title={
+                                    signingOut
+                                        ? "Signing out…"
+                                        : "Sign out"
+                                }
+                                onPress={() => setConfirmingSignOut(true)}
+                                disabled={authBusy}
+                                danger
+                                trailingIcon={null}
+                            />
+                        </AccountSection>
+                    )}
                     <Text style={account.footer}>
                         Version {version} - ({versionCode})
                     </Text>

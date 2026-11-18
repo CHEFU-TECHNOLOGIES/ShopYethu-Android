@@ -1,10 +1,6 @@
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import {
-    Button,
-    Page,
-    SignInNotice,
-} from "@/components/market/Primitives";
+import { Button, Page, SignInNotice } from "@/components/market/Primitives";
 import { CartCheckoutDetails } from "@/components/market/CartCheckoutDetails";
 import { CartAlternativeBaskets } from "@/components/market/CartAlternativeBaskets";
 import { CartItemsSection } from "@/components/market/CartItemsSection";
@@ -54,15 +50,7 @@ export default function CartScreen() {
             {!ready ? (
                 <CartLoadingState error={basketError || undefined} />
             ) : !items.length && !alternates.length ? (
-                <>
                 <EmptyBasket onBrowse={() => router.navigate("/")} />
-                {!session && (
-                    <SignInNotice
-                        title="Ready when you are"
-                        subtitle="Sign in to place an order. Your basket will stay saved on this device."
-                    />
-                )}
-                </>
             ) : (
                 <>
                     <CartAlternativeBaskets
@@ -107,7 +95,9 @@ export default function CartScreen() {
                                 fulfilment={fulfilment}
                                 onSelectFulfilment={setFulfilment}
                                 canCollect={items.every((item) =>
-                                    item.product.fulfilment.includes("collection"),
+                                    item.product.fulfilment.includes(
+                                        "collection",
+                                    ),
                                 )}
                                 contact={contact}
                                 onContactChange={setContact}
@@ -161,7 +151,9 @@ export default function CartScreen() {
                                 trailingIcon={
                                     <Ionicons
                                         name={
-                                            pending ? "sync-outline" : "arrow-forward"
+                                            pending
+                                                ? "sync-outline"
+                                                : "arrow-forward"
                                         }
                                         size={18}
                                         color="#FFFFFF"

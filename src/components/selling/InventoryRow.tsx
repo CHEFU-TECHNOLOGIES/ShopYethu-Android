@@ -32,16 +32,28 @@ export function InventoryRow({ product, onActions }: { product: Product; onActio
         <View style={styles.productCard}>
         <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Edit ${product.name}, ${product.published ? "published" : "draft"}, ${product.stock} in stock`}
-            accessibilityHint="Tap to edit. Touch and hold to manage this product."
+            accessibilityLabel={
+                product.published
+                    ? `View ${product.name}, published, ${product.stock} in stock`
+                    : `Manage ${product.name}, draft, ${product.stock} in stock`
+            }
+            accessibilityHint={
+                product.published
+                    ? "Tap to view product details. Touch and hold to manage this product."
+                    : "Tap to manage this draft."
+            }
             style={[styles.productRow, styles.productMain]}
             onLongPress={openActionsWithHaptic}
-            onPress={() =>
+            onPress={() => {
+                if (!product.published) {
+                    onActions(product);
+                    return;
+                }
                 router.navigate({
-                    pathname: "/selling/product",
+                    pathname: "/product/[id]",
                     params: { id: product.id },
-                })
-            }
+                });
+            }}
         >
             <View style={styles.thumbnail}>
                 <ProductThumbnail

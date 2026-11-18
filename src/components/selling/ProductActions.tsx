@@ -15,7 +15,10 @@ export function ProductActions({
 }: {
     product: Product;
     onClose: () => void;
-    onOptimistic: (action: "draft" | "delete", product: Product) => void;
+    onOptimistic: (
+        action: "draft" | "publish" | "delete",
+        product: Product,
+    ) => void;
     onSettled: (productId: string) => void;
 }) {
     const insets = useSafeAreaInsets();
@@ -126,25 +129,60 @@ export function ProductActions({
                                         color={palette.muted}
                                     />
                                 </Pressable>
-                                {product.published && (
-                                    <View style={styles.draft}>
-                                        <Text style={ui.small}>
-                                            Hide this listing from shoppers and
-                                            keep it ready to edit or publish
-                                            again.
-                                        </Text>
-                                        <Button
-                                            title={
-                                                busy === "draft"
-                                                    ? "Moving to drafts…"
-                                                    : "Move to draft"
-                                            }
-                                            secondary
-                                            loading={busy === "draft"}
-                                            disabled={!!busy}
-                                            onPress={() => void submit("draft")}
+                                {product.published ? (
+                                    <Pressable
+                                        accessibilityRole="button"
+                                        accessibilityState={{
+                                            disabled: !!busy,
+                                            busy: busy === "draft",
+                                        }}
+                                        style={styles.action}
+                                        disabled={!!busy}
+                                        onPress={() => void submit("draft")}
+                                    >
+                                        <Ionicons
+                                            name="archive-outline"
+                                            size={21}
+                                            color={palette.brand}
                                         />
-                                    </View>
+                                        <Text style={styles.actionText}>
+                                            {busy === "draft"
+                                                ? "Moving to drafts…"
+                                                : "Move to draft"}
+                                        </Text>
+                                        <Ionicons
+                                            name="chevron-forward"
+                                            size={17}
+                                            color={palette.muted}
+                                        />
+                                    </Pressable>
+                                ) : (
+                                    <Pressable
+                                        accessibilityRole="button"
+                                        accessibilityState={{
+                                            disabled: !!busy,
+                                            busy: busy === "publish",
+                                        }}
+                                        style={styles.action}
+                                        disabled={!!busy}
+                                        onPress={() => void submit("publish")}
+                                    >
+                                        <Ionicons
+                                            name="cloud-upload-outline"
+                                            size={21}
+                                            color={palette.brand}
+                                        />
+                                        <Text style={styles.actionText}>
+                                            {busy === "publish"
+                                                ? "Publishing…"
+                                                : "Publish product"}
+                                        </Text>
+                                        <Ionicons
+                                            name="chevron-forward"
+                                            size={17}
+                                            color={palette.muted}
+                                        />
+                                    </Pressable>
                                 )}
                                 <Pressable
                                     accessibilityRole="button"
@@ -228,13 +266,6 @@ const styles = StyleSheet.create({
         color: palette.ink,
         fontSize: 15,
         fontWeight: "600",
-    },
-    draft: {
-        borderTopWidth: 1,
-        borderBottomWidth: 1,
-        borderColor: palette.line,
-        paddingVertical: 16,
-        gap: 12,
     },
     danger: { color: palette.danger },
 });

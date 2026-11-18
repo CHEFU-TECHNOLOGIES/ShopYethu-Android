@@ -46,14 +46,6 @@ export function ContactFields({
                 editable={!disabled}
             />
             <ApplicationFieldError field="phone" issue={fieldIssue} />
-            <Choice
-                checkbox
-                label="This is my business contact number"
-                selected={form.phoneConfirmed}
-                onPress={() => update("phoneConfirmed", !form.phoneConfirmed)}
-                disabled={disabled}
-            />
-            <ApplicationFieldError field="phoneConfirmed" issue={fieldIssue} />
             <View style={{ gap: 10 }}>
                 <Text style={ui.heading}>
                     Will customers be able to collect?

@@ -4,8 +4,7 @@ import { useSellerInventory } from "@/hooks/use-seller-inventory";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { publishSellerChange } from "@/lib/seller-events";
-import type { PhoneVerificationReceipt } from "@/lib/account-phone";
-import { saveSession } from "@/lib/session";
+import { normalizeApplicationPhone } from "@/lib/contact-phone";
 import { storeHasChanges, storePhoneChanged } from "@/lib/store-form";
 import { toast } from "@/lib/toast";
 import type { Storefront } from "@/types/marketplace";
@@ -17,13 +16,10 @@ export function useStoreEditor() {
     const accountPhone = resource.data
         ? {
               phone: resource.data.phone || "",
-              phoneVerificationRequired:
-                  resource.data.phoneVerificationRequired === true,
+              whatsappAvailable: resource.data.whatsappAvailable === true,
           }
         : null;
-    const [showPhoneVerification, setShowPhoneVerification] = useState(false);
-    const phoneVerificationOpen = showPhoneVerification ||
-        accountPhone?.phoneVerificationRequired === true;
+    const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
     const [contactSyncPending, setContactSyncPending] = useState(false);
     const nameEditable = initial?.nameEditable === true;
     const phoneReady = resource.data !== null;
@@ -36,6 +32,7 @@ export function useStoreEditor() {
             areaPlaceId: initial?.areaPlaceId || "",
             areaSessionToken: "",
             phone: accountPhone?.phone || "",
+            whatsappAvailable: accountPhone?.whatsappAvailable || false,
         },
     );
     const [busy, setBusy] = useState(false);
@@ -43,8 +40,15 @@ export function useStoreEditor() {
     const [error, setError] = useState("");
     const locked = useRef(false);
     const initialPhone = accountPhone?.phone || "";
+    const initialWhatsappAvailable = accountPhone?.whatsappAvailable || false;
     const phoneChanged = storePhoneChanged(form.phone, initialPhone);
-    const hasChanges = storeHasChanges(initial, form, initialPhone) || contactSyncPending;
+    const whatsappChanged = form.whatsappAvailable !== initialWhatsappAvailable;
+    const hasChanges = storeHasChanges(
+        initial,
+        form,
+        initialPhone,
+        initialWhatsappAvailable,
+    ) || contactSyncPending;
 
     function updatePhone(phone: string) {
         setForm((value) => ({ ...value, phone }));
@@ -55,22 +59,30 @@ export function useStoreEditor() {
         resource.refresh();
     }
 
-    async function save(verifiedPhone?: string) {
-        if (locked.current || !session) return;
-        if (verifiedPhone && !initial) return;
-        if (!verifiedPhone && accountPhone?.phoneVerificationRequired) {
-            setShowPhoneVerification(true);
-            return;
-        }
-        if (!verifiedPhone && phoneChanged) {
+    async function save(contactWhatsappAvailable?: boolean): Promise<boolean> {
+        if (locked.current || !session) return false;
+        const updatingContact = contactWhatsappAvailable !== undefined;
+        if (updatingContact && !initial) return false;
+        if (!updatingContact && (phoneChanged || whatsappChanged)) {
             if (!form.phone.trim()) {
-                setError("Enter a phone number before verifying it.");
-                return;
+                setError("Enter a phone number before saving contact details.");
+                return false;
             }
-            setShowPhoneVerification(true);
-            return;
+            setShowWhatsAppModal(true);
+            return false;
         }
-        if (!verifiedPhone && !hasChanges) return;
+        if (updatingContact && !form.phone.trim()) {
+            setError("Enter a phone number before saving contact details.");
+            return false;
+        }
+        const normalizedPhone = updatingContact
+            ? normalizeApplicationPhone(form.phone)
+            : null;
+        if (updatingContact && !normalizedPhone) {
+            setError("Enter a valid South African phone number.");
+            return false;
+        }
+        if (!updatingContact && !hasChanges) return false;
         locked.current = true;
         setBusy(true);
         setError("");
@@ -96,10 +108,28 @@ export function useStoreEditor() {
                     area: form.area,
                     areaPlaceId: form.areaPlaceId,
                     areaSessionToken: form.areaSessionToken,
+                    ...(updatingContact
+                        ? {
+                              phone: normalizedPhone,
+                              whatsappAvailable: contactWhatsappAvailable,
+                          }
+                        : {}),
                 }),
             });
             publishSellerChange({ uid: session.user.uid, store });
-            const savedPhone = verifiedPhone || accountPhone?.phone || "";
+            const savedPhone = updatingContact
+                ? normalizedPhone || form.phone
+                : accountPhone?.phone || "";
+            const savedWhatsappAvailable = updatingContact
+                ? contactWhatsappAvailable === true
+                : initialWhatsappAvailable;
+            if (updatingContact && resource.data) {
+                resource.mutate((current) => ({
+                    ...current,
+                    phone: savedPhone,
+                    whatsappAvailable: savedWhatsappAvailable,
+                }));
+            }
             setForm({
                 name: store.name,
                 description: store.description,
@@ -107,8 +137,10 @@ export function useStoreEditor() {
                 areaPlaceId: store.areaPlaceId || "",
                 areaSessionToken: "",
                 phone: savedPhone,
+                whatsappAvailable: savedWhatsappAvailable,
             });
             setContactSyncPending(false);
+            return true;
         } catch (cause) {
             if (previous && optimistic) {
                 resource.mutate((current) =>
@@ -123,33 +155,22 @@ export function useStoreEditor() {
                     : "Could not save your storefront. Please try again.";
             setError(message);
             toast.error(message);
+            return false;
         } finally {
             locked.current = false;
             setBusy(false);
         }
     }
 
-    function handlePhoneVerified(receipt: PhoneVerificationReceipt) {
-        setShowPhoneVerification(false);
-        if (resource.data) {
-            resource.mutate((current) => ({
-                ...current,
-                phone: receipt.phone,
-                phoneVerificationRequired: false,
-            }));
-        }
-        setForm((value) => ({ ...value, phone: receipt.phone }));
+    function handleWhatsAppConfirm(available: boolean): Promise<boolean> {
+        setShowWhatsAppModal(false);
+        setForm((value) => ({ ...value, whatsappAvailable: available }));
         setContactSyncPending(true);
-        if (!initial) resource.refresh();
-        void save(receipt.phone);
+        return save(available);
     }
 
-    function cancelPhoneVerification() {
-        if (accountPhone?.phoneVerificationRequired) {
-            void saveSession(null);
-        } else {
-            setShowPhoneVerification(false);
-        }
+    function cancelWhatsAppModal() {
+        setShowWhatsAppModal(false);
     }
 
     return {
@@ -166,9 +187,9 @@ export function useStoreEditor() {
         hasChanges,
         phoneChanged,
         accountPhone,
-        phoneVerificationOpen,
-        cancelPhoneVerification,
-        handlePhoneVerified,
+        whatsappModalOpen: showWhatsAppModal,
+        cancelWhatsAppModal,
+        handleWhatsAppConfirm,
         refresh,
         save,
     };

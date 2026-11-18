@@ -107,26 +107,28 @@ export function SellerAccountSection({
                         }
                         description={application.businessName}
                         onPress={() => router.navigate("/application")}
+                        titleAccessory={
+                            <StatusPill
+                                label={statusLabel(application.status)}
+                                tone={
+                                    application.status === "approved"
+                                        ? "success"
+                                        : application.status === "more-info"
+                                          ? "attention"
+                                          : application.status === "rejected"
+                                            ? "danger"
+                                            : "review"
+                                }
+                            />
+                        }
                     />
-                    <View style={account.statusBody}>
-                        <StatusPill
-                            label={statusLabel(application.status)}
-                            tone={
-                                application.status === "approved"
-                                    ? "success"
-                                    : application.status === "more-info"
-                                      ? "attention"
-                                      : application.status === "rejected"
-                                        ? "danger"
-                                        : "review"
-                            }
-                        />
-                        {!!application.reason && (
+                    {!!application.reason && (
+                        <View style={account.statusBody}>
                             <Text style={account.message}>
                                 {application.reason}
                             </Text>
-                        )}
-                    </View>
+                        </View>
+                    )}
                 </>
             ) : data ? (
                 <AccountRow

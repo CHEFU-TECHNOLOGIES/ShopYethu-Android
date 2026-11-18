@@ -13,7 +13,7 @@ export function cacheSavedStore(cache: Cache, store: Storefront) {
     const storeChanged = current.store?.id === store.id;
     const productsChanged = current.products?.some(product => product.storeId === store.id);
     if (!storeChanged && !productsChanged) return current;
-    return { ...current, ...(storeChanged ? { store } : {}), ...(productsChanged ? {
+    return { ...current, ...(storeChanged ? { store: { ...current.store, ...store } } : {}), ...(productsChanged ? {
       products: current.products!.map(product => product.storeId === store.id ? { ...product, storeName: store.name } : product),
     } : {}) };
   });

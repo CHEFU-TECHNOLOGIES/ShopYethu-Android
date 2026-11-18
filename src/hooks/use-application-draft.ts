@@ -68,7 +68,7 @@ export function useApplicationDraft(uid: string, name: string, previous: SellerA
     function update<K extends keyof ApplicationForm>(field: K, value: ApplicationForm[K]) {
         dirty.current = true;
         setSavedAt('');
-        setForm(current => ({ ...current, [field]: value, ...(field === 'phone' ? { phoneConfirmed: false } : {}) }));
+        setForm(current => ({ ...current, [field]: value }));
     }
   const goTo = useCallback((next: number) => { dirty.current = true; setSavedAt(''); setStep(next); }, []);
     async function discard() {

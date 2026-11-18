@@ -25,11 +25,18 @@ test('production bridge restores queries, reuses confirmed store/product/order m
   const h = market(); await h.loadMarketQuery('/me', 'alice');
   const store = { id: 'alice', ownerUid: 'alice', name: 'Test store', status: 'active' };
   h.marketCache.set('/seller/store?page=1', 'alice', { store, products: [], nextCursor: null });
+  const publicStorePath = '/stores/alice?page=1&view=compact&sort=newest&includeStoreVerification=1';
+  h.marketCache.set(publicStorePath, 'public', {
+    store: { ...store, phone: '+27821234567', whatsappAvailable: true },
+    products: [],
+  });
   h.marketCache.set('/seller/orders', 'alice', { orders: [] });
   h.mutate({ path: '/application', data: { id: 'alice', ownerUid: 'alice', status: 'pending' } });
   assert.equal(h.marketCache.get('/me', 'alice').data.application.status, 'pending');
   h.mutate({ path: '/seller/store', data: { ...store, name: 'Updated store' } });
   assert.equal(h.marketCache.get('/me', 'alice').data.store.name, 'Updated store');
+  assert.equal(h.marketCache.get(publicStorePath, 'public').data.store.phone, '+27821234567');
+  assert.equal(h.marketCache.get(publicStorePath, 'public').data.store.whatsappAvailable, true);
   h.mutate({ path: '/seller/products', data: { id: 'p', storeId: 'alice', published: true } });
   assert.equal(h.marketCache.get('/seller/store?page=1', 'alice').data.products.length, 1);
   const inventoryTime = h.marketCache.get('/seller/store?page=1', 'alice').updatedAt;
