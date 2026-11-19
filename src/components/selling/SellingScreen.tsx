@@ -10,7 +10,7 @@ import { StoreOverview } from "@/components/selling/StoreOverview";
 import { StoreSkeleton } from "@/components/selling/StoreSkeleton";
 import { ProductActions } from "@/components/selling/ProductActions";
 import { CatalogSortSelector } from "@/components/market/CatalogSortSelector";
-import type { Product } from "@/types/marketplace";
+import type { Order, Product } from "@/types/marketplace";
 import { palette, ui } from "@/constants/market-theme";
 import { sellerStyles as styles } from "@/constants/seller-styles";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,6 +18,7 @@ import { router } from "expo-router";
 import { Text, View } from "react-native";
 import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { useSellingInventoryScreen } from "@/hooks/use-selling-inventory-screen";
+import { useResource } from "@/hooks/use-resource";
 
 export default function SellingScreen() {
     const {
@@ -38,6 +39,12 @@ export default function SellingScreen() {
         onSettled,
         clearFilters,
     } = useSellingInventoryScreen();
+    const ordersResource = useResource<{ orders: Order[] }>(
+        "/seller/orders",
+        !!session,
+    );
+    const totalOrders = ordersResource.data?.orders.length;
+
     return (
         <ListPage<Product>
             title="My Store"
@@ -148,7 +155,11 @@ export default function SellingScreen() {
                                     </View>
                                     <View style={styles.action}>
                                         <Button
-                                            title="Orders"
+                                            title={
+                                                totalOrders === undefined
+                                                    ? "Orders"
+                                                    : `Orders (${totalOrders > 99 ? "99+" : totalOrders})`
+                                            }
                                             secondary
                                             onPress={() =>
                                                 router.navigate(
@@ -176,7 +187,7 @@ export default function SellingScreen() {
                                     <View style={styles.inventoryControls}>
                                         <Field
                                             label="Search products"
-                                            placeholder="Name or category"
+                                            placeholder="Search by name or category..."
                                             value={search}
                                             onChangeText={setSearch}
                                             autoCorrect={false}

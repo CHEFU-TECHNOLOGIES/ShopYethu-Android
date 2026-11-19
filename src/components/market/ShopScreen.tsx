@@ -41,16 +41,18 @@ export default function ShopScreen() {
         <View style={{ gap: 18, paddingBottom: 18 }}>
             <View style={home.brand}>
                 <View style={styles.brandIdentity}>
-                    <Image
+                    {/**TODO Uncomment on major version */}
+                    {/* <Image
                         source={require("@/assets/images/shopyethu-icon.png")}
                         style={home.icon}
-                    />
+                    /> */}
                     <Text accessibilityRole="header" style={home.name}>
                         ShopYethu
                     </Text>
                 </View>
                 <View style={styles.headerActions}>
-                    <Pressable
+                    {/**TODO Uncomment when notification settings are implemented */}
+                    {/* <Pressable
                         accessibilityRole="button"
                         accessibilityLabel="Notification settings"
                         onPress={() => router.push("/notification-settings")}
@@ -62,6 +64,19 @@ export default function ShopScreen() {
                             color={palette.ink}
                         />
                         <View style={styles.notificationDot} />
+                    </Pressable> */}
+                    <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Open wishlist"
+                        onPress={() => router.push("/favorites")}
+                        style={styles.headerAction}
+                    >
+                        <Ionicons
+                            name="heart-outline"
+                            size={25}
+                            color={palette.brand}
+                            accessible={false}
+                        />
                     </Pressable>
                     <Pressable
                         accessibilityRole="button"
@@ -177,8 +192,10 @@ export default function ShopScreen() {
                     empty={
                         resource.data && products.length === 0
                             ? resource.data.nextCursor
-                                ? "No products from sellers yet. Load more to keep searching."
-                                : "No products from sellers found. Try another search or category."
+                                ? "No products found in the results loaded so far. Load more to continue browsing."
+                                : query || category !== "All"
+                                  ? "No products match your current search or category. Try adjusting your search or choosing another category."
+                                  : "No products are available at the moment. Please check back soon."
                             : undefined
                     }
                 />

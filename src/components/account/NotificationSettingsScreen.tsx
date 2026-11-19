@@ -74,65 +74,73 @@ export function NotificationSettingsScreen() {
                     </View>
                 </View>
 
-                <View style={notificationSettings.permissionCard}>
-                    <Text style={notificationSettings.permissionTitle}>
-                        Device notifications
-                    </Text>
-                    <Text style={notificationSettings.permissionDescription}>
-                        {checkingPermission && !permission
-                            ? "Checking this device’s permission…"
-                            : permission?.granted
-                              ? "Notifications are allowed on this device. Push delivery for these categories is not active yet."
-                              : permission && !permission.canAskAgain
-                                ? "Notifications are blocked for ShopYethu. Enable them in your device settings."
-                                : "Allow notifications on this device to receive alerts."}
-                    </Text>
-                    {!permission?.granted && (
-                        <Pressable
-                            accessibilityRole="button"
-                            accessibilityLabel={
-                                permission && !permission.canAskAgain
-                                    ? "Open device settings to allow notifications"
-                                    : "Allow notifications on this device"
-                            }
-                            disabled={checkingPermission || updatingPermission}
-                            onPress={() =>
-                                permission
-                                    ? void enablePermission()
-                                    : void refreshPermission()
-                            }
-                            style={({ pressed }) => [
-                                notificationSettings.permissionButton,
-                                pressed && account.pressed,
-                                (checkingPermission || updatingPermission) &&
-                                    notificationSettings.permissionButtonDisabled,
-                            ]}
-                        >
-                            <Text
-                                style={
-                                    notificationSettings.permissionButtonText
-                                }
-                            >
-                                {checkingPermission || updatingPermission
-                                    ? "Please wait…"
-                                    : !permission
-                                      ? "Check permission"
-                                      : permission.canAskAgain
-                                        ? "Allow notifications"
-                                        : "Open device settings"}
-                            </Text>
-                        </Pressable>
-                    )}
-                    {!!permissionError && (
-                        <Text
-                            accessibilityRole="alert"
-                            accessibilityLiveRegion="polite"
-                            style={notificationSettings.permissionError}
-                        >
-                            {permissionError}
+                {permission?.granted !== true ? (
+                    <View style={notificationSettings.permissionCard}>
+                        <Text style={notificationSettings.permissionTitle}>
+                            Device notifications
                         </Text>
-                    )}
-                </View>
+                        <Text
+                            style={
+                                notificationSettings.permissionDescription
+                            }
+                        >
+                            {checkingPermission && !permission
+                                ? "Checking this device’s permission…"
+                                : permission && !permission.canAskAgain
+                                  ? "Notifications are blocked for ShopYethu. Enable them in your device settings."
+                                  : "Allow notifications on this device to receive alerts."}
+                        </Text>
+                        {(permission?.granted === false ||
+                            (!permission && !!permissionError)) && (
+                            <Pressable
+                                accessibilityRole="button"
+                                accessibilityLabel={
+                                    permission && !permission.canAskAgain
+                                        ? "Open device settings to allow notifications"
+                                        : "Allow notifications on this device"
+                                }
+                                disabled={
+                                    checkingPermission || updatingPermission
+                                }
+                                onPress={() =>
+                                    permission
+                                        ? void enablePermission()
+                                        : void refreshPermission()
+                                }
+                                style={({ pressed }) => [
+                                    notificationSettings.permissionButton,
+                                    pressed && account.pressed,
+                                    (checkingPermission ||
+                                        updatingPermission) &&
+                                        notificationSettings.permissionButtonDisabled,
+                                ]}
+                            >
+                                <Text
+                                    style={
+                                        notificationSettings.permissionButtonText
+                                    }
+                                >
+                                    {checkingPermission || updatingPermission
+                                        ? "Please wait…"
+                                        : !permission
+                                          ? "Check permission"
+                                          : permission.canAskAgain
+                                            ? "Allow notifications"
+                                            : "Open device settings"}
+                                </Text>
+                            </Pressable>
+                        )}
+                        {!!permissionError && (
+                            <Text
+                                accessibilityRole="alert"
+                                accessibilityLiveRegion="polite"
+                                style={notificationSettings.permissionError}
+                            >
+                                {permissionError}
+                            </Text>
+                        )}
+                    </View>
+                ) : null}
 
                 <View style={notificationSettings.section}>
                     <Text

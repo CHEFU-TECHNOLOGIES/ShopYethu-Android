@@ -97,10 +97,7 @@ export default function AccountScreen() {
                     ) : session ? (
                         <>
                             <AccountIdentity user={session.user} />
-                            <View
-                                accessibilityElementsHidden
-                                style={account.profileDivider}
-                            />
+                            
                         </>
                     ) : (
                         <AccountSignIn
@@ -134,7 +131,7 @@ export default function AccountScreen() {
                             </Text>
                         </View>
                     )}
-                    <AccountSection title="Notifications">
+                    {/* <AccountSection title="Notifications">
                         <AccountRow
                             title="Notification settings"
                             description="Choose the types of ShopYethu notifications you want."
@@ -142,7 +139,7 @@ export default function AccountScreen() {
                                 void openNotificationSettings()
                             }
                         />
-                    </AccountSection>
+                    </AccountSection> */}
                     {ready && (
                         <>
                             {session && (

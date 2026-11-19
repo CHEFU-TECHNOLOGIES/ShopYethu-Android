@@ -66,7 +66,7 @@ export function StoreActionsDropdown({
             >
                 <Ionicons
                     name="ellipsis-horizontal"
-                    size={18}
+                    size={16}
                     color="#FFFFFF"
                 />
             </Pressable>
@@ -164,8 +164,8 @@ function ActionItem({
 
 const styles = StyleSheet.create({
     trigger: {
-        width: 36,
-        height: 36,
+        width: 34,
+        height: 34,
         borderRadius: 18,
         alignItems: "center",
         justifyContent: "center",

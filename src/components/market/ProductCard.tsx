@@ -6,6 +6,8 @@ import type { Product } from "@/types/marketplace";
 import { money, palette, ui } from "@/constants/market-theme";
 import { MarketImage } from "./MarketImage";
 import { prefetchProduct } from "@/lib/market-cache";
+import { useCart } from "@/lib/cart";
+import { useWishlist } from "@/lib/wishlist";
 
 export function ProductCard({
     product,
@@ -16,6 +18,12 @@ export function ProductCard({
     onAddToBasket?: (product: Product) => void;
     hideSellerName?: boolean;
 }) {
+    const { items } = useCart();
+    const wishlist = useWishlist();
+    const isFavorite = wishlist.productIds.includes(product.id);
+    const basketQuantity =
+        items.find((item) => item.product.id === product.id)?.quantity ?? 0;
+
     function openProduct() {
         prefetchProduct(product.id);
         router.navigate({
@@ -36,6 +44,33 @@ export function ProductCard({
                     <MarketImage
                         uri={product.photos[0]}
                         style={styles.image}
+                    />
+                </Pressable>
+                <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                        isFavorite
+                            ? `Remove ${product.name} from wishlist`
+                            : `Add ${product.name} to wishlist`
+                    }
+                    accessibilityState={{
+                        selected: isFavorite,
+                        disabled: !wishlist.ready || wishlist.saving,
+                    }}
+                    disabled={!wishlist.ready || wishlist.saving}
+                    onPress={() => void wishlist.toggle(product.id)}
+                    style={({ pressed }) => [
+                        styles.favoriteButton,
+                        pressed && styles.favoriteButtonPressed,
+                        (!wishlist.ready || wishlist.saving) &&
+                            styles.favoriteButtonDisabled,
+                    ]}
+                >
+                    <Ionicons
+                        name={isFavorite ? "heart" : "heart-outline"}
+                        size={21}
+                        color={isFavorite ? "#C83F4D" : palette.ink}
+                        accessible={false}
                     />
                 </Pressable>
                 {onAddToBasket && (
@@ -59,12 +94,18 @@ export function ProductCard({
                             accessible={false}
                         />
                         <View style={styles.addBadge}>
-                            <Ionicons
-                                name="add"
-                                size={11}
-                                color={palette.paper}
-                                accessible={false}
-                            />
+                            {basketQuantity > 0 ? (
+                                <Text style={styles.addBadgeText}>
+                                    {basketQuantity}
+                                </Text>
+                            ) : (
+                                <Ionicons
+                                    name="add"
+                                    size={11}
+                                    color={palette.paper}
+                                    accessible={false}
+                                />
+                            )}
                         </View>
                     </Pressable>
                 )}
@@ -145,6 +186,20 @@ const styles = StyleSheet.create({
     },
     imagePressable: { width: "100%", height: "100%" },
     image: { width: "100%", height: "100%" },
+    favoriteButton: {
+        position: "absolute",
+        top: 8,
+        right: 8,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgba(255,255,255,0.94)",
+        elevation: 2,
+    },
+    favoriteButtonPressed: { backgroundColor: palette.soft },
+    favoriteButtonDisabled: { opacity: 0.6 },
     addButton: {
         position: "absolute",
         right: 8,
@@ -163,15 +218,17 @@ const styles = StyleSheet.create({
     addButtonDisabled: { opacity: 0.55 },
     addBadge: {
         position: "absolute",
-        top: 2,
-        right: 1,
-        width: 14,
-        height: 14,
-        borderRadius: 7,
+        top: -3,
+        right: -3,
+        minWidth: 18,
+        height: 18,
+        borderRadius: 9,
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: palette.brand,
+        paddingHorizontal: 3,
     },
+    addBadgeText: { color: palette.paper, fontSize: 10, fontWeight: "700" },
     details: { paddingTop: 10, gap: 4 },
     sellerRow: {
         flexDirection: "row",

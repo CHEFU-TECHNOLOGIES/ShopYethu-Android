@@ -16,10 +16,13 @@ export function StoreStats({ products }: { products: Product[] }) {
 
     return (
         <View style={styles.stats}>
-            {stats.map(([label, count]) => (
+            {stats.map(([label, count], index) => (
                 <View
                     key={label}
-                    style={styles.stat}
+                    style={[
+                        styles.stat,
+                        index < stats.length - 1 && styles.statDivider,
+                    ]}
                     accessible
                     accessibilityLabel={`${label}: ${count}`}
                 >
@@ -29,7 +32,7 @@ export function StoreStats({ products }: { products: Product[] }) {
                         adjustsFontSizeToFit
                         minimumFontScale={0.75}
                     >
-                        {count}
+                        {count > 99 ? "99+" : count}
                     </Text>
                     <Text style={styles.statLabel}>{label}</Text>
                 </View>

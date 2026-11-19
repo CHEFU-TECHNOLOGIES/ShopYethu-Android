@@ -19,40 +19,104 @@ export default function AppTabs() {
         >
             <NativeTabs.Trigger name="index">
                 <NativeTabs.Trigger.Label>Shop</NativeTabs.Trigger.Label>
-                <NativeTabs.Trigger.Icon md="storefront" sf="storefront" />
+                <NativeTabs.Trigger.Icon
+                    src={{
+                        default: (
+                            <NativeTabs.Trigger.VectorIcon
+                                family={Ionicons}
+                                name="bag-handle-outline"
+                            />
+                        ),
+                        selected: (
+                            <NativeTabs.Trigger.VectorIcon
+                                family={Ionicons}
+                                name="bag-handle"
+                            />
+                        ),
+                    }}
+                    selectedColor={palette.brand}
+                />
             </NativeTabs.Trigger>
             <NativeTabs.Trigger name="orders">
                 <NativeTabs.Trigger.Label>Orders</NativeTabs.Trigger.Label>
-                <NativeTabs.Trigger.Icon md="receipt_long" sf="shippingbox" />
+                <NativeTabs.Trigger.Icon
+                    src={{
+                        default: (
+                            <NativeTabs.Trigger.VectorIcon
+                                family={Ionicons}
+                                name="receipt-outline"
+                            />
+                        ),
+                        selected: (
+                            <NativeTabs.Trigger.VectorIcon
+                                family={Ionicons}
+                                name="receipt"
+                            />
+                        ),
+                    }}
+                    selectedColor={palette.brand}
+                />
             </NativeTabs.Trigger>
             <NativeTabs.Trigger name="selling" hidden={!hasActiveStore}>
                 <NativeTabs.Trigger.Label>My Store</NativeTabs.Trigger.Label>
                 <NativeTabs.Trigger.Icon
-                    src={
-                        <NativeTabs.Trigger.VectorIcon
-                            family={Ionicons}
-                            name="storefront-outline"
-                        />
-                    }
-                    selectedColor="black"
+                    src={{
+                        default: (
+                            <NativeTabs.Trigger.VectorIcon
+                                family={Ionicons}
+                                name="storefront-outline"
+                            />
+                        ),
+                        selected: (
+                            <NativeTabs.Trigger.VectorIcon
+                                family={Ionicons}
+                                name="storefront"
+                            />
+                        ),
+                    }}
+                    selectedColor={palette.brand}
                 />
             </NativeTabs.Trigger>
             <NativeTabs.Trigger name="deals">
                 <NativeTabs.Trigger.Label>Deals</NativeTabs.Trigger.Label>
                 <NativeTabs.Trigger.Icon
-                    src={
-                        <NativeTabs.Trigger.VectorIcon
-                            family={Ionicons}
-                            name="pricetag-outline"
-                        />
-                    }
+                    src={{
+                        default: (
+                            <NativeTabs.Trigger.VectorIcon
+                                family={Ionicons}
+                                name="pricetag-outline"
+                            />
+                        ),
+                        selected: (
+                            <NativeTabs.Trigger.VectorIcon
+                                family={Ionicons}
+                                name="pricetag"
+                            />
+                        ),
+                    }}
                     selectedColor={palette.brand}
                 />
             </NativeTabs.Trigger>
 
             <NativeTabs.Trigger name="account">
                 <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
-                <NativeTabs.Trigger.Icon md="settings" sf="gearshape" />
+                <NativeTabs.Trigger.Icon
+                    src={{
+                        default: (
+                            <NativeTabs.Trigger.VectorIcon
+                                family={Ionicons}
+                                name="settings-outline"
+                            />
+                        ),
+                        selected: (
+                            <NativeTabs.Trigger.VectorIcon
+                                family={Ionicons}
+                                name="settings"
+                            />
+                        ),
+                    }}
+                    selectedColor={palette.brand}
+                />
             </NativeTabs.Trigger>
         </NativeTabs>
     );

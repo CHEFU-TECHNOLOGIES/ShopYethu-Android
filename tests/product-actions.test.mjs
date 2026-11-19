@@ -16,7 +16,7 @@ function nodes(node) {
   return [node, ...nodes(node.props?.children)];
 }
 function setup(published = true) {
-  const cells = [], calls = [], optimistic = [], settled = []; let cursor = 0, closed = 0, respond = async () => ({});
+  const cells = [], calls = [], optimistic = [], settled = [], errors = []; let cursor = 0, closed = 0, respond = async () => ({});
   const react = {
     useState(initial) {
       const index = cursor++;
@@ -36,6 +36,7 @@ function setup(published = true) {
     'expo-crypto': { randomUUID: () => 'publish-attempt-key-123456' },
     '@/lib/api': { api: async (path, options) => { calls.push({ path, ...options }); return respond(); } },
     '@/lib/publish-product': publishProduct,
+    '@/lib/toast': { toast: { error: message => errors.push(message) } },
   });
   const { ProductActions } = loadTs('src/components/selling/ProductActions.tsx', {
     react,
@@ -55,13 +56,13 @@ function setup(published = true) {
     onSettled: id => settled.push(id),
   }); };
   const elements = () => nodes(render());
-  return { render, elements, calls, optimistic, settled, closed: () => closed, respond: callback => { respond = callback; },
+  return { render, elements, calls, optimistic, settled, errors, closed: () => closed, respond: callback => { respond = callback; },
     button: title => elements().find(node => node.type === 'Button' && node.props.title === title),
     action: title => elements().find(node => node.type === 'Pressable' && nodes(node.props.children).some(child => child.type === 'Text' && child.props.children === title)),
   };
 }
 
-test('deletion requires confirmation, hides the product immediately and blocks duplicate actions', async () => {
+test('deletion requires confirmation, closes immediately and blocks duplicate actions', async () => {
   const cancelled = setup();
   cancelled.action('Delete product').props.onPress();
   cancelled.render().props.onRequestClose();
@@ -74,7 +75,7 @@ test('deletion requires confirmation, hides the product immediately and blocks d
   const confirm = h.button('Delete product');
   confirm.props.onPress(); confirm.props.onPress();
   assert.equal(h.calls.length, 1);
-  assert.equal(h.closed(), 0, 'keep the action sheet open while the result is pending');
+  assert.equal(h.closed(), 1, 'close the action sheet while the request is pending');
   assert.equal(h.optimistic[0].action, 'delete');
   assert.equal(h.calls[0].method, 'DELETE');
   assert.equal(h.calls[0].path, '/seller/products/test-product');
@@ -82,24 +83,23 @@ test('deletion requires confirmation, hides the product immediately and blocks d
   h.button('Deleting product…').props.onPress();
   assert.equal(h.calls.length, 1);
   h.render().props.onRequestClose();
-  assert.equal(h.closed(), 0);
-  finish({ deleted: true }); await tick();
   assert.equal(h.closed(), 1);
+  finish({ deleted: true }); await tick();
+  assert.equal(h.closed(), 1, 'do not close again after the request finishes');
   assert.deepEqual(h.settled, ['test-product']);
 });
 
 test('draft sends the required empty JSON body and restores the product after rejection', async () => {
   const h = setup(); h.respond(async () => { throw new Error('Selling is suspended.'); });
-  h.action('Move to draft').props.onPress(); await tick();
+  h.action('Move to draft').props.onPress();
+  assert.equal(h.closed(), 1, 'close before waiting for the server');
+  await tick();
   assert.equal(h.calls[0].path, '/seller/products/test-product/draft');
   assert.equal(h.calls[0].method, 'PUT');
   assert.equal(h.calls[0].body, '{}', 'stale screen fields must not overwrite stock or edits');
-  assert.equal(h.closed(), 0);
   assert.deepEqual(h.optimistic.map(change => change.action), ['draft']);
   assert.deepEqual(h.settled, ['test-product']);
-  assert.ok(h.elements().some(node => node.props?.accessibilityRole === 'alert' && /Selling is suspended/.test(node.props.children)));
-  h.respond(async () => ({})); h.action('Move to draft').props.onPress(); await tick();
-  assert.equal(h.closed(), 1);
+  assert.match(h.errors[0], /Selling is suspended.*product was restored/);
   assert.equal(setup(false).action('Move to draft'), undefined, 'an existing draft does not offer Move to draft');
   assert.ok(setup(false).action('Publish product'), 'drafts offer a publish action');
 });
@@ -159,7 +159,7 @@ test('draft publish updates the inventory optimistically before the request sett
   h.respond(() => new Promise(resolve => { finish = resolve; }));
   h.action('Publish product').props.onPress();
   assert.equal(h.optimistic[0].action, 'publish');
-  assert.equal(h.closed(), 0);
+  assert.equal(h.closed(), 1, 'close while the publish request is pending');
   assert.equal(h.calls[0].path, '/seller/products/test-product');
   assert.equal(h.calls[0].method, 'PUT');
   assert.equal(JSON.parse(h.calls[0].body).published, true);

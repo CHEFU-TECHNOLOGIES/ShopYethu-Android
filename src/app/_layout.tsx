@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { CartProvider } from '@/lib/cart';
+import { WishlistProvider } from '@/lib/wishlist';
 import { WelcomeProvider, useWelcome } from '@/lib/welcome';
 import { ToastHost } from '@/components/feedback/ToastHost';
 import { MarketplaceSync } from '@/components/feedback/MarketplaceSync';
@@ -15,9 +16,11 @@ export default function RootLayout() {
     <AuthProvider>
       <WelcomeProvider>
         <CartProvider>
-          <KeyboardProvider preload={false}>
-            <AppNavigator />
-          </KeyboardProvider>
+          <WishlistProvider>
+            <KeyboardProvider preload={false}>
+              <AppNavigator />
+            </KeyboardProvider>
+          </WishlistProvider>
         </CartProvider>
       </WelcomeProvider>
     </AuthProvider>
@@ -43,6 +46,10 @@ function AppNavigator() {
         />
         <Stack.Screen
           name="notification-settings"
+          options={{ animation: "slide_from_right" }}
+        />
+        <Stack.Screen
+          name="favorites"
           options={{ animation: "slide_from_right" }}
         />
         <Stack.Screen name="welcome" options={{ animation: 'fade' }} />

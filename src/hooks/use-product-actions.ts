@@ -7,6 +7,7 @@ import {
 } from "@/lib/publish-product";
 import type { Product } from "@/types/marketplace";
 import { router } from "expo-router";
+import { toast } from "@/lib/toast";
 
 type ProductAction = "draft" | "publish" | "delete";
 
@@ -53,6 +54,7 @@ export function useProductActions(
         setBusy(action);
         setError("");
         onOptimistic(action, product);
+        onClose();
         try {
             const path = `/seller/products/${encodeURIComponent(product.id)}`;
             if (action === "publish") {
@@ -65,9 +67,8 @@ export function useProductActions(
                     ...(action === "draft" ? { body: JSON.stringify({}) } : {}),
                 });
             }
-            onClose();
         } catch (cause) {
-            setError(
+            toast.error(
                 cause instanceof Error
                     ? `${cause.message} Your product was restored.`
                     : "Could not update this product. Your product was restored.",
@@ -75,7 +76,6 @@ export function useProductActions(
         } finally {
             onSettled(product.id);
             locked.current = false;
-            setBusy(null);
         }
     }
 

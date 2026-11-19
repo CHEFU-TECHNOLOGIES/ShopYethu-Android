@@ -24,8 +24,7 @@ export function ShopScrollSettings() {
                 <View style={account.rowText}>
                     <Text style={account.rowTitle}>Keep Shop header fixed</Text>
                     <Text style={account.rowDescription}>
-                        On: only products scroll. Off: the whole Shop screen
-                        scrolls.
+                        {"On: Only products scroll.\nOff: The whole Shop screen scrolls."}
                     </Text>
                 </View>
                 <Switch
