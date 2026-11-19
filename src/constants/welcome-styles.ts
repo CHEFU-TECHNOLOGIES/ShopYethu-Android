@@ -20,4 +20,7 @@ export const welcome = StyleSheet.create({
   description: { color: palette.muted, fontSize: 15, lineHeight: 24, textAlign: 'center' },
   actions: { gap: 12, width: '100%', maxWidth: 440, alignSelf: 'center' },
   note: { color: palette.muted, fontSize: 12, lineHeight: 19, textAlign: 'center', marginTop: 4 },
+  signupPrompt: { alignItems: 'center', paddingVertical: 8 },
+  signupText: { color: palette.muted, fontSize: 14, lineHeight: 20, textAlign: 'center' },
+  signupLink: { color: palette.brand, fontWeight: '700' },
 });

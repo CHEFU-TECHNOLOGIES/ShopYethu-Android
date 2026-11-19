@@ -1,13 +1,12 @@
 import { NativeTabs } from "expo-router/native-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { palette } from "@/constants/market-theme";
-import { useCart } from "@/lib/cart";
 import { useSellerAccount } from "@/hooks/use-seller-account";
 
 export default function AppTabs() {
-    const { items } = useCart();
     const sellerAccount = useSellerAccount();
     const hasActiveStore = sellerAccount.data?.store?.status === "active";
+    
     return (
         <NativeTabs
             backgroundColor={palette.paper}
@@ -22,14 +21,9 @@ export default function AppTabs() {
                 <NativeTabs.Trigger.Label>Shop</NativeTabs.Trigger.Label>
                 <NativeTabs.Trigger.Icon md="storefront" sf="storefront" />
             </NativeTabs.Trigger>
-            <NativeTabs.Trigger name="cart">
-                <NativeTabs.Trigger.Label>Basket</NativeTabs.Trigger.Label>
-                <NativeTabs.Trigger.Icon md="shopping_bag" sf="bag" />
-                <NativeTabs.Trigger.Badge hidden={!items.length}>
-                    {String(
-                        items.reduce((sum, item) => sum + item.quantity, 0),
-                    )}
-                </NativeTabs.Trigger.Badge>
+            <NativeTabs.Trigger name="orders">
+                <NativeTabs.Trigger.Label>Orders</NativeTabs.Trigger.Label>
+                <NativeTabs.Trigger.Icon md="receipt_long" sf="shippingbox" />
             </NativeTabs.Trigger>
             <NativeTabs.Trigger name="selling" hidden={!hasActiveStore}>
                 <NativeTabs.Trigger.Label>My Store</NativeTabs.Trigger.Label>
@@ -43,9 +37,17 @@ export default function AppTabs() {
                     selectedColor="black"
                 />
             </NativeTabs.Trigger>
-            <NativeTabs.Trigger name="orders">
-                <NativeTabs.Trigger.Label>Orders</NativeTabs.Trigger.Label>
-                <NativeTabs.Trigger.Icon md="receipt_long" sf="shippingbox" />
+            <NativeTabs.Trigger name="deals">
+                <NativeTabs.Trigger.Label>Deals</NativeTabs.Trigger.Label>
+                <NativeTabs.Trigger.Icon
+                    src={
+                        <NativeTabs.Trigger.VectorIcon
+                            family={Ionicons}
+                            name="pricetag-outline"
+                        />
+                    }
+                    selectedColor={palette.brand}
+                />
             </NativeTabs.Trigger>
 
             <NativeTabs.Trigger name="account">

@@ -10,6 +10,15 @@ export const styles = StyleSheet.create({
         gap: 12,
     },
     sectionHeading: { gap: 4 },
+    sectionToggle: {
+        gap: 4,
+    },
+    sectionToggleTitleRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+    },
     itemCard: {
         flexDirection: "row",
         alignItems: "center",

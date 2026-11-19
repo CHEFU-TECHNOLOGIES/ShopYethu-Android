@@ -1,3 +1,7 @@
+import * as AuthSession from "expo-auth-session";
+import { randomUUID } from "expo-crypto";
+import { router } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import {
     createContext,
     useContext,
@@ -5,19 +9,15 @@ import {
     useState,
     type ReactNode,
 } from "react";
-import * as AuthSession from "expo-auth-session";
-import * as WebBrowser from "expo-web-browser";
-import { randomUUID } from "expo-crypto";
-import { router } from "expo-router";
-import { toast } from "./toast";
+import { accountUserFromInfo } from "./account-user";
 import { ACCOUNT_BASE, API_BASE, CLIENT_ID, REDIRECT_URI } from "./config";
-import { accountUserDiagnostics, accountUserFromInfo } from "./account-user";
 import {
     hydrateSession,
     saveSession,
     subscribe,
     type Session,
 } from "./session";
+import { toast } from "./toast";
 
 WebBrowser.maybeCompleteAuthSession();
 type Auth = {
@@ -26,6 +26,7 @@ type Auth = {
     busy: boolean;
     error: string;
     signIn: () => Promise<void>;
+    signUp: () => Promise<void>;
     signOut: () => Promise<void>;
 };
 const Context = createContext<Auth | null>(null);
@@ -57,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
     }, []);
 
-    async function signIn() {
+    async function authorize(accountPath: "/login" | "/register") {
         if (busy) return;
         setBusy(true);
         setError("");
@@ -77,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 tokenEndpoint: `${API_BASE}/oauth/token`,
             };
             const authorize = await request.makeAuthUrlAsync(discovery);
-            const account = new URL("/login", ACCOUNT_BASE);
+            const account = new URL(accountPath, ACCOUNT_BASE);
             account.searchParams.set("app", "shopyethu");
             account.searchParams.set("returnTo", authorize);
             account.searchParams.set("prompt", "select_account");
@@ -141,6 +142,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setBusy(false);
         }
     }
+    async function signIn() {
+        await authorize("/login");
+    }
+    async function signUp() {
+        await authorize("/register");
+    }
     return (
         <Context.Provider
             value={{
@@ -149,6 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 busy,
                 error,
                 signIn,
+                signUp,
                 signOut: async () => {
                     await saveSession(null);
                     toast.success("You’re signed out.");

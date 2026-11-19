@@ -38,6 +38,10 @@ function AppNavigator() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
+          name="cart"
+          options={{ animation: "slide_from_right" }}
+        />
+        <Stack.Screen
           name="notification-settings"
           options={{ animation: "slide_from_right" }}
         />

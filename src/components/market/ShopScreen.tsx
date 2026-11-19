@@ -1,3 +1,15 @@
+import { CatalogSkeleton } from "@/components/market/CatalogSkeleton";
+import { CatalogSortSelector } from "@/components/market/CatalogSortSelector";
+import { ClearableTextInput } from "@/components/market/ClearableTextInput";
+import { Button, ResourceState } from "@/components/market/Primitives";
+import { ProductCard } from "@/components/market/ProductCard";
+import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
+import { home } from "@/constants/home-styles";
+import { palette, ui } from "@/constants/market-theme";
+import { useShopScreen } from "@/hooks/use-shop-screen";
+import { useCart } from "@/lib/cart";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import {
     FlatList,
     Image,
@@ -6,16 +18,7 @@ import {
     Text,
     View,
 } from "react-native";
-import { DebouncedPressable as Pressable } from "@/components/ui/DebouncedPressable";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ClearableTextInput } from "@/components/market/ClearableTextInput";
-import { Button, ResourceState } from "@/components/market/Primitives";
-import { CatalogSkeleton } from "@/components/market/CatalogSkeleton";
-import { ProductCard } from "@/components/market/ProductCard";
-import { CatalogSortSelector } from "@/components/market/CatalogSortSelector";
-import { home } from "@/constants/home-styles";
-import { palette, ui } from "@/constants/market-theme";
-import { useShopScreen } from "@/hooks/use-shop-screen";
 
 export default function ShopScreen() {
     const {
@@ -31,23 +34,68 @@ export default function ShopScreen() {
         products,
         keepHeaderFixed,
     } = useShopScreen();
+    const { items, add } = useCart();
+    const basketCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
     const shopHeader = (
         <View style={{ gap: 18, paddingBottom: 18 }}>
             <View style={home.brand}>
-                <Image
-                    source={require("@/assets/images/shopyethu-icon.png")}
-                    style={home.icon}
-                />
-                <Text accessibilityRole="header" style={home.name}>
-                    ShopYethu
-                </Text>
+                <View style={styles.brandIdentity}>
+                    <Image
+                        source={require("@/assets/images/shopyethu-icon.png")}
+                        style={home.icon}
+                    />
+                    <Text accessibilityRole="header" style={home.name}>
+                        ShopYethu
+                    </Text>
+                </View>
+                <View style={styles.headerActions}>
+                    <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Notification settings"
+                        onPress={() => router.push("/notification-settings")}
+                        style={styles.headerAction}
+                    >   
+                        <Ionicons
+                            name="notifications-outline"
+                            size={25}
+                            color={palette.ink}
+                        />
+                        <View style={styles.notificationDot} />
+                    </Pressable>
+                    <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Open basket, ${basketCount} items`}
+                        onPress={() => router.push("/cart")}
+                        style={styles.headerAction}
+                    >
+                        <Ionicons
+                            name="cart-outline"
+                            size={25}
+                            color={palette.ink}
+                        />
+                        {basketCount > 0 ? (
+                            <View style={styles.cartBadge}>
+                                <Text style={styles.cartBadgeText}>
+                                    {basketCount}
+                                </Text>
+                            </View>
+                        ) : null}
+                    </Pressable>
+                </View>
             </View>
             <View style={home.search}>
+                <Ionicons
+                    name="search"
+                    size={20}
+                    color={palette.muted}
+                    accessible={false}
+                    style={styles.searchIcon}
+                />
                 <ClearableTextInput
                     accessibilityLabel="Search products"
                     clearLabel="search"
-                    placeholder="Search products..."
+                    placeholder="Search products, stores or categories..."
                     placeholderTextColor={palette.muted}
                     value={search}
                     onChangeText={setSearch}
@@ -86,12 +134,36 @@ export default function ShopScreen() {
                     </Pressable>
                 ))}
             </ScrollView>
+            {!query ? (
+                <View style={styles.hero}>
+                    <Image
+                        source={require("@/assets/images/ShopYethu Lifestyle Essentials.png")}
+                        style={styles.heroImage}
+                        resizeMode="cover"
+                        accessible={false}
+                    />
+                    <View style={styles.heroOverlay} />
+                    <View style={styles.heroCopy}>
+                        <Text style={styles.heroTitle}>
+                            <Text style={styles.heroTitleWhite}>
+                                Shop Local{"\n"}
+                            </Text>
+                            <Text style={styles.heroTitleLime}>
+                                Support Local
+                            </Text>
+                        </Text>
+                        <Text style={styles.heroDescription}>
+                            Discover great products from local sellers near you.
+                        </Text>
+                    </View>
+                </View>
+            ) : null}
             <View style={styles.productsHeading}>
                 <Text accessibilityRole="header" style={home.sectionTitle}>
                     {query
                         ? "Search results"
                         : category === "All"
-                          ? "Products"
+                          ? "Popular Products"
                           : category}
                 </Text>
                 <CatalogSortSelector value={sort} onChange={setSort} />
@@ -119,7 +191,9 @@ export default function ShopScreen() {
             style={keepHeaderFixed ? styles.fixedProducts : undefined}
             data={products}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <ProductCard product={item} />}
+            renderItem={({ item }) => (
+                <ProductCard product={item} onAddToBasket={add} />
+            )}
             numColumns={2}
             columnWrapperStyle={{ justifyContent: "space-between" }}
             contentContainerStyle={
@@ -171,6 +245,108 @@ const styles = StyleSheet.create({
     fixedHeader: { paddingHorizontal: 20, paddingTop: 20 },
     fixedProducts: { flex: 1 },
     fixedProductsContent: { paddingHorizontal: 20, paddingBottom: 36 },
+    brandIdentity: { flexDirection: "row", alignItems: "center", gap: 10 },
+    headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
+    headerAction: {
+        width: 42,
+        height: 42,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    notificationDot: {
+        position: "absolute",
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        backgroundColor: "#D84A3D",
+        top: 4,
+        right: 5,
+        borderWidth: 2,
+        borderColor: palette.canvas,
+    },
+    cartBadge: {
+        position: "absolute",
+        top: 1,
+        right: 0,
+        minWidth: 20,
+        height: 20,
+        borderRadius: 10,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: palette.brand,
+        paddingHorizontal: 4,
+    },
+    cartBadgeText: { color: palette.paper, fontSize: 11, fontWeight: "800" },
+    searchIcon: { position: "absolute", left: 14, zIndex: 1 },
+    hero: {
+        alignSelf: "center",
+        width: "100%",
+        height: 146,
+        borderRadius: 24,
+        backgroundColor: "#105B48",
+        overflow: "hidden",
+        justifyContent: "center",
+    },
+    heroImage: {
+        ...StyleSheet.absoluteFill,
+        width: "100%",
+        height: "100%",
+    },
+    heroOverlay: {
+        ...StyleSheet.absoluteFill,
+        backgroundColor: "rgba(8, 58, 48, 0.28)",
+    },
+    heroCopy: {
+        width: "62%",
+        paddingHorizontal: 18,
+        paddingVertical: 16,
+        gap: 8,
+        zIndex: 2,
+    },
+    heroTitle: { fontSize: 27, lineHeight: 31, fontWeight: "900" },
+    heroTitleWhite: { color: palette.paper },
+    heroTitleLime: { color: "#DDF39A" },
+    heroDescription: {
+        color: palette.paper,
+        fontSize: 12,
+        lineHeight: 17,
+        maxWidth: 190,
+    },
+    heroButton: {
+        alignSelf: "flex-start",
+        minHeight: 44,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        borderRadius: 22,
+        backgroundColor: "#DDF39A",
+        paddingHorizontal: 16,
+    },
+    heroButtonText: { color: palette.ink, fontSize: 15, fontWeight: "800" },
+    categoryHeading: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+    },
+    seeAll: { color: palette.brand, fontSize: 12, fontWeight: "800" },
+    categoryTiles: { gap: 10, paddingRight: 20 },
+    categoryTile: {
+        width: 85,
+        height: 70,
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+        borderRadius: 18,
+        backgroundColor: palette.paper,
+        borderWidth: 1,
+        borderColor: palette.line,
+    },
+    categoryTileText: {
+        color: palette.ink,
+        fontSize: 10,
+        fontWeight: "700",
+        textAlign: "center",
+    },
     productsHeading: {
         flexDirection: "row",
         alignItems: "center",

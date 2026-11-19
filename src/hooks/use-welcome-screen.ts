@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { useWelcome } from "@/lib/welcome";
 
 export function useWelcomeScreen() {
-    const { ready, session, signIn, busy: authBusy, error } = useAuth();
+    const { ready, session, signIn, signUp, busy: authBusy, error } = useAuth();
     const { complete } = useWelcome();
     const entering = useRef(false);
     const [busy, setBusy] = useState(false);
@@ -39,5 +39,18 @@ export function useWelcomeScreen() {
         }
     }
 
-    return { ready, session, authBusy, error, busy, enter, openAccount };
+    async function openSignUp() {
+        if (entering.current || authBusy) return;
+        entering.current = true;
+        setBusy(true);
+        try {
+            await complete();
+            await signUp();
+        } finally {
+            entering.current = false;
+            setBusy(false);
+        }
+    }
+
+    return { ready, session, authBusy, error, busy, enter, openAccount, openSignUp };
 }

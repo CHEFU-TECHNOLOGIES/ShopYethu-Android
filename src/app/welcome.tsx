@@ -2,13 +2,21 @@ import { Image, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import { Button } from "@/components/market/Primitives";
+import { DebouncedPressable } from "@/components/ui/DebouncedPressable";
 import { palette } from "@/constants/market-theme";
 import { welcome } from "@/constants/welcome-styles";
 import { useWelcomeScreen } from "@/hooks/use-welcome-screen";
 
 export default function WelcomeScreen() {
-    const { ready, session, authBusy, error, busy, enter, openAccount } =
-        useWelcomeScreen();
+    const {
+        ready,
+        session,
+        authBusy,
+        error,
+        busy,
+        openAccount,
+        openSignUp,
+    } = useWelcomeScreen();
 
     return (
         <SafeAreaView style={welcome.page}>
@@ -35,9 +43,9 @@ export default function WelcomeScreen() {
                 </View>
                 <View style={welcome.actions}>
                     <Button
-                        title="Start shopping"
+                        title="Get started"
                         disabled={!ready || busy || authBusy}
-                        onPress={() => void enter("/")}
+                        onPress={() => void openSignUp()}
                         trailingIcon={
                             <Feather
                                 name="arrow-right"
@@ -47,25 +55,29 @@ export default function WelcomeScreen() {
                             />
                         }
                     />
-                    <Button
-                        title={session ? "Your account" : authBusy ? "Signing in…" : "Sign in"}
-                        secondary
-                        disabled={!ready || busy || authBusy}
-                        onPress={() => void openAccount()}
-                        trailingIcon={
-                            <Feather
-                                name="user"
-                                size={18}
-                                color={palette.brand}
-                                accessible={false}
-                            />
-                        }
-                    />
-                    {error ? <Text accessibilityRole="alert" style={[welcome.note, { color: palette.danger }]}>{error}</Text> : null}
-                    <Text style={welcome.note}>
-                        Browse without an account. Sign in when you are ready to
-                        order or start selling.
-                    </Text>
+
+                    {!session ? (
+                        <DebouncedPressable
+                            accessibilityRole="button"
+                            accessibilityLabel="Already have an account? Sign in"
+                            disabled={!ready || busy || authBusy}
+                            onPress={() => void openAccount()}
+                            style={welcome.signupPrompt}
+                        >
+                            <Text style={welcome.signupText}>
+                                Already have an account?{" "}
+                                <Text style={welcome.signupLink}>Sign in</Text>
+                            </Text>
+                        </DebouncedPressable>
+                    ) : null}
+                    {error ? (
+                        <Text
+                            accessibilityRole="alert"
+                            style={[welcome.note, { color: palette.danger }]}
+                        >
+                            {error}
+                        </Text>
+                    ) : null}
                 </View>
             </ScrollView>
         </SafeAreaView>
