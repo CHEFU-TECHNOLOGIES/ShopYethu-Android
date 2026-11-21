@@ -3,7 +3,7 @@
     "name": "ShopYethu",
     "slug": "ShopYethu",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "platforms": [
       "android",
       "ios"
